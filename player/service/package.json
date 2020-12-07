@@ -1,0 +1,23 @@
+{
+  "name": "catapult-player-service",
+  "version": "1.0.0",
+  "description": "",
+  "config": {
+    "port": "3399"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "./index.js",
+      "lib/",
+      "node_modules/"
+    ]
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/h2o2": "^9.0.2",
+    "@hapi/hapi": "^20.0.3",
+    "@hapi/inert": "^6.0.3",
+    "@hapi/wreck": "^17.1.0",
+    "uuid": "^8.3.1"
+  }
+}

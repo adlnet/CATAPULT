@@ -1,0 +1,57 @@
+// These are the closest USWDS "cool gray" colors to our own cool grayscale.
+// Which really aren't all that close (ours are a bit more blue). Oh well.
+$white:    #fff;
+$gray-100: #fbfcfd;
+$gray-200: #f1f3f6;
+$gray-300: #dfe1e2;
+$gray-400: #c6cace;
+$gray-500: #a9aeb1;
+$gray-600: #71767a;
+$gray-700: #565c65;
+$gray-800: #2d2e2f;
+$gray-900: #1c1d1f;
+$black:    #000;
+
+// The Bootstrap rainbow, using Rustici-ish colors from the USWDS palette.
+// We don't have all of these colors in the Rustici palette (e.g., yellow),
+// so I interpolated them from adjacent colors, did some manual adjustment,
+// and picked the nearest USWDS colors that I could find.
+$blue:    #345d96;
+$indigo:  #5e519e;
+$purple:  #864381;
+$pink:    #d72d79;
+$red:     #e52207;
+$orange:  #fa9441;
+$yellow:  #face00;
+$green:   #008817;
+$teal:    #5abf95;
+$cyan:    #5dc0d1;
+
+// Theme colors. We mostly follow Bootstrap's lead here, except for using
+// a slightly different grey for $dark.
+$primary:       $blue;
+$secondary:     $gray-600;
+$success:       $green;
+$info:          $cyan;
+$warning:       $yellow;
+$danger:        $red;
+$light:         $gray-100;
+$dark:          $gray-800;
+
+// Accessibility tweaks:
+// - According to the Bootstrap docs[1], the colors in the default palette lead
+//   to insufficient contrast for WCAG 2.0 guidelines when used against a light
+//   background. Since our colors aren't too far off from the defaults, we may
+//   have to adjust some of the color scaling values to compensate.
+//
+// - Make sure that links are always underlined[2]. Otherwise, we'd need to
+//   ensure that there is a 3:1 contrast between body text and link text, on
+//   top of the standard 4.5:1 text contrast requirement. And we'd have to add
+//   an underline on hover or mouse focus anyway.
+//
+// [1]: https://getbootstrap.com/docs/4.5/getting-started/accessibility/
+// [2]: https://webaim.org/articles/contrast/#only
+$text-muted: $gray-700;
+$link-decoration: underline;
+
+

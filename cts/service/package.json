@@ -1,0 +1,17 @@
+{
+  "name": "catapult-cts-service",
+  "version": "1.0.0",
+  "description": "Web service to support the Catapult CTS UI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rustici Software <support@rusticisoftware.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@hapi/h2o2": "^9.0.2",
+    "@hapi/hapi": "^20.0.3",
+    "@hapi/inert": "^6.0.3",
+    "uuid": "^8.3.1"
+  }
+}

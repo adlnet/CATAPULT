@@ -22,17 +22,29 @@ const Hapi = require("@hapi/hapi"),
 
 const provision = async () => {
     const server = Hapi.server(
-        {
-            host: process.argv[3],
-            port: process.argv[2] || 3398,
-            routes: {
-                cors: true,
-                response: {
-                    emptyStatusCode: 204
+            {
+                host: process.argv[3],
+                port: process.argv[2] || 3398,
+                routes: {
+                    cors: true,
+                    response: {
+                        emptyStatusCode: 204
+                    }
                 }
             }
-        }
-    );
+        ),
+        sigHandler = async (signal) => {
+            try {
+                await server.stop({timeout: 10000});
+
+                console.log(`Catapult player service stopped (${signal})`);
+                process.exit(0);
+            }
+            catch (ex) {
+                console.log(`Catapult player service failed to stop gracefully (${signal}): terminating the process`, ex);
+                process.exit(1);
+            }
+        };
 
     server.app = {
         lrs: {
@@ -46,21 +58,8 @@ const provision = async () => {
 
     await server.start();
 
-    process.on(
-        "SIGINT",
-        async () => {
-            try {
-                await server.stop({timeout: 10000});
-
-                console.log(`Catapult player service stopped`);
-                process.exit(0);
-            }
-            catch (ex) {
-                console.log("Catapult player service failed to stop gracefully: terminating the process", ex);
-                process.exit(1);
-            }
-        }
-    );
+    process.on("SIGINT", sigHandler);
+    process.on("SIGTERM", sigHandler);
 
     console.log("Catapult player service running on %s", server.info.uri);
 };

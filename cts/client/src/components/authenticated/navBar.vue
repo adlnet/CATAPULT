@@ -1,36 +1,99 @@
+<!--
+    Copyright 2020 Rustici Software
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+ -->
 <template>
-    <b-navbar fixed sticky>
-        <b-row class="flex-fill">
-            <b-col class="col-auto">
-                <h1 class="title">
-                    catapult
-                </h1>
-            </b-col>
-            <b-col>
-                <b-breadcrumb>
-                    <b-breadcrumb-item href="#">
-                        Home
-                    </b-breadcrumb-item>
-                </b-breadcrumb>
-            </b-col>
-            <b-col class="col-auto text-right">
-                <b-button variant="primary" size="sm" class="mr-2">New Course</b-button>
-                <b-button variant="primary" size="sm">New Test</b-button>
-            </b-col>
-        </b-row>
-    </b-navbar>
+    <b-col>
+        <b-navbar fixed sticky>
+            <b-navbar-brand class="title">
+                catapult
+            </b-navbar-brand>
+
+            <b-navbar-nav>
+                <b-nav-text>
+                    <b-breadcrumb>
+                        <b-breadcrumb-item href="#">
+                            Home
+                        </b-breadcrumb-item>
+                    </b-breadcrumb>
+                </b-nav-text>
+            </b-navbar-nav>
+
+            <b-navbar-nav class="ml-auto">
+                <b-nav-form>
+                    <b-button variant="primary" class="mr-2">New Course</b-button>
+                    <b-button v-b-toggle.navbar-new-test :disabled="newTestContentIsShown" variant="primary">New Test</b-button>
+                    <b-nav-item-dropdown right no-caret class="user-menu-dropdown h2 mb-2">
+                        <template #button-content>
+                            <b-icon-person-fill class="rounded-circle bg-info" scale="0.75" variant="light" />
+                        </template>
+                        <b-dropdown-item>Sign Out</b-dropdown-item>
+                    </b-nav-item-dropdown>
+                </b-nav-form>
+            </b-navbar-nav>
+        </b-navbar>
+        <b-navbar fixed sticky>
+            <b-collapse id="navbar-new-test" class="w-100">
+                <test-new />
+            </b-collapse>
+        </b-navbar>
+    </b-col>
 </template>
 
 <script>
+    import {BIconPersonFill} from "bootstrap-vue";
+    import testNew from "@/components/authenticated/testNew";
+
     export default {
         name: "nav-bar",
+        components: {
+            BIconPersonFill,
+            testNew
+        },
         data: () => ({
-        })
+            newTestContentIsShown: false
+        }),
+        mounted () {
+            //
+            // listen for the collapse event so we can set a local value
+            // as to whether the new test content form is currently being
+            // displayed so that we can disable the button that toggles
+            // display of the content, can't use refs because they are
+            // handled too late in the cycle
+            //
+            this.$root.$on(
+                "bv::collapse::state",
+                (collapseId, isJustShown) => {
+                    this.newTestContentIsShown = isJustShown;
+                }
+            );
+        }
     };
 </script>
 
-<style lang="scss">
-    .title {
+<style lang="scss" scoped>
+    .navbar {
+        padding-right: .5rem;
+        padding-top: 0px;
+        padding-bottom: 0px;
+    }
+
+    .navbar-light .title,
+    .navbar-light .title:focus,
+    .navbar-light .title:hover {
+        font-size: 2.5rem;
+        padding: 0px;
         color: $gray-500;
 
         &::first-letter {
@@ -40,5 +103,20 @@
 
     ol.breadcrumb {
         background-color: inherit;
+        margin-bottom: 0px;
+
+        a {
+            text-decoration: none;
+        }
+    }
+
+    .user-menu-dropdown {
+        margin-bottom: 0px !important;
+    }
+
+    #navbar-new-test {
+        margin-top: 5px;
+        border-top: 1px solid $gray-300;
+        padding: 30px;
     }
 </style>

@@ -13,5 +13,14 @@ module.exports = {
                 prependData: `@import "~@/styles/custom-vars.scss";`
             }
         }
+    },
+    chainWebpack: (config) => {
+        config.plugin("html").tap(
+            (args) => {
+                args[0].title = "Catapult: CTS"
+
+                return args;
+            }
+        );
     }
 };

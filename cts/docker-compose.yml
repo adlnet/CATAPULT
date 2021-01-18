@@ -26,9 +26,11 @@ services:
     image: mysql:latest
     volumes:
       - catapult-cts-data:/var/lib/mysql
+      - ./init_db.sql:/docker-entrypoint-initdb.d/cts-init_db.sql
+      - ../player/init_db.sql:/docker-entrypoint-initdb.d/player-init_db.sql
     environment:
       MYSQL_ROOT_PASSWORD: quartz
-      MYSQL_DATABASE: catapult_cts
+    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
 
 volumes:
   catapult-cts-data:

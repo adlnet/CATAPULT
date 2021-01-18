@@ -11,14 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:14-alpine AS client-build
-COPY client .
+
+FROM node:lts-alpine AS client-build
+WORKDIR /usr/src/app
+COPY --chown=node:node client /usr/src/app
 RUN npm ci
 RUN npm run build
 
-FROM node:14-alpine
-COPY service .
-COPY --from=client-build dist ./client
-RUN npm ci
-CMD ["node", "index.js"]
+FROM node:lts-alpine
+RUN apk add dumb-init
+ENV NODE_ENV production
+WORKDIR /usr/src/app
+COPY --chown=node:node service /usr/src/app
+COPY --chown=node:node --from=client-build /usr/src/app/dist /usr/src/app/client
+RUN npm ci --only=production
+USER node
+CMD ["dumb-init", "node", "index.js"]
 EXPOSE 3399/tcp

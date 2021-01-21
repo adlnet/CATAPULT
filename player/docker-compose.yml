@@ -1,4 +1,4 @@
-# Copyright 2020 Rustici Software
+# Copyright 2021 Rustici Software
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,14 +18,36 @@ services:
     image: catapult:player
     ports:
       - 3398:3398
+    depends_on:
+      - rdbms
+    volumes:
+      - ./migrations:/usr/src/app/migrations:ro
+    environment:
+      - DEV_MODE=${DEV_MODE}
+      - DATABASE_USER=catapult
+      - DATABASE_USER_PASSWORD=quartz
+      - DATABASE_NAME=catapult_player
   rdbms:
     image: mysql:latest
     volumes:
       - catapult-player-data:/var/lib/mysql
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro
     environment:
-      MYSQL_ROOT_PASSWORD: quartz
-    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - DATABASE_USER=catapult
+      - DATABASE_USER_PASSWORD=quartz
+      - DATABASE_NAME=catapult_player
+    command: [
+      "mysqld",
+
+      # provide for full UTF-8 support
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+
+      # need the following because the mysql.js client lib doesn't yet support
+      # the newer default scheme used in MySQL 8.x
+      "--default-authentication-plugin=mysql_native_password"
+    ]
 
 volumes:
   catapult-player-data:

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2021 Rustici Software
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:lts-alpine
-RUN apk add dumb-init
-ENV NODE_ENV production
-WORKDIR /usr/src/app
-COPY --chown=node:node entrypoint.sh /usr/src/app
-COPY --chown=node:node service /usr/src/app
-COPY --chown=node:node migrations /usr/src/app/migrations
-RUN npm ci --only=production
-USER node
-ENTRYPOINT []
-CMD ["dumb-init", "./entrypoint.sh"]
-EXPOSE 3398/tcp
+echo "Creating Catapult Player Database: '$DATABASE_NAME' and User: '$DATABASE_USER'";
+mysql --user=root --password=$MYSQL_ROOT_PASSWORD << END
+
+CREATE DATABASE IF NOT EXISTS $DATABASE_NAME;
+
+CREATE USER '$DATABASE_USER'@'%' IDENTIFIED BY '$DATABASE_USER_PASSWORD';
+GRANT ALL PRIVILEGES ON $DATABASE_NAME.* TO '$DATABASE_USER'@'%';
+FLUSH PRIVILEGES;
+
+END

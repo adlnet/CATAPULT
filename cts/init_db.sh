@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2021 Rustici Software
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:lts-alpine AS client-build
-WORKDIR /usr/src/app
-COPY --chown=node:node client /usr/src/app
-RUN npm ci
-RUN npm run build
+echo "Creating Catapult CTS Database: '$DATABASE_NAME', Player Database: '$PLAYER_DATABASE_NAME' and User: '$DATABASE_USER'";
+mysql --user=root --password=$MYSQL_ROOT_PASSWORD << END
 
-FROM node:lts-alpine
-RUN apk add dumb-init
-ENV NODE_ENV production
-WORKDIR /usr/src/app
-COPY --chown=node:node entrypoint.sh /usr/src/app
-COPY --chown=node:node service /usr/src/app
-COPY --chown=node:node migrations /usr/src/app/migrations
-COPY --chown=node:node --from=client-build /usr/src/app/dist /usr/src/app/client
-RUN npm ci --only=production
-USER node
-ENTRYPOINT []
-CMD ["dumb-init", "./entrypoint.sh"]
-EXPOSE 3399/tcp
+CREATE DATABASE IF NOT EXISTS $DATABASE_NAME;
+CREATE DATABASE IF NOT EXISTS $PLAYER_DATABASE_NAME;
+
+CREATE USER '$DATABASE_USER'@'%' IDENTIFIED BY '$DATABASE_USER_PASSWORD';
+GRANT ALL PRIVILEGES ON $DATABASE_NAME.* TO '$DATABASE_USER'@'%';
+GRANT ALL PRIVILEGES ON $PLAYER_DATABASE_NAME.* TO '$DATABASE_USER'@'%';
+FLUSH PRIVILEGES;
+
+END

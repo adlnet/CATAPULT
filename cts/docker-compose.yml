@@ -11,26 +11,56 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+version: "3.8"
 services:
-  service:
+  webservice:
     build: .
     image: catapult:cts
     ports:
       - 3399:3399
+    depends_on:
+      - rdbms
+    volumes:
+      - ./migrations:/usr/src/app/migrations:ro
     # TODO: need to pass the info of connecting to mysql here
+    environment:
+      - DEV_MODE=${DEV_MODE}
+      - DATABASE_USER=catapult
+      - DATABASE_USER_PASSWORD=quartz
+      - DATABASE_NAME=catapult_cts
   player:
     build: ../player
     image: catapult:player
+    depends_on:
+      - rdbms
+    environment:
+      - DEV_MODE=${DEV_MODE}
+      - DATABASE_USER=catapult
+      - DATABASE_USER_PASSWORD=quartz
+      - DATABASE_NAME=catapult_player
     # TODO: need to pass the info of connecting to mysql here
   rdbms:
     image: mysql:latest
     volumes:
       - catapult-cts-data:/var/lib/mysql
-      - ./init_db.sql:/docker-entrypoint-initdb.d/cts-init_db.sql
-      - ../player/init_db.sql:/docker-entrypoint-initdb.d/player-init_db.sql
+      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro
     environment:
-      MYSQL_ROOT_PASSWORD: quartz
-    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - DATABASE_USER=catapult
+      - DATABASE_USER_PASSWORD=quartz
+      - DATABASE_NAME=catapult_cts
+      - PLAYER_DATABASE_NAME=catapult_player
+    command: [
+      "mysqld",
+
+      # provide for full UTF-8 support
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+
+      # need the following because the mysql.js client lib doesn't yet support
+      # the newer default scheme used in MySQL 8.x
+      "--default-authentication-plugin=mysql_native_password"
+    ]
 
 volumes:
   catapult-cts-data:

@@ -18,6 +18,7 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
+    waitPort = require("wait-port"),
     routes = require("./lib/routes");
 
 const provision = async () => {
@@ -35,7 +36,11 @@ const provision = async () => {
         ),
         sigHandler = async (signal) => {
             try {
+                const db = server.app.db;
+
                 await server.stop({timeout: 10000});
+
+                await db.destroy();
 
                 console.log(`Catapult CTS service stopped (${signal})`);
                 process.exit(0);
@@ -46,9 +51,14 @@ const provision = async () => {
             }
         };
 
+    await waitPort({host: "rdbms", port: 3306});
+
+    const db = await require("./lib/db")();
+
     server.app = {
         player: {
-        }
+        },
+        db
     };
 
     await server.register(H2o2);

@@ -21,10 +21,11 @@ services:
     depends_on:
       - rdbms
     volumes:
+      - ./service/index.js:/usr/src/app/index.js:ro
+      - ./service/lib:/usr/src/app/lib:ro
       - ./migrations:/usr/src/app/migrations:ro
-    # TODO: need to pass the info of connecting to mysql here
+      - ./seeds:/usr/src/app/seeds:ro
     environment:
-      - DEV_MODE=${DEV_MODE}
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
@@ -34,11 +35,9 @@ services:
     depends_on:
       - rdbms
     environment:
-      - DEV_MODE=${DEV_MODE}
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player
-    # TODO: need to pass the info of connecting to mysql here
   rdbms:
     image: mysql:latest
     volumes:

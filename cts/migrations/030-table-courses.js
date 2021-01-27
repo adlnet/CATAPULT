@@ -13,11 +13,18 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const Knex = require("knex"),
-    KnexCfg = require("../knexfile");
+const tableName = "courses";
 
-module.exports = async () => {
-    const knexCfg = await KnexCfg();
-
-    return Knex(knexCfg);
-};
+exports.up = (knex) => knex.schema.createTable(
+    tableName,
+    (table) => {
+        table.increments("id");
+        table.timestamps(true, true);
+        table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.string("code").notNullable().unique();
+        table.text("title").notNullable();
+        table.boolean("test_result");
+        table.datetime("last_tested");
+    }
+);
+exports.down = (knex) => knex.schema.dropTable(tableName);

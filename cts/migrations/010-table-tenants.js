@@ -1,5 +1,5 @@
 /*
-    Copyright 2020 Rustici Software
+    Copyright 2021 Rustici Software
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,4 +13,23 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-CREATE DATABASE IF NOT EXISTS catapult_cts;
+const tableName = "tenants";
+
+exports.up = async (knex) => {
+    await knex.schema.createTable(
+        tableName,
+        (table) => {
+            table.increments("id");
+            table.timestamps(true, true);
+            table.string("code").notNullable().unique();
+        }
+    );
+
+    await knex(tableName).insert(
+        {
+            id: 1,
+            code: "default"
+        }
+    );
+};
+exports.down = (knex) => knex.schema.dropTable(tableName);

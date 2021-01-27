@@ -54,9 +54,8 @@ module.exports = [
     {
         method: "GET",
         path: "/api/v1/courses",
-        handler: (req, h) => ({
-            items: [
-            ]
+        handler: async (req, h) => ({
+            items: await req.server.app.db.select("*").from("courses")
         })
     },
 

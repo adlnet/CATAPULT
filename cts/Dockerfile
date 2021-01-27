@@ -27,6 +27,7 @@ COPY --chown=node:node service /usr/src/app
 COPY --chown=node:node migrations /usr/src/app/migrations
 COPY --chown=node:node --from=client-build /usr/src/app/dist /usr/src/app/client
 RUN npm ci --only=production
+RUN npm install -g nodemon
 USER node
 ENTRYPOINT []
 CMD ["dumb-init", "./entrypoint.sh"]

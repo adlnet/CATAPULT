@@ -35,7 +35,6 @@ module.exports = async () => {
 
     return {
         client: "mysql",
-        connection: {host, user, password, database},
-        migrations: {}
+        connection: {host, user, password, database}
     };
 };

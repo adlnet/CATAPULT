@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # Copyright 2021 Rustici Software
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-if [ RUN_MIGRATIONS ]; then
-    node node_modules/.bin/knex migrate:latest
-fi
-
-exec nodemon index.js
+FROM node:lts-alpine AS client-build
+WORKDIR /usr/src/app
+COPY --chown=node:node . /usr/src/app
+RUN npm ci
+USER node
+CMD ["npm", "run", "serve"]
+EXPOSE 3396/tcp

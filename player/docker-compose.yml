@@ -21,9 +21,10 @@ services:
     depends_on:
       - rdbms
     volumes:
+      - ./service/index.js:/usr/src/app/index.js:ro
+      - ./service/lib:/usr/src/app/lib:ro
       - ./migrations:/usr/src/app/migrations:ro
     environment:
-      - DEV_MODE=${DEV_MODE}
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player

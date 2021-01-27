@@ -53,7 +53,7 @@ const provision = async () => {
 
     await waitPort({host: "rdbms", port: 3306});
 
-    const db = require("./lib/db");
+    const db = await require("./lib/db")();
 
     server.app = {
         lrs: {

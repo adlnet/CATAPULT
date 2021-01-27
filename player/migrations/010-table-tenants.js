@@ -13,11 +13,13 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const Knex = require("knex"),
-    KnexCfg = require("../knexfile");
+const tableName = "tenants";
 
-module.exports = async () => {
-    const knexCfg = await KnexCfg();
-
-    return Knex(knexCfg);
-};
+exports.up = (knex) => knex.schema.createTable(
+    tableName,
+    (table) => {
+        table.increments("id");
+        table.string("code").notNullable().unique();
+    }
+);
+exports.down = (knex) => knex.schema.dropTable(tableName);

@@ -18,4 +18,4 @@ if [ RUN_MIGRATIONS ]; then
     node node_modules/.bin/knex migrate:latest
 fi
 
-exec node index.js
+exec nodemon index.js

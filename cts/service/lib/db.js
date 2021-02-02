@@ -14,10 +14,11 @@
     limitations under the License.
 */
 const Knex = require("knex"),
+    KnexStringcase = require('knex-stringcase'),
     KnexCfg = require("../knexfile");
 
 module.exports = async () => {
     const knexCfg = await KnexCfg();
 
-    return Knex(knexCfg);
+    return Knex(KnexStringcase(knexCfg));
 };

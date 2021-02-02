@@ -22,6 +22,7 @@ services:
       - rdbms
     volumes:
       - ./service/index.js:/usr/src/app/index.js:ro
+      - ./service/plugins:/usr/src/app/plugins:ro
       - ./service/lib:/usr/src/app/lib:ro
       - ./migrations:/usr/src/app/migrations:ro
       - ./seeds:/usr/src/app/seeds:ro

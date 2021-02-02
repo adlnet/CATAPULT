@@ -36,6 +36,13 @@ services:
     image: catapult:player
     depends_on:
       - rdbms
+    volumes:
+      - ../player/service/index.js:/usr/src/app/index.js:ro
+      - ../player/service/knexfile.js:/usr/src/app/knexfile.js:ro
+      - ../player/service/plugins:/usr/src/app/plugins:ro
+      - ../player/service/lib:/usr/src/app/lib:ro
+      - ../player/migrations:/usr/src/app/migrations:ro
+      - ../player/seeds:/usr/src/app/seeds:ro
     environment:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz

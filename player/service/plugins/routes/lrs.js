@@ -18,7 +18,7 @@
 const Wreck = require("@hapi/wreck");
 
 module.exports = {
-    name: "catapult-cts-api-routes-lrs",
+    name: "catapult-player-api-routes-lrs",
     register: (server, options) => {
         server.route(
             {
@@ -39,9 +39,8 @@ module.exports = {
                     cors: false,
 
                     //
-                    // set up a pre-request handler to handle capturing meta information about the xAPI
-                    // requests before proxying the request to the underlying LRS (which is proxied from
-                    // the player)
+                    // set up a pre-request handler to handle any cmi5 requirements validation before
+                    // proxying the request to the underlying LRS
                     //
                     pre: [
                         (req, h) => {
@@ -61,7 +60,7 @@ module.exports = {
                         // maintaining any query string parameters
                         //
                         mapUri: (req) => ({
-                            uri: `${req.server.app.player.baseUrl}/lrs/${req.params.resource}${req.url.search}`
+                            uri: `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`
                         }),
 
                         //
@@ -91,6 +90,7 @@ module.exports = {
                                     response.header(k, v);
                                 }
                             }
+
 
                             // clean up the original response
                             res.destroy();

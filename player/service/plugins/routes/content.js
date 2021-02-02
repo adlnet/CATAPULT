@@ -16,34 +16,19 @@
 "use strict";
 
 module.exports = {
-    name: "catapult-cts-api-routes-client",
+    name: "catapult-player-api-routes-content",
     register: (server, options) => {
         server.route(
-            [
-                //
-                // serve the static web client files
-                //
-                {
-                    method: "GET",
-                    path: "/client/{param*}",
-                    handler: {
-                        directory: {
-                            path: `${__dirname}/../client`,
-                            listing: true
-                        }
+            // TODO: cookie auth?
+            {
+                method: "GET",
+                path: "/content/{param*}",
+                handler: {
+                    directory: {
+                        path: `${__dirname}/../var/content`
                     }
-                },
-
-                //
-                // Handle `/` to help web UI users get to `/client/`
-                //
-                {
-                    method: "GET",
-                    path: "/client",
-                    handler: (req, h) => h.redirect("/client/")
                 }
-            ]
+            }
         );
     }
 };
-

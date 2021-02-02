@@ -18,7 +18,7 @@
 const { v4: uuidv4 } = require("uuid");
 
 module.exports = {
-    name: "catapult-api-routes-v1-courses",
+    name: "catapult-cts-api-routes-v1-courses",
     register: (server, options) => {
         server.route(
             [

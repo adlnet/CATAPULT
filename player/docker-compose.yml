@@ -22,8 +22,11 @@ services:
       - rdbms
     volumes:
       - ./service/index.js:/usr/src/app/index.js:ro
+      - ./service/knexfile.js:/usr/src/app/knexfile.js:ro
+      - ./service/plugins:/usr/src/app/plugins:ro
       - ./service/lib:/usr/src/app/lib:ro
       - ./migrations:/usr/src/app/migrations:ro
+      - ./seeds:/usr/src/app/seeds:ro
     environment:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz

@@ -13,12 +13,19 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const Knex = require("knex"),
-    KnexStringcase = require('knex-stringcase'),
-    KnexCfg = require("../knexfile");
+"use strict";
 
-module.exports = async () => {
-    const knexCfg = await KnexCfg();
-
-    return Knex(KnexStringcase(knexCfg));
+module.exports = {
+    name: "catapult-player-api-routes-spec",
+    register: (server, options) => {
+        server.route(
+            {
+                method: "POST",
+                path: "/fetch-url",
+                handler: (req, h) => ({
+                    "auth-token": "ZGV2LXRvb2xzLXhhcGk6ZGV2LXRvb2xzLXhhcGktcGFzc3dvcmQ="
+                })
+            }
+        );
+    }
 };

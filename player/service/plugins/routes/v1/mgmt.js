@@ -13,12 +13,27 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const Knex = require("knex"),
-    KnexStringcase = require('knex-stringcase'),
-    KnexCfg = require("../knexfile");
+"use strict";
 
-module.exports = async () => {
-    const knexCfg = await KnexCfg();
-
-    return Knex(KnexStringcase(knexCfg));
+module.exports = {
+    name: "catapult-player-api-routes-v1-mgmt",
+    register: (server, options) => {
+        server.route(
+            {
+                method: "GET",
+                path: "/api/v1/ping",
+                handler: (req, h) => ({
+                    ok: true
+                })
+            },
+            {
+                method: "GET",
+                path: "/api/v1/about",
+                handler: (req, h) => ({
+                    description: "catapult-player-service"
+                })
+            }
+        );
+    }
 };
+

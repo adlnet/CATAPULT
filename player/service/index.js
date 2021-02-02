@@ -18,8 +18,7 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
-    waitPort = require("wait-port"),
-    routes = require("./lib/routes");
+    waitPort = require("wait-port");
 
 const provision = async () => {
     const server = Hapi.server(
@@ -64,7 +63,24 @@ const provision = async () => {
     await server.register(H2o2);
     await server.register(Inert);
 
-    server.route(routes);
+    await server.register(
+        [
+            require("./plugins/routes/content"),
+            require("./plugins/routes/lrs"),
+            require("./plugins/routes/spec")
+        ]
+    );
+    await server.register(
+        [
+            require("./plugins/routes/v1/mgmt"),
+            require("./plugins/routes/v1/courses")
+        ],
+        {
+            routes: {
+                prefix: "/api/v1"
+            }
+        }
+    );
 
     await server.start();
 

@@ -16,7 +16,7 @@
 "use strict";
 
 module.exports = {
-    name: "catapult-api-routes-v1-mgmt",
+    name: "catapult-cts-api-routes-v1-mgmt",
     register: (server, options) => {
         server.route(
             {

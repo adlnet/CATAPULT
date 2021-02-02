@@ -43,14 +43,22 @@ export default {
         defaultCacheKey: (state, getters) => getters.cacheKey({props: state.defaultKeyProperties}),
 
         cache: (state) => ({cacheKey}) => state.cacheContainer[cacheKey],
-        defaultCache: (state, getters) => getters.cache({cacheKey: getters.defaultCacheKey})
+        defaultCache: (state, getters) => getters.cache({cacheKey: getters.defaultCacheKey}),
+
+        byId: (state, getters) => ({id}) => {
+            const cache = state.cacheContainer[getters.defaultCacheKey];
+
+            console.log(cache.items);
+
+            return cache.items.find((element) => element.id === id);
+        }
     },
     actions: {
-        alert: ({dispatch}, {content}) => {
+        alert: ({dispatch}, {content, kind = "courseList"}) => {
             dispatch(
                 "alerts/add",
                 {
-                    kind: "courses",
+                    kind,
                     payload: {
                         content
                     }
@@ -123,9 +131,10 @@ export default {
 
             try {
                 const response = await rootGetters["service/makeApiRequest"](
-                    `courses?id=${item.id}`,
+                    `courses/${item.id}`,
                     {
-                        method: "DELETE"
+                        method: "DELETE",
+                        mode: "cors"
                     }
                 );
 
@@ -158,6 +167,56 @@ export default {
 
                 dispatch("alert", {content});
             }
+        },
+
+        upload: async ({dispatch, rootGetters}, {file}) => {
+            const kind = "courseNew";
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    "courses",
+                    {
+                        method: "POST",
+                        mode: "cors",
+                        body: file
+                    }
+                );
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${response.status}`);
+                }
+
+                const body = await response.json();
+
+                dispatch(
+                    "alert",
+                    {
+                        variant: "success",
+                        kind,
+                        content: `Imported course. (${body.id})`
+                    }
+                );
+
+                return body.id;
+            }
+            catch (ex) {
+                let content = "Failed to upload course: ";
+
+                if (ex.error) {
+                    content += ex.error.message;
+
+                    if (ex.error.srcError) {
+                        content += ` (${ex.error.srcError.message ? ex.error.srcError.message : ex.error.srcError})`;
+                    }
+                }
+                else {
+                    content += ex;
+                }
+
+                dispatch("alert", {content, kind});
+            }
+
+            return null;
         }
     }
 };

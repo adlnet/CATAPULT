@@ -3,7 +3,7 @@
         <b-col>
             <h2 class="mb-3">Courses</h2>
 
-            <alerts kind="courses" />
+            <alerts kind="courseList" />
 
             <b-row class="mb-4">
                 <b-col>
@@ -79,8 +79,13 @@
                         <strong>Loading...</strong>
                     </div>
                 </template>
+                <template #cell(title)="data">
+                    <b-link :to="`/courses/${data.item.id}`">
+                        {{ data.value }}
+                    </b-link>
+                </template>
                 <template #cell(testResult)="data">
-                    <template v-if="data.value">
+                    <template v-if="data.value === 1">
                         <b-badge pill variant="success" class="mr-1">
                             <b-icon-check scale="1.75"/>
                         </b-badge>
@@ -88,7 +93,7 @@
                             Conformant
                         </span>
                     </template>
-                    <template v-else-if="data.value === false">
+                    <template v-else-if="data.value === 0">
                         <b-badge pill variant="danger" class="mr-1">
                             <b-icon-x scale="1.75"/>
                         </b-badge>
@@ -111,10 +116,40 @@
                         Never
                     </span>
                 </template>
+                <!--
+                <template #cell(detailToggle)="row">
+                    <b-button size="sm" variant="link" class="detailToggle" @click="row.toggleDetails">
+                        <font-awesome-icon v-if="row.detailsShowing" icon="caret-down"></font-awesome-icon>
+                        <font-awesome-icon v-else icon="caret-right"></font-awesome-icon>
+                    </b-button>
+                </template>
+                -->
                 <template #cell(actions)="row">
                     <b-button size="sm" variant="primary" class="mr-2" @click="test({item: row.item})">Test</b-button>
+                    <!-- TODO: need to do confirmation -->
                     <b-button size="sm" variant="outline-danger" @click="drop({item: row.item})">Delete</b-button>
+                    <!--
+                    <b-dropdown right variant="primary" size="sm" text="Actions">
+                        <b-dropdown-item-button @click="launch({courseId: row.item.id})">
+                            Launch
+                        </b-dropdown-item-button>
+                        <b-dropdown-item-button variant="danger" @click="drop({courseId: row.item.id})">
+                            Delete
+                        </b-dropdown-item-button>
+                    </b-dropdown>
+                    -->
                 </template>
+                <!--
+                <template #row-details="row">
+                    <b-container fluid class="targetRegistrationDetail mb-4">
+                        <b-row class="mb-4">
+                            <b-col>
+                                {{ row.item.id }} Reg details.
+                            </b-col>
+                        </b-row>
+                    </b-container>
+                </template>
+                -->
             </b-table>
         </b-col>
     </b-row>
@@ -124,19 +159,32 @@
     import Vuex from "vuex";
     import {BIconCheck, BIconQuestion, BIconSearch, BIconX} from "bootstrap-vue";
     import alerts from "@/components/alerts";
+    /*
+    import filterByCourses from "./filterByCourses";
+    import filterByLearners from "./filterByLearners";
+    */
 
     export default {
-        name: "courses",
+        name: "CourseList",
         components: {
             BIconCheck,
             BIconQuestion,
             BIconSearch,
             BIconX,
             alerts
+            // filterByCourses,
+            // filterByLearners
         },
         data: () => ({
             caller: "courses",
             tableFields: [
+                /*
+                {
+                    key: "detailToggle",
+                    label: "",
+                    class: "text-center"
+                },
+                */
                 {
                     key: "title",
                     label: "Title",
@@ -170,6 +218,11 @@
                     cache: "service/courses/defaultCache"
                 }
             ),
+            /*
+            cacheProperties () {
+                return this.$store.getters["target/coursesCacheProperties"]({caller: this.caller});
+            },
+            */
             tableNumberOfPages () {
                 return Math.ceil(this.cache.items.length / this.tablePerPage);
             },
@@ -217,6 +270,25 @@
             test ({item}) {
                 console.log("components:courses::test", item);
             }
+
+            /*
+            async launch ({courseId}) {
+                const launchUrl = await this.$store.dispatch(
+                    "target/launchUrl",
+                    {
+                        courseId: courseId,
+                        caller: "courses",
+                        createRegistration: false
+                    }
+                );
+
+                // if the above errors then there will be a warning shown,
+                // so this can effectively be silent
+                if (launchUrl) {
+                    window.open(launchUrl);
+                }
+            }
+            */
         }
     };
 </script>

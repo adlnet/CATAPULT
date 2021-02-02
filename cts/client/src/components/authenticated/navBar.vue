@@ -23,7 +23,7 @@
             <b-navbar-nav>
                 <b-nav-text>
                     <b-breadcrumb>
-                        <b-breadcrumb-item href="#">
+                        <b-breadcrumb-item to="/">
                             Home
                         </b-breadcrumb-item>
                     </b-breadcrumb>
@@ -32,7 +32,7 @@
 
             <b-navbar-nav class="ml-auto">
                 <b-nav-form>
-                    <b-button variant="primary" class="mr-2">New Course</b-button>
+                    <b-button to="/course-new/upload" variant="primary" class="mr-2">New Course</b-button>
                     <b-button v-b-toggle.navbar-new-test :disabled="newTestContentIsShown" variant="primary">New Test</b-button>
                     <b-nav-item-dropdown right no-caret class="user-menu-dropdown h2 mb-2">
                         <template #button-content>

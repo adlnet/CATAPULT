@@ -1,11 +1,39 @@
 <template>
     <b-row>
         <b-col>
-            <template v-if="model">
-                <h2 class="mb-3">{{ model.title }}</h2>
+            <template v-if="model.loading">
+                Loading...
+            </template>
+            <template v-else-if="model.error">
+                Course load error: {{ model.errMsg }}
             </template>
             <template v-else>
-                Load model?
+                <b-row>
+                    <b-col>
+                        <h2 class="mb-3">{{ model.item.metadata.structure.course.title[0].text }}</h2>
+                    </b-col>
+                    <b-col cols="auto">
+                        <b-button variant="primary" class="mr-2">Test</b-button>
+                        <b-button variant="outline-danger">Delete</b-button>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col>
+                        Course ID: {{ model.item.metadata.structure.course.id }}
+                        <br>
+                        Imported: {{ model.item.createdAt | moment("from", "now") }}
+                        <br>
+                        <b-nav tabs class="my-3">
+                            <b-nav-item :to="`/courses/${id}`" exact active-class="active">
+                                Conformance Tests
+                            </b-nav-item>
+                            <b-nav-item :to="`/courses/${id}/structure`" active-class="active">
+                                Course Structure
+                            </b-nav-item>
+                        </b-nav>
+                        <router-view></router-view>
+                    </b-col>
+                </b-row>
             </template>
         </b-col>
     </b-row>
@@ -20,16 +48,16 @@
                 required: true
             }
         },
-        data: () => ({
-        }),
         computed: {
             model () {
                 return this.$store.getters["service/courses/byId"]({id: this.id});
             }
+        },
+        created () {
+            this.$store.dispatch("service/courses/loadById", {id: this.id});
         }
     };
 </script>
 
 <style lang="scss" scoped>
 </style>
-

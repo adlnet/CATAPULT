@@ -29,13 +29,18 @@
             ...Vuex.mapActions(
                 "service/courses",
                 [
-                    "upload"
+                    "import"
                 ]
             ),
 
             async doUpload () {
                 try {
-                    const id = await this.upload({file: this.file});
+                    const id = await this.import(
+                        {
+                            body: this.file,
+                            contentType: "application/zip"
+                        }
+                    );
 
                     if (id === null) {
                         return;
@@ -43,12 +48,11 @@
 
                     this.file = null;
 
-                    // TODO: trigger route to course detail page
                     this.$router.push(`/courses/${id}`);
                 }
                 catch (ex) {
-                    // failing the upload should have already posted an alert
-                    console.log(`Failed call to upload: ${ex}`);
+                    // failing the import should have already posted an alert
+                    console.log(`Failed call to import: ${ex}`);
                 }
             }
         }

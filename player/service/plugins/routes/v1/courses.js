@@ -15,197 +15,255 @@
 */
 "use strict";
 
-const { v4: uuidv4 } = require("uuid");
+const fs = require("fs"),
+    util = require("util"),
+    Boom = require("@hapi/boom"),
+    Wreck = require("@hapi/wreck"),
+    xml2js = require("xml2js"),
+    { v4: uuidv4 } = require("uuid"),
+    readFile = util.promisify(fs.readFile),
+    validateAU = (element) => {
+        const result = {
+            type: "au",
+            id: element.$.id
+        };
+
+        if (element.title && element.title.length > 0) {
+            result.title = element.title[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+        if (element.description && element.description.length > 0) {
+            result.description = element.description[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+
+        return result;
+    },
+    validateBlock = (element) => {
+        const result = {
+            type: "block",
+            id: element.$.id,
+            children: []
+        };
+
+        if (element.title && element.title.length > 0) {
+            result.title = element.title[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+        if (element.description && element.description.length > 0) {
+            result.description = element.description[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+
+        for (const child of element.$$) {
+            if (child["#name"] === "au") {
+                result.children.push(
+                    validateAU(child)
+                );
+            }
+            else if (child["#name"] === "block") {
+                result.children.push(
+                    validateBlock(child)
+                );
+            }
+            else if (child["#name"] === "objectives") {
+            }
+            else {
+                console.log("Unrecognized element: ", element);
+            }
+        }
+
+        return result;
+    },
+    validateAndReduceStructure = (structure) => {
+        const result = {
+            course: {
+                type: "course",
+                children: [],
+                objectives: null
+            }
+        };
+
+        if (! structure.courseStructure) {
+            throw new Error(`No "courseStructure" element`);
+        }
+
+        const _course = structure.courseStructure.course[0];
+
+        result.course.id = _course.$.id;
+
+        if (_course.title && _course.title.length > 0) {
+            result.course.title = _course.title[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+        if (_course.description && _course.description.length > 0) {
+            result.course.description = _course.description[0].langstring.map(
+                (ls) => ({
+                    lang: ls.$.lang,
+                    text: ls._
+                })
+            );
+        }
+
+        for (const element of structure.courseStructure.$$) {
+            // have already handled the course element
+            if (element["#name"] === "course") {
+                continue;
+            }
+            // objectives is a single static list
+            else if (element["#name"] === "objectives") {
+            }
+            else if (element["#name"] === "au") {
+                result.course.children.push(
+                    validateAU(element)
+                );
+            }
+            else if (element["#name"] === "block") {
+                result.course.children.push(
+                    validateBlock(element)
+                );
+            }
+            else {
+                throw new Error(`Unrecognized element: ${element["#name"]}`);
+            }
+        }
+
+        return result;
+    };
 
 module.exports = {
     name: "catapult-player-api-routes-v1-courses",
     register: (server, options) => {
         server.route(
-            {
-                method: "GET",
-                path: "/course/{courseId}",
-                handler: (req, h) => ({
-                    course: {
-                        id: "http://example.org...",
-                        au: [
-                            {
-                                id: "http://example.org..."
-                            }
-                        ]
-                    }
-                })
-            },
-
-            {
-                method: "POST",
-                path: "/course/{courseId}",
-                handler: (req, h) => {
-                    // TODO: import course structure, zip
-                }
-            },
-
-            {
-                method: "DELETE",
-                path: "/course/{courseId}",
-                handler: (req, h) => {
-                    // TODO: delete course
-                }
-            },
-
-            {
-                method: "GET",
-                path: "/course/{courseId}/launch-url/{auIndex}",
-                handler: async (req, h) => {
-                    console.log("get launchUrl");
-
-                    // TODO: needs to receive actor, registration, and activity ID of LMS id for AU
-                    //       (which should be available from course structure endpoint above)
-                    //
-                    //       should `actor` really be something like `accountName` which is then
-                    //       used to construct an account based on a pre-configured `homePage`?
-                    //       or both?
-                    const actor = {
-                            account: {
-                                homePage: `${req.url.protocol}//${req.url.host}`,
-                                name: "brian.miller"
-                            }
-                        },
-                        registration = uuidv4(),
-                        lmsActivityId = "http://lms.catapult",
-
-                        // TODO: need to pass this in?
-                        returnURL = `${base}/return-url`;
-
-                    // TODO: need to look up based on lmsActivityId + registration?
-                    const publisherActivityId = "http://publisher.catapult",
-                        launchMode = "Normal",
-                        launchMethod = "AnyWindow",
-                        moveOn = "Completed",
-                        contentPath = "cmi5-au-sim/index.html",
-                        contentUrl = `${req.url.protocol}//${req.url.host}/content/${contentPath}`;
-
-                    const base = `${req.url.protocol}//${req.url.host}`,
-                        endpoint = `${base}/lrs`,
-                        lrsWreck = Wreck.defaults(
-                            {
-                                baseUrl: req.server.app.lrs.endpoint,
-                                headers: {
-                                    "X-Experience-API-Version": "1.0.3",
-                                    Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
-                                },
-                                json: true
-                            }
-                        ),
-                        sessionId = uuidv4(),
-                        contextTemplate = {
-                            contextActivities: {
-                                grouping: [
-                                    {
-                                        id: publisherActivityId
-                                    }
-                                ]
-                            },
-                            extensions: {
-                                "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
-                            }
-                        };
-
-                    console.log("setting LMS.LaunchData");
-                    try {
-                        const lmsLaunchDataStateParams = new URLSearchParams(
+            [
+                {
+                    method: "POST",
+                    path: "/course",
+                    options: {
+                        payload: {
+                            allow: [
+                                "application/zip",
+                                "application/xml"
+                            ],
+                            output: "file"
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            lmsId = `http://catapult/${uuidv4()}`,
+                            contentType = req.headers["content-type"],
+                            xmlParser = new xml2js.Parser(
                                 {
-                                    stateId: "LMS.LaunchData",
-                                    agent: JSON.stringify(actor),
-                                    activityId: lmsActivityId,
-                                    registration
-                                }
-                            ),
-                            lmsLaunchDataRes = await lrsWreck.post(
-                                `activities/state?${lmsLaunchDataStateParams.toString()}`,
-                                {
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    },
-                                    payload: {
-                                        launchMode,
-                                        launchMethod,
-                                        moveOn,
-                                        returnURL,
-                                        contextTemplate
-                                    }
+                                    explicitChildren: true,
+                                    preserveChildrenOrder: true
                                 }
                             );
 
-                        console.log("set LMS.LaunchData", lmsLaunchDataRes.res.statusCode);
-                    }
-                    catch (ex) {
-                        console.log("Failed to set LMS.LaunchData state document", ex);
-                        throw ex;
-                    }
+                        let structureAsXml;
 
-                    // TODO: store learner preferences? based on what?
+                        try {
+                            let structureFile;
 
-                    try {
-                        const launchedStContext = {
-                            ...contextTemplate,
-                            registration,
-                            extensions: {
-                                "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId,
-                                "https://w3id.org/xapi/cmi5/context/extensions/launchmode": launchMode,
-                                "https://w3id.org/xapi/cmi5/context/extensions/moveon": moveOn,
-                                "https://w3id.org/xapi/cmi5/context/extensions/launchurl": contentUrl
+                            if (contentType === "application/zip") {
+                                // TODO: unzip the file and check for cmi5.xml
                             }
-                        };
-
-                        launchedStContext.contextActivities.category = [
-                            {
-                                id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
+                            else {
+                                structureFile = req.payload.path;
                             }
-                        ];
 
-                        const launchedStRes = await lrsWreck.post(
-                            "statements",
-                            {
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                payload: {
-                                    actor,
-                                    verb: {
-                                        id: "http://adlnet.gov/expapi/verbs/launched",
-                                        display: {
-                                            en: "launched"
-                                        }
-                                    },
-                                    object: {
-                                        id: lmsActivityId
-                                    },
-                                    context: launchedStContext
-                                }
-                            }
-                        );
-
-                        console.log("stored launched statement", launchedStRes.res.statusCode);
-                    }
-                    catch (ex) {
-                        console.log("Failed to store launched statement", ex.data.payload.toString());
-                        console.log(ex);
-                        throw ex;
-                    }
-
-                    const launchUrlParams = new URLSearchParams(
-                        {
-                            endpoint,
-                            fetch: `${base}/fetch-url`,
-                            actor: JSON.stringify(actor),
-                            activityId: lmsActivityId,
-                            registration
+                            structureAsXml = await readFile(structureFile);
                         }
-                    );
+                        catch (ex) {
+                            throw Boom.internal(`Failed to read structure file: ${ex}`);
+                        }
 
-                    return h.redirect(`${contentUrl}?${launchUrlParams.toString()}`);
+                        let structure;
+
+                        try {
+                            structure = await xmlParser.parseStringPromise(structureAsXml);
+                        }
+                        catch (ex) {
+                            throw Boom.badRequest(`Failed to parse XML: ${ex}`);
+                        }
+
+                        try {
+                            structure = validateAndReduceStructure(structure);
+                        }
+                        catch (ex) {
+                            throw Boom.badRequest(`Failed to validate course structure XML: ${ex}`);
+                        }
+
+                        let insertResult;
+
+                        try {
+                            insertResult = await db.insert(
+                                {
+                                    tenant_id: 1,
+                                    lms_id: lmsId,
+                                    metadata: JSON.stringify({
+                                        version: 1
+                                    }),
+                                    structure: JSON.stringify({
+                                        version: "1.0.0",
+                                        ...structure
+                                    })
+                                }
+                            ).into("courses");
+                        }
+                        catch (ex) {
+                            throw new Error(ex);
+                        }
+
+                        return db.first("*").from("courses").where("id", insertResult);
+                    }
+                },
+
+                {
+                    method: "GET",
+                    path: "/course/{id}",
+                    handler: async (req, h) => {
+                        const result = await req.server.app.db.first("*").from("courses").where("id", req.params.id);
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
+                        return result;
+                    }
+                },
+
+                {
+                    method: "DELETE",
+                    path: "/course/{id}",
+                    handler: async (req, h) => {
+                        const deleteResult = await req.server.app.db("courses").where("id", req.params.id).delete();
+
+                        // TODO: clean up local files
+
+                        return null;
+                    }
                 }
-            }
+            ]
         );
     }
 };

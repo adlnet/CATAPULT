@@ -81,7 +81,7 @@
                 </template>
                 <template #cell(title)="data">
                     <b-link :to="`/courses/${data.item.id}`">
-                        {{ data.value }}
+                        {{ data.item.metadata.structure.course.title[0].text }}
                     </b-link>
                 </template>
                 <template #cell(testResult)="data">

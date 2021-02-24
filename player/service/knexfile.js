@@ -35,6 +35,22 @@ module.exports = async () => {
 
     return {
         client: "mysql",
-        connection: {host, user, password, database}
+        connection: {host, user, password, database},
+        postProcessResponse: (result, queryContext) => {
+            if (queryContext && queryContext.jsonCols) {
+                result = result.map(
+                    (row) => {
+                        for (const k of queryContext.jsonCols) {
+                            row[k] = JSON.parse(row[k]);
+                        }
+
+                        return row;
+                    }
+                );
+            }
+
+            return result;
+        }
+
     };
 };

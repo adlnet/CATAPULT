@@ -21,10 +21,11 @@ exports.up = (knex) => knex.schema.createTable(
         table.increments("id");
         table.timestamps(true, true);
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
-        table.string("code").notNullable().unique();
-        table.text("title").notNullable();
+        table.integer("player_id").unsigned().notNullable().unique();
         table.boolean("test_result");
         table.datetime("last_tested");
+
+        table.json("metadata").notNullable();
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

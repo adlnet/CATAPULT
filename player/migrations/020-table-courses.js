@@ -20,7 +20,10 @@ exports.up = (knex) => knex.schema.createTable(
     (table) => {
         table.increments("id");
         table.integer("tenant_id").unsigned().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
-        table.string("code").notNullable().unique();
+        table.string("lms_id").notNullable().unique();
+
+        table.json("metadata").notNullable();
+        table.json("structure").notNullable();
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

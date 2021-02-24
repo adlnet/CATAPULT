@@ -21,7 +21,7 @@
         <b-row class="flex-fill">
             <b-col>
             </b-col>
-            <b-col cols="10">
+            <b-col cols="10" class="d-flex flex-column">
                 <router-view/>
             </b-col>
             <b-col>

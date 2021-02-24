@@ -21,6 +21,8 @@ import courseDetail from "@/components/authenticated/course/detail";
 import courseNew from "@/components/authenticated/course/new";
 import courseNewUpload from "@/components/authenticated/course/new/upload";
 import courseNewXmlEditor from "@/components/authenticated/course/new/xmlEditor";
+import courseDetailStructure from "@/components/authenticated/course/detail/structure";
+import courseDetailTestList from "@/components/authenticated/course/detail/testList";
 
 Vue.use(VueRouter);
 
@@ -44,7 +46,19 @@ const router = new VueRouter(
             {
                 path: "/courses/:id",
                 component: courseDetail,
-                props: true
+                props: true,
+                children: [
+                    {
+                        path: "structure",
+                        component: courseDetailStructure,
+                        props: true
+                    },
+                    {
+                        path: "",
+                        component: courseDetailTestList,
+                        props: true
+                    }
+                ]
             },
             {
                 path: "/",

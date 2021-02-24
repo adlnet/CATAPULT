@@ -15,9 +15,18 @@
 */
 import Vue from "vue";
 
+const populateItem = (item, {loading = false, loaded = false}) => ({
+    loading,
+    loaded,
+    item,
+    error: false,
+    errMsg: null
+});
+
 export default {
     namespaced: true,
     state: {
+        detailCache: {},
         cacheContainer: {},
         defaultKeyProperties: {}
     },
@@ -45,26 +54,69 @@ export default {
         cache: (state) => ({cacheKey}) => state.cacheContainer[cacheKey],
         defaultCache: (state, getters) => getters.cache({cacheKey: getters.defaultCacheKey}),
 
-        byId: (state, getters) => ({id}) => {
-            const cache = state.cacheContainer[getters.defaultCacheKey];
+        byId: (state) => ({id}) => {
+            if (! state.detailCache[id]) {
+                Vue.set(
+                    state.detailCache,
+                    id,
+                    populateItem(
+                        {
+                            id
+                        },
+                        {
+                            loaded: false
+                        }
+                    )
+                );
+            }
 
-            console.log(cache.items);
-
-            return cache.items.find((element) => element.id === id);
+            return state.detailCache[id];
         }
     },
     actions: {
-        alert: ({dispatch}, {content, kind = "courseList"}) => {
+        alert: ({dispatch}, {content, variant, kind = "courseList"}) => {
             dispatch(
                 "alerts/add",
                 {
                     kind,
                     payload: {
-                        content
+                        content,
+                        variant
                     }
                 },
                 {root: true}
             );
+        },
+
+        loadById: async ({getters, rootGetters}, {id, force = false}) => {
+            const fromCache = getters.byId({id});
+
+            if (fromCache.loaded && ! force) {
+                return;
+            }
+
+            fromCache.loading = true;
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](`courses/${id}`);
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${response.status}`);
+                }
+
+                const body = await response.json();
+                body.metadata = JSON.parse(body.metadata);
+
+                fromCache.item = body;
+                fromCache.loaded = true;
+            }
+            catch (ex) {
+                fromCache.error = true;
+                fromCache.errMsg = `Failed to load from id: ${ex}`;
+            }
+            finally {
+                fromCache.loading = false;
+            }
         },
 
         load: async ({dispatch, state, getters, rootGetters}, {props = state.defaultKeyProperties, force = false} = {}) => {
@@ -103,22 +155,19 @@ export default {
                     )
                 );
                 cache.loaded = true;
-            }
-            catch (ex) {
-                let content = "Failed to load courses: ";
 
-                if (ex.error) {
-                    content += ex.error.message;
-
-                    if (ex.error.srcError) {
-                        content += ` (${ex.error.srcError.message ? ex.error.srcError.message : ex.error.srcError})`;
+                for (const i of body.items) {
+                    if (! state.detailCache[i.id]) {
+                        Vue.set(
+                            state.detailCache,
+                            i.id,
+                            populateItem(i, {loaded: true})
+                        );
                     }
                 }
-                else {
-                    content += ex;
-                }
-
-                dispatch("alert", {content});
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to load courses: ${ex}`});
             }
 
             // eslint-disable-next-line require-atomic-updates
@@ -152,24 +201,11 @@ export default {
                 }
             }
             catch (ex) {
-                let content = `Failed to delete course (id: ${item.id}): `;
-
-                if (ex.error) {
-                    content += ex.error.message;
-
-                    if (ex.error.srcError) {
-                        content += ` (${ex.error.srcError.message ? ex.error.srcError.message : ex.error.srcError})`;
-                    }
-                }
-                else {
-                    content += ex;
-                }
-
-                dispatch("alert", {content});
+                dispatch("alert", {content: `Failed to delete course (id: ${item.id}): ${ex}`});
             }
         },
 
-        upload: async ({dispatch, rootGetters}, {file}) => {
+        import: async ({dispatch, state, rootGetters}, {body, contentType}) => {
             const kind = "courseNew";
 
             try {
@@ -178,42 +214,36 @@ export default {
                     {
                         method: "POST",
                         mode: "cors",
-                        body: file
+                        headers: {
+                            "Content-Type": contentType
+                        },
+                        body
                     }
                 );
 
+                const responseBody = await response.json();
+
                 if (! response.ok) {
-                    throw new Error(`Request failed: ${response.status}`);
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
                 }
 
-                const body = await response.json();
+                responseBody.metadata = JSON.parse(responseBody.metadata);
+
+                state.detailCache[responseBody.id] = populateItem(responseBody, {loaded: true});
 
                 dispatch(
                     "alert",
                     {
                         variant: "success",
-                        kind,
-                        content: `Imported course. (${body.id})`
+                        content: `Imported course. (${responseBody.id})`,
+                        kind
                     }
                 );
 
-                return body.id;
+                return responseBody.id;
             }
             catch (ex) {
-                let content = "Failed to upload course: ";
-
-                if (ex.error) {
-                    content += ex.error.message;
-
-                    if (ex.error.srcError) {
-                        content += ` (${ex.error.srcError.message ? ex.error.srcError.message : ex.error.srcError})`;
-                    }
-                }
-                else {
-                    content += ex;
-                }
-
-                dispatch("alert", {content, kind});
+                dispatch("alert", {content: `Failed to import course: ${ex}`, kind});
             }
 
             return null;

@@ -1,6 +1,6 @@
 <template>
-    <b-row>
-        <b-col>
+    <b-row class="flex-fill">
+        <b-col class="d-flex flex-column">
             <h2 class="mb-3">New Course</h2>
 
             <alerts kind="courseNew" />
@@ -33,4 +33,3 @@
 
 <style lang="scss" scoped>
 </style>
-

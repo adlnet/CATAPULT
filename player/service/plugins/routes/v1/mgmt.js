@@ -19,21 +19,22 @@ module.exports = {
     name: "catapult-player-api-routes-v1-mgmt",
     register: (server, options) => {
         server.route(
-            {
-                method: "GET",
-                path: "/api/v1/ping",
-                handler: (req, h) => ({
-                    ok: true
-                })
-            },
-            {
-                method: "GET",
-                path: "/api/v1/about",
-                handler: (req, h) => ({
-                    description: "catapult-player-service"
-                })
-            }
+            [
+                {
+                    method: "GET",
+                    path: "/api/v1/ping",
+                    handler: (req, h) => ({
+                        ok: true
+                    })
+                },
+                {
+                    method: "GET",
+                    path: "/api/v1/about",
+                    handler: (req, h) => ({
+                        description: "catapult-player-service"
+                    })
+                }
+            ]
         );
     }
 };
-

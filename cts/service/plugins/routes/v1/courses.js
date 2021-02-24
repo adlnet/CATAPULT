@@ -15,7 +15,9 @@
 */
 "use strict";
 
-const { v4: uuidv4 } = require("uuid");
+const Boom = require("@hapi/boom"),
+    Wreck = require("@hapi/wreck"),
+    { v4: uuidv4 } = require("uuid");
 
 module.exports = {
     name: "catapult-cts-api-routes-v1-courses",
@@ -23,47 +25,133 @@ module.exports = {
         server.route(
             [
                 {
+                    method: "POST",
+                    path: "/courses",
+                    handler: {
+                        proxy: {
+                            passThrough: true,
+                            xforward: true,
+                            acceptEncoding: false,
+
+                            mapUri: (req) => ({
+                                uri: `${req.server.app.player.baseUrl}/api/v1/course`
+                            }),
+
+                            onResponse: async (err, res, req, h, settings) => {
+                                if (err !== null) {
+                                    const error = Boom.boomify(new Error(err));
+                                    error.output.payload.srcError = error.message;
+
+                                    return error;
+                                }
+
+                                let payload;
+                                try {
+                                    payload = await Wreck.read(res, {json: true});
+                                }
+                                catch (ex) {
+                                    const error = Boom.boomify(new Error(`Failed to parse player request response: ${ex}`));
+                                    error.output.payload.srcError = error.message;
+
+                                    return error;
+                                }
+
+                                // clean up the original response
+                                res.destroy();
+
+                                if (res.statusCode !== 200) {
+                                    throw Boom.boomify(new Error(`Player course import failed: ${payload.message}`), {statusCode: res.statusCode});
+                                }
+
+                                const db = req.server.app.db;
+
+                                let insertResult;
+                                try {
+                                    insertResult = await db.insert(
+                                        {
+                                            tenant_id: 1,
+                                            player_id: payload.id,
+                                            metadata: JSON.stringify({
+                                                version: 1,
+                                                structure: JSON.parse(payload.structure)
+                                            })
+                                        }
+                                    ).into("courses");
+                                }
+                                catch (ex) {
+                                    throw Boom.boomify(new Error(ex));
+                                }
+
+                                return db.first("*").from("courses").where("id", insertResult);
+                            }
+                        }
+                    }
+                },
+
+                {
                     method: "GET",
                     path: "/courses",
                     handler: async (req, h) => ({
-                        items: await req.server.app.db.select("*").from("courses")
+                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("courses")
                     })
                 },
 
                 {
-                    method: "POST",
-                    path: "/courses",
-                    options: {
-                        payload: {
-                            parse: false,
-                            allow: "application/zip"
-                        }
-                    },
+                    method: "GET",
+                    path: "/courses/{id}",
                     handler: async (req, h) => {
-                        const id = uuidv4(),
-                            insertResult = await req.server.app.db.insert(
-                                {
-                                    tenant_id: 1,
-                                    code: id,
-                                    title: `Uploaded Course: ${id}`
-                                }
-                            ).into("courses");
+                        const result = await req.server.app.db.first("*").from("courses").where("id", req.params.id);
 
-                        console.log(`POST /courses - inserted ${id}`);
+                        if (! result) {
+                            return Boom.notFound();
+                        }
 
-                        return req.server.app.db.select("*").from("courses").where("id", insertResult);
+                        return result;
                     }
                 },
 
                 {
                     method: "DELETE",
                     path: "/courses/{id}",
-                    handler: async (req, h) => {
-                        const result = await req.server.app.db("courses").where("id", req.params.id).delete();
+                    handler: {
+                        proxy: {
+                            passThrough: true,
+                            xforward: true,
 
-                        console.log(`POST /courses - deleted ${req.params.id}`);
+                            mapUri: async (req) => {
+                                const result = await req.server.app.db.first("playerId").from("courses").where("id", req.params.id);
 
-                        return null;
+                                return {
+                                    uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`
+                                };
+                            },
+
+                            onResponse: async (err, res, req, h, settings) => {
+
+                                if (err !== null) {
+                                    throw new Error(err);
+                                }
+
+                                if (res.statusCode !== 204) {
+                                    throw new Error(res.statusCode);
+                                }
+
+                                const db = req.server.app.db;
+
+                                // clean up the original response
+                                res.destroy();
+
+                                let deleteResult;
+                                try {
+                                    deleteResult = await db("courses").where("id", req.params.id).delete();
+                                }
+                                catch (ex) {
+                                    throw new Error(ex);
+                                }
+
+                                return null;
+                            }
+                        }
                     }
                 }
             ]

@@ -18,4 +18,7 @@ if [ RUN_MIGRATIONS ]; then
     node node_modules/.bin/knex migrate:latest
 fi
 
-exec nodemon index.js
+# legacy-watch is used because it improves auto restart in our specific
+# use case for development, mounted volume in container, see "Application
+# isn't restarting" in the docs
+exec nodemon --legacy-watch --watch index.js --watch knexfile.js --watch lib --watch plugins index.js

@@ -20,8 +20,11 @@ const fs = require("fs"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     xml2js = require("xml2js"),
+    StreamZip = require("node-stream-zip"),
     { v4: uuidv4 } = require("uuid"),
     readFile = util.promisify(fs.readFile),
+    copyFile = util.promisify(fs.copyFile),
+    mkdir = util.promisify(fs.mkdir),
     validateAU = (element) => {
         const result = {
             type: "au",
@@ -43,6 +46,12 @@ const fs = require("fs"),
                     text: ls._
                 })
             );
+        }
+        if (element.url && element.url.length > 0) {
+            result.url = element.url;
+        }
+        else {
+            throw new Error("Invalid AU: 'url' missing or zero length");
         }
 
         return result;
@@ -149,6 +158,22 @@ const fs = require("fs"),
         }
 
         return result;
+    },
+    flattenAUs = (list) => {
+        const result = [];
+
+        for (const child of list) {
+            if (child.type === "au") {
+                result.push(child);
+            }
+            else if (child.type === "block") {
+                result.push(
+                    ...flattenAUs(child.children)
+                );
+            }
+        }
+
+        return result;
     };
 
 module.exports = {
@@ -179,19 +204,18 @@ module.exports = {
                                 }
                             );
 
-                        let structureAsXml;
+                        let structureAsXml,
+                            zip;
 
                         try {
-                            let structureFile;
-
                             if (contentType === "application/zip") {
-                                // TODO: unzip the file and check for cmi5.xml
+                                zip = new StreamZip.async({file: req.payload.path});
+
+                                structureAsXml = await zip.entryData("cmi5.xml");
                             }
                             else {
-                                structureFile = req.payload.path;
+                                structureAsXml = await readFile(req.payload.path);
                             }
-
-                            structureAsXml = await readFile(structureFile);
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to read structure file: ${ex}`);
@@ -213,15 +237,25 @@ module.exports = {
                             throw Boom.badRequest(`Failed to validate course structure XML: ${ex}`);
                         }
 
-                        let insertResult;
+                        let aus;
 
                         try {
-                            insertResult = await db.insert(
+                            aus = flattenAUs(structure.course.children);
+                        }
+                        catch (ex) {
+                            throw Boom.internal(`Failed to flatten AUs: ${ex}`);
+                        }
+
+                        let courseId;
+
+                        try {
+                            courseId = await db.insert(
                                 {
                                     tenant_id: 1,
                                     lms_id: lmsId,
                                     metadata: JSON.stringify({
-                                        version: 1
+                                        version: 1,
+                                        aus
                                     }),
                                     structure: JSON.stringify({
                                         version: "1.0.0",
@@ -231,10 +265,31 @@ module.exports = {
                             ).into("courses");
                         }
                         catch (ex) {
-                            throw new Error(ex);
+                            throw Boom.internal(new Error(`Failed to insert: ${ex}`));
                         }
 
-                        return db.first("*").from("courses").where("id", insertResult);
+                        const courseDir = `${__dirname}/../../../var/content/${courseId}`;
+
+                        try {
+                            await mkdir(courseDir);
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed to create course content directory (${courseDir}): ${ex}`));
+                        }
+
+                        try {
+                            if (contentType === "application/zip") {
+                                await zip.extract(null, courseDir);
+                            }
+                            else {
+                                await copyFile(req.payload.path, `${courseDir}/cmi5.xml`);
+                            }
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed to store course content: ${ex}`));
+                        }
+
+                        return db.first("*").from("courses").where("id", courseId);
                     }
                 },
 
@@ -242,7 +297,7 @@ module.exports = {
                     method: "GET",
                     path: "/course/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("courses").where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where("id", req.params.id);
 
                         if (! result) {
                             return Boom.notFound();
@@ -256,11 +311,237 @@ module.exports = {
                     method: "DELETE",
                     path: "/course/{id}",
                     handler: async (req, h) => {
-                        const deleteResult = await req.server.app.db("courses").where("id", req.params.id).delete();
+                        try {
+                            const deleteResult = await req.server.app.db("courses").where("id", req.params.id).delete();
+                        }
+                        catch (ex) {
+                            throw new Boom.internal(`Failed to delete course (${req.params.id}): ${ex}`);
+                        }
 
                         // TODO: clean up local files
 
                         return null;
+                    }
+                },
+
+                {
+                    method: "POST",
+                    path: "/courses/{id}/launch-url/{auIndex}",
+                    handler: async (req, h) => {
+                        console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
+                        const db = req.server.app.db,
+                            regCode = req.payload.reg,
+                            tenantId = 1,
+                            course = await req.server.app.db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
+                                {
+                                    tenantId,
+                                    id: req.params.id
+                                }
+                            );
+
+                        if (! course) {
+                            throw Boom.notFound(`Unrecognized course: ${req.params.id} (${tenantId})`);
+                        }
+
+                        let reg;
+
+                        if (regCode) {
+                            // load registration record and validate details match
+                            reg = await db.first("*").from("registrations").where(
+                                {
+                                    tenantId,
+                                    code: regCode,
+                                    courseId: req.params.id
+                                }
+                            );
+                        }
+
+                        if (! reg) {
+                            // either this is a new registration or we didn't find one they were expecting
+                            // so go ahead and create the registration now
+                            reg = {
+                                code: uuidv4(),
+                                tenant_id: tenantId,
+                                course_id: req.payload.courseId,
+                                actor: req.payload.actor
+                            };
+
+                            let insertResult;
+
+                            try {
+                                insertResult = await db.insert(reg).into("registrations");
+
+                                reg.id = insertResult;
+                            }
+                            catch (ex) {
+                                throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
+                            }
+                        }
+
+                        const actor = reg.actor,
+                            lmsActivityId = course.lmsId,
+                            publisherActivityId = course.structure.course.id,
+                            launchMode = "Normal",
+                            launchMethod = "AnyWindow",
+                            moveOn = "Completed",
+                            baseUrl = `${req.url.protocol}//${req.url.host}`,
+                            endpoint = `${baseUrl}/lrs`,
+                            returnURL = `${baseUrl}/return-url`,
+                            lrsWreck = Wreck.defaults(
+                                {
+                                    baseUrl: req.server.app.lrs.endpoint,
+                                    headers: {
+                                        "X-Experience-API-Version": "1.0.3",
+                                        Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
+                                    },
+                                    json: true
+                                }
+                            ),
+                            sessionId = uuidv4(),
+                            contextTemplate = {
+                                contextActivities: {
+                                    grouping: [
+                                        {
+                                            id: publisherActivityId
+                                        }
+                                    ]
+                                },
+                                extensions: {
+                                    "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
+                                }
+                            };
+
+                        let contentUrl;
+
+                        if (/[A-Za-z]+:\/\/.+/.test(course.metadata.aus[req.params.auIndex].url)) {
+                            contentUrl = course.metadata.aus[req.params.auIndex].url;
+                        }
+                        else {
+                            contentUrl = `http://localhost:3398/content/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
+                        }
+
+                        let lmsLaunchDataResponse;
+
+                        try {
+                            const lmsLaunchDataStateParams = new URLSearchParams(
+                                {
+                                    stateId: "LMS.LaunchData",
+                                    agent: actor,
+                                    activityId: lmsActivityId,
+                                    registration: regCode
+                                }
+                            );
+
+                            lmsLaunchDataResponse = await lrsWreck.request(
+                                "POST",
+                                `activities/state?${lmsLaunchDataStateParams.toString()}`,
+                                {
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    payload: {
+                                        launchMode,
+                                        launchMethod,
+                                        moveOn,
+                                        returnURL,
+                                        contextTemplate
+                                    }
+                                }
+                            );
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));
+                        }
+
+                        if (lmsLaunchDataResponse.statusCode !== 204) {
+                            throw Boom.internal(new Error(`Failed to store LMS.LaunchData state document: ${lmsLaunchDataResponse.statusCode}`));
+                        }
+
+                        let launchedStResponse,
+                            launchedStResponseBody;
+
+                        try {
+                            const launchedStContext = {
+                                ...contextTemplate,
+                                registration: regCode,
+                                extensions: {
+                                    "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId,
+                                    "https://w3id.org/xapi/cmi5/context/extensions/launchmode": launchMode,
+                                    "https://w3id.org/xapi/cmi5/context/extensions/moveon": moveOn,
+                                    "https://w3id.org/xapi/cmi5/context/extensions/launchurl": contentUrl
+                                }
+                            };
+
+                            launchedStContext.contextActivities.category = [
+                                {
+                                    id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
+                                }
+                            ];
+
+                            launchedStResponse = await lrsWreck.request(
+                                "POST",
+                                "statements",
+                                {
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    payload: {
+                                        actor: JSON.parse(actor),
+                                        verb: {
+                                            id: "http://adlnet.gov/expapi/verbs/launched",
+                                            display: {
+                                                en: "launched"
+                                            }
+                                        },
+                                        object: {
+                                            id: lmsActivityId
+                                        },
+                                        context: launchedStContext
+                                    }
+                                }
+                            );
+
+                            launchedStResponseBody = await Wreck.read(launchedStResponse, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to store launched statement: ${ex}`));
+                        }
+
+                        if (launchedStResponse.statusCode !== 200) {
+                            throw Boom.internal(new Error(`Failed to store launched statement: ${launchedStResponse.statusCode}`));
+                        }
+
+                        let sessionInsertResult;
+                        const session = {
+                            tenantId: tenantId,
+                            registrationId: reg.id,
+                            launchMode,
+                            launchTokenId: uuidv4()
+                        };
+
+                        try {
+                            sessionInsertResult = await db.insert(session).into("sessions");
+
+                            session.id = sessionInsertResult[0];
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed to insert session: ${ex}`));
+                        }
+
+                        const launchUrlParams = new URLSearchParams(
+                            {
+                                endpoint,
+                                fetch: `${baseUrl}/fetch-url`,
+                                actor,
+                                activityId: lmsActivityId,
+                                registration: regCode
+                            }
+                        );
+
+                        return {
+                            id: session.id,
+                            url: `${contentUrl}?${launchUrlParams.toString()}`
+                        };
                     }
                 }
             ]

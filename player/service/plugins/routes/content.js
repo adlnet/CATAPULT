@@ -25,7 +25,7 @@ module.exports = {
                 path: "/content/{param*}",
                 handler: {
                     directory: {
-                        path: `${__dirname}/../var/content`
+                        path: `${__dirname}/../../var/content`
                     }
                 }
             }

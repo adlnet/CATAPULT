@@ -38,15 +38,32 @@ module.exports = async () => {
         connection: {host, user, password, database},
         postProcessResponse: (result, queryContext) => {
             if (queryContext && queryContext.jsonCols) {
-                result = result.map(
-                    (row) => {
-                        for (const k of queryContext.jsonCols) {
-                            row[k] = JSON.parse(row[k]);
-                        }
+                if (Array.isArray(result)) {
+                    result = result.map(
+                        (row) => {
+                            for (const k of queryContext.jsonCols) {
+                                try {
+                                    row[k] = JSON.parse(row[k]);
+                                }
+                                catch (ex) {
+                                    throw new Error(`Failed to parse JSON in key ('${k}' in '${row}'): ${ex}`);
+                                }
+                            }
 
-                        return row;
+                            return row;
+                        }
+                    );
+                }
+                else {
+                    for (const k of queryContext.jsonCols) {
+                        try {
+                            result[k] = JSON.parse(result[k]);
+                        }
+                        catch (ex) {
+                            throw new Error(`Failed to parse JSON in key ('${k}' in '${result}'): ${ex}`);
+                        }
                     }
-                );
+                }
             }
 
             return result;

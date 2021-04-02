@@ -19,7 +19,8 @@ exports.up = (knex) => knex.schema.createTable(
     tableName,
     (table) => {
         table.increments("id");
-        table.integer("tenant_id").unsigned().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.timestamps(true, true);
+        table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
         table.string("lms_id").notNullable().unique();
 
         table.json("metadata").notNullable();

@@ -15,11 +15,22 @@
 */
 const tableName = "tenants";
 
-exports.up = (knex) => knex.schema.createTable(
-    tableName,
-    (table) => {
-        table.increments("id");
-        table.string("code").notNullable().unique();
-    }
-);
+exports.up = async (knex) => {
+    await knex.schema.createTable(
+        tableName,
+        (table) => {
+            table.increments("id");
+            table.timestamps(true, true);
+            table.string("code").notNullable().unique();
+        }
+    );
+
+    await knex(tableName).insert(
+        {
+            id: 1,
+            code: "default"
+        }
+    );
+};
+
 exports.down = (knex) => knex.schema.dropTable(tableName);

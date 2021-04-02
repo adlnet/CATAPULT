@@ -19,7 +19,18 @@ exports.up = (knex) => knex.schema.createTable(
     tableName,
     (table) => {
         table.increments("id");
-        table.integer("registration_id").unsigned().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.timestamps(true, true);
+        table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
+        table.datetime("last_request_time");
+        table.enu("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
+        table.uuid("launch_token_id").notNullable();
+        table.boolean("launch_token_fetched").notNullable().default(false);
+        table.boolean("is_launched").notNullable().default(false);
+        table.boolean("is_initialized").notNullable().default(false);
+        table.boolean("is_terminated").notNullable().default(false);
+        table.boolean("is_failed").notNullable().default(false);
+        table.bigInteger("time_reported");
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

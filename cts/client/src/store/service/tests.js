@@ -1,5 +1,5 @@
 /*
-    Copyright 2020 Rustici Software
+    Copyright 2021 Rustici Software
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,8 +34,18 @@ export default {
         defaultKeyProperties: {}
     },
     getters: {
-        cacheKey: (state) => () => {
-            const cacheKey = "key";
+        cacheKey: (state) => ({courseId}) => {
+            //
+            // there isn't really a technical reason why we should only be able to pull the list
+            // of tests based on a course id, but when written the UI only provided for listing
+            // tests at the course level so this was arbitrarily restricted based on that and the
+            // service back end only has a route for getting tests under the /courses resource
+            //
+            if (typeof courseId === "undefined") {
+                throw new Error("courseId is a required cache key component");
+            }
+
+            const cacheKey = `key-${courseId}`;
 
             if (! state.cacheContainer[cacheKey]) {
                 Vue.set(
@@ -52,10 +62,8 @@ export default {
 
             return cacheKey;
         },
-        defaultCacheKey: (state, getters) => getters.cacheKey({props: state.defaultKeyProperties}),
 
         cache: (state) => ({cacheKey}) => state.cacheContainer[cacheKey],
-        defaultCache: (state, getters) => getters.cache({cacheKey: getters.defaultCacheKey}),
 
         byId: (state) => ({id}) => {
             if (! state.detailCache[id]) {
@@ -77,7 +85,7 @@ export default {
         }
     },
     actions: {
-        alert: ({dispatch}, {content, variant = "danger", kind = "courseList"}) => {
+        alert: ({dispatch}, {content, variant = "danger", kind = "testList"}) => {
             dispatch(
                 "alerts/add",
                 {
@@ -101,15 +109,17 @@ export default {
             fromCache.loading = true;
 
             try {
-                const response = await rootGetters["service/makeApiRequest"](`courses/${id}`);
+                const response = await rootGetters["service/makeApiRequest"](`tests/${id}`);
 
                 if (! response.ok) {
                     throw new Error(`Request failed: ${response.status}`);
                 }
 
-                const body = await response.json();
+                let body = await response.json();
 
-                fromCache.item = populateItem(body);
+                body = populateItem(body);
+
+                fromCache.item = body;
                 fromCache.loaded = true;
             }
             catch (ex) {
@@ -121,8 +131,8 @@ export default {
             }
         },
 
-        load: async ({dispatch, state, getters, rootGetters}, {props = state.defaultKeyProperties, force = false} = {}) => {
-            const cache = getters.cache({cacheKey: getters.cacheKey({props})}),
+        load: async ({dispatch, state, getters, rootGetters}, {courseId, props = state.defaultKeyProperties, force = false} = {}) => {
+            const cache = getters.cache({cacheKey: getters.cacheKey({courseId, ...props})}),
                 busyKey = "loading";
 
             if (cache.loaded || cache.loading) {
@@ -136,7 +146,7 @@ export default {
             cache[busyKey] = true;
 
             try {
-                const response = await rootGetters["service/makeApiRequest"]("courses"),
+                const response = await rootGetters["service/makeApiRequest"](`courses/${courseId}/tests`),
                     lastNewItemIndex = cache.items.findIndex((i) => i.id !== null);
 
                 if (! response.ok) {
@@ -148,7 +158,13 @@ export default {
                 cache.items.splice(
                     lastNewItemIndex === -1 ? cache.items.length : lastNewItemIndex + 1,
                     0,
-                    ...body.items
+                    ...body.items.map(
+                        (i) => {
+                            i.pending = null;
+
+                            return i;
+                        }
+                    )
                 );
                 cache.loaded = true;
 
@@ -163,7 +179,7 @@ export default {
                 }
             }
             catch (ex) {
-                const content = `Failed to load courses: ${ex}`
+                const content = `Failed to load tests: ${ex}`
 
                 cache.err = true;
                 cache.errMsg = content;
@@ -175,50 +191,21 @@ export default {
             cache[busyKey] = false;
         },
 
-        delete: async ({dispatch, getters, rootGetters}, {item}) => {
-            const cache = getters.defaultCache,
-                itemIndex = cache.items.findIndex((i) => i === item);
+        create: async ({dispatch, state, rootGetters}, {courseId, actor}) => {
+            const kind = "testNew";
 
             try {
                 const response = await rootGetters["service/makeApiRequest"](
-                    `courses/${item.id}`,
-                    {
-                        method: "DELETE",
-                        mode: "cors"
-                    }
-                );
-
-                if (response.ok) {
-                    if (itemIndex !== -1) {
-                        cache.items.splice(itemIndex, 1);
-
-                        if (cache.currentIndex === itemIndex) {
-                            cache.currentIndex = null;
-                        }
-                    }
-                }
-                else {
-                    throw new Error(response.status);
-                }
-            }
-            catch (ex) {
-                dispatch("alert", {content: `Failed to delete course (id: ${item.id}): ${ex}`});
-            }
-        },
-
-        import: async ({dispatch, state, getters, rootGetters}, {body, contentType}) => {
-            const kind = "courseNew";
-
-            try {
-                const response = await rootGetters["service/makeApiRequest"](
-                    "courses",
+                    "tests",
                     {
                         method: "POST",
-                        mode: "cors",
                         headers: {
-                            "Content-Type": contentType
+                            "Content-Type": "application/json"
                         },
-                        body
+                        body: JSON.stringify({
+                            courseId,
+                            actor
+                        })
                     }
                 );
 
@@ -227,27 +214,14 @@ export default {
                 if (! response.ok) {
                     throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
                 }
-
                 responseBody = populateItem(responseBody);
 
                 state.detailCache[responseBody.id] = wrapItem(responseBody, {loaded: true});
-                getters.cache({cacheKey: getters.cacheKey()}).items.unshift(responseBody);
-
-                state.cacheContainer
-
-                dispatch(
-                    "alert",
-                    {
-                        variant: "success",
-                        content: `Imported course. (${responseBody.id})`,
-                        kind
-                    }
-                );
 
                 return responseBody.id;
             }
             catch (ex) {
-                dispatch("alert", {content: `Failed to import course: ${ex}`, kind});
+                dispatch("alert", {content: `Failed to create test: ${ex}`, kind});
             }
 
             return null;

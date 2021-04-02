@@ -1,16 +1,57 @@
 <template>
     <b-row>
         <b-col>
-            Test List tab
+            <b-table
+                :fields="tableFields"
+                :items="cache.items"
+                :busy="cache.loading"
+                primary-key="id"
+                show-empty
+                empty-text="No tests performed."
+                small
+                striped
+                class="target targetCondensed"
+            >
+                <template #table-busy>
+                    <div class="text-center text-danger my-2">
+                        <b-spinner class="align-middle"></b-spinner>
+                        <strong>Loading...</strong>
+                    </div>
+                </template>
+                <template #cell(registration)="data">
+                    <b-link :to="`/tests/${data.item.id}`">
+                        {{ data.item.metadata.actor.name }} ({{ data.item.code }})
+                    </b-link>
+                </template>
+                <template #cell(result)="data">
+                    <test-status :status="data.value" />
+                </template>
+                <template #cell(updatedAt)="data">
+                    <span v-if="data.value" v-b-popover.hover="data.value">
+                        {{ data.value | moment("from", "now") }}
+                    </span>
+                    <span v-else>
+                        Never
+                    </span>
+                </template>
+                <template #cell(actions)="row">
+                    <b-button size="sm" variant="primary" class="mr-2" :to="`/tests/${row.item.id}`">Resume</b-button>
+                    <b-button size="sm" variant="outline-danger" @click="download({item: row.item})">Download</b-button>
+                </template>
+            </b-table>
         </b-col>
     </b-row>
 </template>
 
 <script>
-    // import Vuex from "vuex";
+    import Vuex from "vuex";
+    import testStatus from "@/components/testStatus";
 
     export default {
         name: "CourseDetailTestList",
+        components: {
+            testStatus
+        },
         props: {
             id: {
                 type: String,
@@ -18,16 +59,61 @@
             }
         },
         data: () => ({
+            tableFields: [
+                {
+                    key: "registration",
+                    label: "Registration",
+                    sortable: true,
+                    class: "w-100"
+                },
+                {
+                    key: "result",
+                    label: "Test Result",
+                    sortable: true,
+                    class: "text-nowrap px-4 align-middle"
+                },
+                {
+                    key: "updatedAt",
+                    label: "Last Updated",
+                    sortable: true,
+                    class: "text-nowrap px-4 align-middle"
+                },
+                {
+                    key: "actions",
+                    class: "text-nowrap px-4 align-middle"
+                }
+            ]
         }),
         computed: {
-            model () {
-                return this.$store.getters["service/courses/byId"]({id: this.id});
+            cacheKey () {
+                return this.$store.getters["service/tests/cacheKey"]({courseId: this.id});
+            },
+            cache () {
+                return this.$store.getters["service/tests/cache"]({cacheKey: this.cacheKey});
             }
         },
+        watch: {
+            cacheKey () {
+                this.load({courseId: this.id});
+            }
+        },
+        mounted () {
+            this.load({courseId: this.id});
+        },
         methods: {
+            ...Vuex.mapActions(
+                "service/tests",
+                {
+                    load: "load"
+                }
+            ),
+
+            download ({item}) {
+                console.log("components:courses::detail::testList::download", item);
+            }
         }
     };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 </style>

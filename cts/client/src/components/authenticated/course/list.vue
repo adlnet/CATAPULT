@@ -85,28 +85,7 @@
                     </b-link>
                 </template>
                 <template #cell(testResult)="data">
-                    <template v-if="data.value === 1">
-                        <b-badge pill variant="success" class="mr-1">
-                            <b-icon-check scale="1.75"/>
-                        </b-badge>
-                        <span class="text-success">
-                            Conformant
-                        </span>
-                    </template>
-                    <template v-else-if="data.value === 0">
-                        <b-badge pill variant="danger" class="mr-1">
-                            <b-icon-x scale="1.75"/>
-                        </b-badge>
-                        <span class="text-danger">
-                            Non-conformant
-                        </span>
-                    </template>
-                    <template v-else>
-                        <b-badge pill variant="dark" class="mr-1">
-                            <b-icon-question scale="1.75"/>
-                        </b-badge>
-                        Result Pending
-                    </template>
+                    <test-status :status="data.value" />
                 </template>
                 <template #cell(lastTested)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">
@@ -125,7 +104,7 @@
                 </template>
                 -->
                 <template #cell(actions)="row">
-                    <b-button size="sm" variant="primary" class="mr-2" @click="test({item: row.item})">Test</b-button>
+                    <b-button size="sm" variant="primary" class="mr-2" :to="`/test-new/${row.item.id}`">Test</b-button>
                     <!-- TODO: need to do confirmation -->
                     <b-button size="sm" variant="outline-danger" @click="drop({item: row.item})">Delete</b-button>
                     <!--
@@ -157,23 +136,16 @@
 
 <script>
     import Vuex from "vuex";
-    import {BIconCheck, BIconQuestion, BIconSearch, BIconX} from "bootstrap-vue";
+    import {BIconSearch} from "bootstrap-vue";
     import alerts from "@/components/alerts";
-    /*
-    import filterByCourses from "./filterByCourses";
-    import filterByLearners from "./filterByLearners";
-    */
+    import testStatus from "@/components/testStatus";
 
     export default {
         name: "CourseList",
         components: {
-            BIconCheck,
-            BIconQuestion,
             BIconSearch,
-            BIconX,
-            alerts
-            // filterByCourses,
-            // filterByLearners
+            alerts,
+            testStatus
         },
         data: () => ({
             caller: "courses",

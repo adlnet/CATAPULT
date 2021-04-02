@@ -10,10 +10,10 @@
             <template v-else>
                 <b-row>
                     <b-col>
-                        <h2 class="mb-3">{{ model.item.metadata.structure.course.title[0].text }}</h2>
+                        <h3 class="mb-3">{{ model.item.metadata.structure.course.title[0].text }}</h3>
                     </b-col>
                     <b-col cols="auto">
-                        <b-button variant="primary" class="mr-2">Test</b-button>
+                        <b-button variant="primary" class="mr-2" :to="`/test-new/${id}`">Test</b-button>
                         <b-button variant="outline-danger">Delete</b-button>
                     </b-col>
                 </b-row>
@@ -31,7 +31,9 @@
                                 Course Structure
                             </b-nav-item>
                         </b-nav>
-                        <router-view></router-view>
+                        <keep-alive>
+                            <router-view></router-view>
+                        </keep-alive>
                     </b-col>
                 </b-row>
             </template>

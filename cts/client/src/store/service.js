@@ -15,6 +15,8 @@
 */
 import signIn from "./service/signIn";
 import courses from "./service/courses";
+import tests from "./service/tests";
+import sessions from "./service/sessions";
 
 export default {
     namespaced: true,
@@ -33,6 +35,8 @@ export default {
     },
     modules: {
         signIn,
-        courses
+        courses,
+        tests,
+        sessions
     }
 };

@@ -13,7 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const tableName = "courses";
+const tableName = "sessions";
 
 exports.up = (knex) => knex.schema.createTable(
     tableName,
@@ -22,7 +22,11 @@ exports.up = (knex) => knex.schema.createTable(
         table.timestamps(true, true);
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
         table.integer("player_id").unsigned().notNullable().unique();
-        table.datetime("last_tested");
+        table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
+
+        table.text("player_launch_url").notNullable();
+        table.text("player_endpoint").notNullable();
+        table.text("player_fetch").notNullable();
 
         table.json("metadata").notNullable();
     }

@@ -45,7 +45,12 @@
         </b-navbar>
         <b-navbar fixed sticky>
             <b-collapse id="navbar-new-test" class="w-100">
-                <test-new />
+                <!--
+                    use the v-if here to prevent creation/mounting of the component because
+                    it triggers a load of the course list which would always happen when the
+                    nav bar is rendered (which is always) and that load isn't always necessary
+                -->
+                <test-new v-if="newTestContentIsShown" />
             </b-collapse>
         </b-navbar>
     </b-col>
@@ -53,10 +58,10 @@
 
 <script>
     import {BIconPersonFill} from "bootstrap-vue";
-    import testNew from "@/components/authenticated/testNew";
+    import testNew from "@/components/authenticated/navBar/testNew";
 
     export default {
-        name: "nav-bar",
+        name: "NavBar",
         components: {
             BIconPersonFill,
             testNew

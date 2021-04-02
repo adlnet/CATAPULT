@@ -13,16 +13,15 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const tableName = "courses";
+const tableName = "registrations_logs";
 
 exports.up = (knex) => knex.schema.createTable(
     tableName,
     (table) => {
         table.increments("id");
         table.timestamps(true, true);
-        table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
-        table.integer("player_id").unsigned().notNullable().unique();
-        table.datetime("last_tested");
+        table.integer("tenant_id").notNullable().unsigned().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.integer("registration_id").notNullable().unsigned().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
 
         table.json("metadata").notNullable();
     }

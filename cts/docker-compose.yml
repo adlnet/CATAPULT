@@ -34,6 +34,8 @@ services:
   player:
     build: ../player
     image: catapult:player
+    ports:
+      - 3398:3398
     depends_on:
       - rdbms
     volumes:
@@ -43,6 +45,7 @@ services:
       - ../player/service/lib:/usr/src/app/lib:ro
       - ../player/migrations:/usr/src/app/migrations:ro
       - ../player/seeds:/usr/src/app/seeds:ro
+      - ../var/player/content:/usr/src/app/var/content
     environment:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz

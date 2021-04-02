@@ -13,7 +13,7 @@
                             <b-col>
                                 <h4 style="margin-bottom: 0px;">{{ selectedNode.item.title[0].text }}</h4>
                             </b-col>
-                            <b-col class="text-right" style="text-transform: capitalize;">
+                            <b-col cols="auto" class="text-right" style="text-transform: capitalize;">
                                 {{ selectedNode.item.type }}
                             </b-col>
                         </b-row>

@@ -60,6 +60,17 @@ const provision = async () => {
         db
     };
 
+    server.ext(
+        "onPreResponse",
+        (request, h) => {
+            if (request.response.isBoom) {
+                request.response.output.payload.srcError = request.response.message;
+            }
+
+            return h.continue;
+        }
+    );
+
     await server.register(H2o2);
     await server.register(Inert);
 
@@ -72,7 +83,9 @@ const provision = async () => {
     await server.register(
         [
             require("./plugins/routes/v1/mgmt"),
-            require("./plugins/routes/v1/courses")
+            require("./plugins/routes/v1/courses"),
+            require("./plugins/routes/v1/tests"),
+            require("./plugins/routes/v1/sessions")
         ],
         {
             routes: {

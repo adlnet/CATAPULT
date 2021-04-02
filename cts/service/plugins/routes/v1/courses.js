@@ -38,11 +38,9 @@ module.exports = {
                             }),
 
                             onResponse: async (err, res, req, h, settings) => {
-                                if (err !== null) {
-                                    const error = Boom.boomify(new Error(err));
-                                    error.output.payload.srcError = error.message;
 
-                                    return error;
+                                if (err !== null) {
+                                    throw Boom.internal(new Error(`Failed proxied import request: ${err}`));
                                 }
 
                                 let payload;
@@ -50,17 +48,14 @@ module.exports = {
                                     payload = await Wreck.read(res, {json: true});
                                 }
                                 catch (ex) {
-                                    const error = Boom.boomify(new Error(`Failed to parse player request response: ${ex}`));
-                                    error.output.payload.srcError = error.message;
-
-                                    return error;
+                                    throw Boom.internal(new Error(`Failed to parse player request response: ${ex}`));
                                 }
 
                                 // clean up the original response
                                 res.destroy();
 
                                 if (res.statusCode !== 200) {
-                                    throw Boom.boomify(new Error(`Player course import failed: ${payload.message}`), {statusCode: res.statusCode});
+                                    throw Boom.badRequest(new Error(`Player course import failed: ${payload.message}${payload.srcError}`), {statusCode: res.statusCode});
                                 }
 
                                 const db = req.server.app.db;
@@ -73,16 +68,17 @@ module.exports = {
                                             player_id: payload.id,
                                             metadata: JSON.stringify({
                                                 version: 1,
-                                                structure: JSON.parse(payload.structure)
+                                                structure: JSON.parse(payload.structure),
+                                                aus: JSON.parse(payload.metadata).aus
                                             })
                                         }
                                     ).into("courses");
                                 }
                                 catch (ex) {
-                                    throw Boom.boomify(new Error(ex));
+                                    throw Boom.internal(new Error(`Failed to insert course (${payload.id}): ${ex}`));
                                 }
 
-                                return db.first("*").from("courses").where("id", insertResult);
+                                return db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where("id", insertResult);
                             }
                         }
                     }
@@ -100,7 +96,7 @@ module.exports = {
                     method: "GET",
                     path: "/courses/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("courses").where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
 
                         if (! result) {
                             return Boom.notFound();
@@ -153,6 +149,14 @@ module.exports = {
                             }
                         }
                     }
+                },
+
+                {
+                    method: "GET",
+                    path: "/courses/{id}/tests",
+                    handler: async (req, h) => ({
+                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("registrations").where({courseId: req.params.id})
+                    })
                 }
             ]
         );

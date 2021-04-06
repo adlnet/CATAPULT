@@ -20,7 +20,8 @@ exports.up = async (knex) => {
         tableName,
         (table) => {
             table.increments("id");
-            table.timestamps(true, true);
+            table.timestamp("created_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP"));
+            table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
             table.string("code").notNullable().unique();
         }
     );

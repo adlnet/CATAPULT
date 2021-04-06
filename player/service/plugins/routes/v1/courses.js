@@ -515,6 +515,7 @@ module.exports = {
                         const session = {
                             tenantId: tenantId,
                             registrationId: reg.id,
+                            isLaunched: true,
                             launchMode,
                             launchTokenId: uuidv4()
                         };

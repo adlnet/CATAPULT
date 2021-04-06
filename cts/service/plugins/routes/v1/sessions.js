@@ -46,7 +46,7 @@ module.exports = {
                                 .options({nestTables: true});
                         }
                         catch (ex) {
-                            throw Boom.internal(`Failed to retrieve registration for id ${req.payload.testId}: ${ex}`);
+                            throw Boom.internal(new Error(`Failed to retrieve registration for id ${req.payload.testId}: ${ex}`));
                         }
 
                         if (! queryResult) {
@@ -70,11 +70,11 @@ module.exports = {
                             createResponseBody = await Wreck.read(createResponse, {json: true});
                         }
                         catch (ex) {
-                            throw Boom.internal(`Failed to request AU launch url from player: ${ex}`);
+                            throw Boom.internal(new Error(`Failed to request AU launch url from player: ${ex}`));
                         }
 
                         if (createResponse.statusCode !== 200) {
-                            throw Boom.internal(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponse.message} (${createResponse.srcError})`);
+                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponse.message} (${createResponse.srcError})`));
                         }
 
                         const playerLaunchUrl = createResponseBody.url,
@@ -97,7 +97,7 @@ module.exports = {
                             ).into("sessions");
                         }
                         catch (ex) {
-                            throw Boom.internal(`Failed to insert into sessions: ${ex}`);
+                            throw Boom.internal(new Error(`Failed to insert into sessions: ${ex}`));
                         }
 
                         //

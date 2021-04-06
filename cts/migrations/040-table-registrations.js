@@ -19,7 +19,8 @@ exports.up = (knex) => knex.schema.createTable(
     tableName,
     (table) => {
         table.increments("id");
-        table.timestamps(true, true);
+        table.timestamp("created_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
         table.integer("player_id").unsigned().notNullable().unique();
         table.integer("course_id").unsigned().notNullable().references("id").inTable("courses").onUpdate("CASCADE").onDelete("CASCADE");

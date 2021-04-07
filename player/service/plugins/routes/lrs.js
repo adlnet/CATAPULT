@@ -45,6 +45,13 @@ module.exports = {
                     pre: [
                         (req, h) => {
                             console.log("lrs.pre", req.method, req.params.resource);
+
+                            //
+                            // switch the authorization credential from the player session based value
+                            // to the general credential we have for the underlying LRS
+                            //
+                            req.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
+
                             return null;
                         }
                     ]
@@ -69,6 +76,7 @@ module.exports = {
                         //
                         onResponse: async (err, res, req, h, settings) => {
                             console.log(`h2o2.onResponse - request: ${req.method} ${req.params.resource}`);
+                            const resource = req.params.resource;
 
                             if (err !== null) {
                                 // TODO: handle internal errors
@@ -77,7 +85,6 @@ module.exports = {
                             }
 
                             console.log(`h2o2.onResponse - statusCode: ${res.statusCode}, statusMessage: '${res.statusMessage}', httpVersion: ${res.httpVersion}`);
-                            console.log("h2o2.onResponse - headers:", res.headers);
 
                             const payload = await Wreck.read(res),
                                 response = h.response(payload);
@@ -91,12 +98,16 @@ module.exports = {
                                 }
                             }
 
-
                             // clean up the original response
                             res.destroy();
 
-                            if (res.statusCode !== 204 && res.statusCode !== 200) {
-                                console.log("h2o2.onRequest", payload.toString());
+                            if (resource === "statements") {
+                                if (req.method === "post" && res.statusCode === 200) {
+                                    console.log("h2o2.onResponse - statement(s) stored", payload.toString());
+                                }
+                                else if (req.method === "put" && res.statusCode === 204) {
+                                    console.log("h2o2.onResponse - statement(s) stored (no content, would need id from request)");
+                                }
                             }
 
                             return response;

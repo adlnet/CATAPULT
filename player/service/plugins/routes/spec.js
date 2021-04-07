@@ -14,6 +14,7 @@
     limitations under the License.
 */
 "use strict";
+const Boom = require("@hapi/boom");
 
 module.exports = {
     name: "catapult-player-api-routes-spec",
@@ -21,10 +22,50 @@ module.exports = {
         server.route(
             {
                 method: "POST",
-                path: "/fetch-url",
-                handler: (req, h) => ({
-                    "auth-token": "ZGV2LXRvb2xzLXhhcGk6ZGV2LXRvb2xzLXhhcGktcGFzc3dvcmQ="
-                })
+                path: "/fetch-url/{sessionId}",
+                handler: async (req, h) => {
+                    const db = req.server.app.db;
+                    let session;
+
+                    try {
+                        session = await db.first("*").from("sessions").where(
+                            {
+                                id: req.params.sessionId
+                            }
+                        );
+                    }
+                    catch (ex) {
+                        throw Boom.internal(new Error(`Failed to select session: ${ex}`));
+                    }
+
+                    if (! session) {
+                        throw Boom.notFound(new Error(`session: ${req.params.sessionId}`));
+                    }
+
+                    if (session.launchTokenFetched) {
+                        return h.response(
+                            {
+                                "error-code": "1",
+                                "error-text": "Already in Use"
+                            }
+                        ).code(200).type("application/json");
+                    }
+
+                    try {
+                        await db("sessions").where("id", session.id).update(
+                            {
+                                launch_token_fetched: true
+                            }
+                        );
+                    }
+                    catch (ex) {
+                        throw Boom.internal(new Error(`Failed to update session: ${ex}`));
+                    }
+
+                    return {
+                        "auth-token": Buffer.from(":" + session.launchTokenId).toString("base64")
+                    };
+                }
             }
         );
     }

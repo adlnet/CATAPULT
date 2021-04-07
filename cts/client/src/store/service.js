@@ -31,6 +31,9 @@ export default {
             }
 
             throw new Error("Unauthenticated");
+        },
+        eventSource: () => (resource) => {
+            return new EventSource(`/api/v1/${resource}`);
         }
     },
     modules: {

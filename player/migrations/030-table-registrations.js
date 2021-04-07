@@ -25,7 +25,8 @@ exports.up = (knex) => knex.schema.createTable(
         table.string("code").notNullable().unique();
         table.integer("course_id").unsigned().notNullable().references("id").inTable("courses").onUpdate("CASCADE").onDelete("CASCADE");
         table.json("actor").notNullable();
-        table.boolean("satisfied");
+        table.boolean("is_passed").notNullable().default(false);
+        table.boolean("is_satisfied").notNullable().default(false);
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

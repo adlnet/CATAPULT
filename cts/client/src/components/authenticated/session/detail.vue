@@ -33,6 +33,11 @@
                     </b-col>
                     <b-col cols="4" class="d-flex flex-column">
                         <h5>Event Log</h5>
+                        <ul>
+                            <li v-for="(event, index) in events" :key="index">
+                                {{ event }}
+                            </li>
+                        </ul>
                     </b-col>
                 </b-row>
             </b-card>
@@ -49,6 +54,8 @@
 <script>
     import alerts from "@/components/alerts";
 
+    let eventSource;
+
     export default {
         name: "SessionDetail",
         components: {
@@ -60,6 +67,10 @@
                 required: true
             }
         },
+        data: () => ({
+            listening: false,
+            events: []
+        }),
         computed: {
             model () {
                 return this.$store.getters["service/sessions/byId"]({id: this.id});
@@ -84,10 +95,37 @@
             }
         },
         created () {
+            const self = this;
+
             this.$store.dispatch("service/sessions/loadById", {id: this.id});
+
+            eventSource = this.$store.getters["service/eventSource"](`sessions/${this.id}/events`);
+
+            eventSource.addEventListener(
+                "control",
+                (event) => {
+                    const data = JSON.parse(event.data);
+
+                    self.events.unshift(`control: ${JSON.stringify(data)}`);
+                }
+            );
+
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                self.events.unshift(JSON.stringify(data));
+            };
+            eventSource.onopen = () => {
+                self.listening = true;
+            };
+            eventSource.onclose = () => {
+                self.listening = false;
+            };
         },
         methods: {
             closeAU () {
+                eventSource.close();
+
                 this.$router.push(`/tests/${this.model.item.registrationId}`);
             },
             abandonSession () {

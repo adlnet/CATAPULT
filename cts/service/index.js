@@ -81,7 +81,6 @@ const provision = async () => {
     await server.register(
         [
             require("./plugins/routes/client"),
-            require("./plugins/routes/lrs")
         ]
     );
     await server.register(

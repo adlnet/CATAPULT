@@ -25,10 +25,9 @@ exports.up = (knex) => knex.schema.createTable(
         table.integer("player_id").unsigned().notNullable().unique();
         table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
 
-        table.text("player_launch_url").notNullable();
+        table.text("player_au_launch_url").notNullable();
         table.text("player_endpoint").notNullable();
         table.text("player_fetch").notNullable();
-        table.text("player_return_url");
 
         table.json("metadata").notNullable();
     }

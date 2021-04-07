@@ -332,7 +332,7 @@ module.exports = {
                         const db = req.server.app.db,
                             regCode = req.payload.reg,
                             tenantId = 1,
-                            course = await req.server.app.db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
+                            course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
                                 {
                                     tenantId,
                                     id: req.params.id
@@ -532,7 +532,7 @@ module.exports = {
                         const launchUrlParams = new URLSearchParams(
                             {
                                 endpoint,
-                                fetch: `${baseUrl}/fetch-url`,
+                                fetch: `${baseUrl}/fetch-url/${session.id}`,
                                 actor,
                                 activityId: lmsActivityId,
                                 registration: regCode

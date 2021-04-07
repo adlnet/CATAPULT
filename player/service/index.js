@@ -18,7 +18,13 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
-    waitPort = require("wait-port");
+    waitPort = require("wait-port"),
+    {
+        LRS_ENDPOINT,
+        LRS_USERNAME,
+        LRS_PASSWORD,
+        CONTENT_URL
+    } = process.env;
 
 const provision = async () => {
     const server = Hapi.server(
@@ -55,7 +61,11 @@ const provision = async () => {
     const db = await require("./lib/db")();
 
     server.app = {
+        contentUrl: CONTENT_URL || "http://localhost:3398/content",
         lrs: {
+            endpoint: LRS_ENDPOINT,
+            username: LRS_USERNAME,
+            password: LRS_PASSWORD
         },
         db
     };

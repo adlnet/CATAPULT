@@ -74,7 +74,7 @@ module.exports = {
                         }
 
                         if (createResponse.statusCode !== 200) {
-                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponse.message} (${createResponse.srcError})`));
+                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponseBody.message} (${createResponseBody.srcError})`));
                         }
 
                         const playerLaunchUrl = createResponseBody.url,

@@ -1,4 +1,5 @@
 *.swp
 node_modules
-var
-.env
+player/.env
+cts/.env
+cts/var

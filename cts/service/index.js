@@ -18,7 +18,10 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
-    waitPort = require("wait-port");
+    waitPort = require("wait-port"),
+    {
+        PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398"
+    } = process.env;
 
 const provision = async () => {
     const server = Hapi.server(
@@ -56,6 +59,7 @@ const provision = async () => {
 
     server.app = {
         player: {
+            baseUrl: PLAYER_BASE_URL
         },
         db
     };

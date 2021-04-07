@@ -28,7 +28,7 @@ module.exports = {
                     path: "/client/{param*}",
                     handler: {
                         directory: {
-                            path: `${__dirname}/../client`,
+                            path: `${__dirname}/../../client`,
                             listing: true
                         }
                     }

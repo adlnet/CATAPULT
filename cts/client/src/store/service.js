@@ -25,7 +25,7 @@ export default {
             if (state.signIn.access) {
                 // TODO: need to handle authentication, adding base URL, etc.
                 return fetch(
-                    `http://Rustici-BJM.local:3399/api/v1/${resource}`,
+                    `/api/v1/${resource}`,
                     cfg
                 );
             }

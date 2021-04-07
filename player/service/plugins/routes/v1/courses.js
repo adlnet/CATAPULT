@@ -417,7 +417,7 @@ module.exports = {
                             contentUrl = course.metadata.aus[req.params.auIndex].url;
                         }
                         else {
-                            contentUrl = `http://localhost:3398/content/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
+                            contentUrl = `${req.server.app.contentUrl}/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
                         }
 
                         let lmsLaunchDataResponse;

@@ -17,7 +17,7 @@ services:
     build: .
     image: catapult:cts
     ports:
-      - 3399:3399
+      - ${HOST_PORT}:3399
     depends_on:
       - rdbms
     volumes:
@@ -31,13 +31,14 @@ services:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
+      - PLAYER_BASE_URL
   player:
     build: ../player
     image: catapult:player
-    ports:
-      - 3398:3398
     depends_on:
       - rdbms
+    ports:
+      - ${PLAYER_HOST_PORT}:3398
     volumes:
       - ../player/service/index.js:/usr/src/app/index.js:ro
       - ../player/service/knexfile.js:/usr/src/app/knexfile.js:ro
@@ -45,11 +46,15 @@ services:
       - ../player/service/lib:/usr/src/app/lib:ro
       - ../player/migrations:/usr/src/app/migrations:ro
       - ../player/seeds:/usr/src/app/seeds:ro
-      - ../var/player/content:/usr/src/app/var/content
+      - ./var/player/content:/usr/src/app/var/content
     environment:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player
+      - CONTENT_URL=http://localhost:${PLAYER_HOST_PORT}/content
+      - LRS_ENDPOINT
+      - LRS_USERNAME
+      - LRS_PASSWORD
   rdbms:
     image: mysql:latest
     volumes:

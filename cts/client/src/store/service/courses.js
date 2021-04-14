@@ -15,7 +15,12 @@
 */
 import Vue from "vue";
 
-const wrapItem = (item, {loading = false, loaded = false}) => ({
+const initialState = () => ({
+        detailCache: {},
+        cacheContainer: {},
+        defaultKeyProperties: {}
+    }),
+    wrapItem = (item, {loading = false, loaded = false}) => ({
         item,
         loading,
         loaded,
@@ -29,9 +34,8 @@ const wrapItem = (item, {loading = false, loaded = false}) => ({
 export default {
     namespaced: true,
     state: {
-        detailCache: {},
-        cacheContainer: {},
-        defaultKeyProperties: {}
+        initialState,
+        ...initialState()
     },
     getters: {
         cacheKey: (state) => () => {

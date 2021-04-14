@@ -15,7 +15,10 @@
 */
 import Vue from "vue";
 
-const wrapItem = (item, {loading = false, loaded = false}) => ({
+const initialState = () => ({
+        detailCache: {}
+    }),
+    wrapItem = (item, {loading = false, loaded = false}) => ({
         item,
         loading,
         loaded,
@@ -29,7 +32,8 @@ const wrapItem = (item, {loading = false, loaded = false}) => ({
 export default {
     namespaced: true,
     state: {
-        detailCache: {}
+        initialState,
+        ...initialState()
     },
     getters: {
         byId: (state) => ({id}) => {

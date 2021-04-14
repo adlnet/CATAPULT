@@ -18,7 +18,7 @@
         <b-row v-if="isSignedIn" class="flex-fill" no-gutters>
             <authenticated />
         </b-row>
-        <b-row v-else no-gutters>
+        <b-row v-else class="flex-fill" no-gutters style="background-color: #94a9c8;">
             <unauthenticated />
         </b-row>
     </b-container>
@@ -37,9 +37,9 @@
         },
         computed: {
             ...Vuex.mapState(
-                "service/signIn",
+                "service/apiAccess",
                 {
-                    isSignedIn: (state) => state.access !== null
+                    isSignedIn: (state) => state.access
                 }
             )
         }

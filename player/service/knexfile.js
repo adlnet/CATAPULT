@@ -37,7 +37,7 @@ module.exports = async () => {
         client: "mysql",
         connection: {host, user, password, database},
         postProcessResponse: (result, queryContext) => {
-            if (queryContext && queryContext.jsonCols) {
+            if (result && queryContext && queryContext.jsonCols) {
                 if (Array.isArray(result)) {
                     result = result.map(
                         (row) => {

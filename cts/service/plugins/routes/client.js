@@ -31,6 +31,9 @@ module.exports = {
                             path: `${__dirname}/../../client`,
                             listing: true
                         }
+                    },
+                    options: {
+                        auth: false
                     }
                 },
 
@@ -40,10 +43,12 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/client",
-                    handler: (req, h) => h.redirect("/client/")
+                    handler: (req, h) => h.redirect("/client/"),
+                    options: {
+                        auth: false
+                    }
                 }
             ]
         );
     }
 };
-

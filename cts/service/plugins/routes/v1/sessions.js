@@ -62,7 +62,7 @@ module.exports = {
                                 .first("*")
                                 .from("registrations")
                                 .leftJoin("courses", "registrations.course_id", "courses.id")
-                                .where("registrations.id", req.payload.testId)
+                                .where({"registrations.tenantId": req.auth.credentials.tenantId, "registrations.id": req.payload.testId})
                                 .options({nestTables: true});
                         }
                         catch (ex) {
@@ -81,9 +81,13 @@ module.exports = {
                                 "POST",
                                 `${req.server.app.player.baseUrl}/api/v1/courses/${queryResult.courses.player_id}/launch-url/${req.payload.auIndex}`,
                                 {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                    },
                                     payload: {
                                         reg: queryResult.registrations.code,
-                                        actor: queryResult.registrations.metadata.actor
+                                        actor: queryResult.registrations.metadata.actor,
+                                        returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`
                                     }
                                 }
                             );
@@ -106,7 +110,7 @@ module.exports = {
                         try {
                             sessionId = await db.insert(
                                 {
-                                    tenant_id: 1,
+                                    tenant_id: req.auth.credentials.tenantId,
                                     player_id: createResponseBody.id,
                                     registration_id: req.payload.testId,
                                     player_au_launch_url: playerAuLaunchUrl,
@@ -127,7 +131,7 @@ module.exports = {
                         playerAuLaunchUrlParsed.searchParams.set("fetch", `${baseUrl}/api/v1/sessions/${sessionId}/fetch`);
 
                         const ctsLaunchUrl = playerAuLaunchUrlParsed.href;
-                        const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where("id", sessionId);
+                        const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.id, id: sessionId});
 
                         delete result.playerId;
                         delete result.playerAuLaunchUrl;
@@ -144,7 +148,7 @@ module.exports = {
                     method: "GET",
                     path: "/sessions/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                         if (! result) {
                             return Boom.notFound();
@@ -163,7 +167,7 @@ module.exports = {
                             xforward: true,
 
                             mapUri: async (req) => {
-                                const result = await req.server.app.db.first("playerId").from("courses").where("id", req.params.id);
+                                const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                                 return {
                                     uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`
@@ -185,7 +189,7 @@ module.exports = {
 
                                 let deleteResult;
                                 try {
-                                    deleteResult = await db("courses").where("id", req.params.id).delete();
+                                    deleteResult = await db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
                                 }
                                 catch (ex) {
                                     throw new Error(ex);
@@ -194,6 +198,22 @@ module.exports = {
                                 return null;
                             }
                         }
+                    }
+                },
+
+                {
+                    method: "GET",
+                    path: "/sessions/{id}/return-url",
+                    handler: async (req, h) => {
+                        const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
+                        h.sessionEvent(req.params.id, null, {kind: "spec", resource: "returnURL loaded"});
+
+                        return "<html><body>Session has ended, use &quot;Close&quot; button to return to test details page.</body></html>";
                     }
                 },
 
@@ -234,7 +254,7 @@ module.exports = {
                             let session;
 
                             try {
-                                session = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
+                                session = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({id: req.params.id});
                             }
                             catch (ex) {
                                 throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
@@ -270,6 +290,10 @@ module.exports = {
                                 }
                             ).code(400);
                         }
+                    },
+                    options: {
+                        // turn off auth because this is effectively an auth request
+                        auth: false
                     }
                 },
 
@@ -287,6 +311,8 @@ module.exports = {
                     ],
                     path: "/sessions/{id}/lrs/{resource*}",
                     options: {
+                        auth: false,
+
                         //
                         // turn off CORS for this handler because the LRS will provide back the right headers
                         // this just needs to pass them through, enabling CORS for this route means they get
@@ -304,7 +330,7 @@ module.exports = {
                                 let session;
 
                                 try {
-                                    session = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
+                                    session = await req.server.app.db.first("*").from("sessions").where({id: req.params.id});
                                 }
                                 catch (ex) {
                                     throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
@@ -345,8 +371,33 @@ module.exports = {
                                     throw new Error(`LRS request failed: ${err}`);
                                 }
 
-                                const payload = await Wreck.read(res),
-                                    response = h.response(payload);
+                                let payload;
+                                if (res.statusCode !== 204) {
+                                    payload = await Wreck.read(res);
+                                }
+
+                                let responsePayload = payload;
+
+                                if (res.statusCode !== 204 && res.statusCode !== 200) {
+                                    console.log("lrs h2o2.onResponse - error response", payload.toString());
+                                }
+                                else {
+                                    if (req.method === "get" && req.params.resource === "activities/state") {
+                                        if (req.query.stateId === "LMS.LaunchData") {
+                                            const parsedPayload = JSON.parse(payload.toString());
+
+                                            parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
+
+                                            // altering the body means the content length would be off,
+                                            // we could just adjust it based on the size difference
+                                            delete res.headers["content-length"];
+
+                                            responsePayload = parsedPayload;
+                                        }
+                                    }
+                                }
+
+                                const response = h.response(responsePayload);
 
                                 response.code(res.statusCode);
                                 response.message(res.statusMessage);

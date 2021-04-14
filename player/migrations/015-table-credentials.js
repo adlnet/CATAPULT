@@ -14,7 +14,7 @@
     limitations under the License.
 */
 const bcrypt = require("bcrypt"),
-    tableName = "users";
+    tableName = "credentials";
 
 exports.up = async (knex) => {
     await knex.schema.createTable(
@@ -24,11 +24,8 @@ exports.up = async (knex) => {
             table.timestamp("created_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP"));
             table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
             table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
-            table.string("username").notNullable().unique();
-            table.string("password").notNullable();
-            table.string("player_key").notNullable();
-            table.string("player_secret").notNullable();
-            table.json("roles").notNullable();
+            table.string("key").notNullable().unique();
+            table.string("secret").notNullable();
         }
     );
 
@@ -36,14 +33,8 @@ exports.up = async (knex) => {
         {
             id: 1,
             tenant_id: 1,
-            username: "root",
-            password: await bcrypt.hash("catapult!", 8),
-            player_key: "root",
-            player_secret: "player!",
-            roles: JSON.stringify([
-                "user",
-                "admin"
-            ])
+            key: "root",
+            secret: await bcrypt.hash("player!", 8)
         }
     );
 };

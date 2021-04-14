@@ -37,7 +37,7 @@ module.exports = {
                         let course;
 
                         try {
-                            course = await db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where("id", req.payload.courseId);
+                            course = await db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.payload.courseId});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to retrieve course for id ${req.payload.courseId}: ${ex}`));
@@ -47,13 +47,17 @@ module.exports = {
                             throw Boom.notFound(`course: ${req.payload.courseId}`);
                         }
 
-                        let createResponseBody;
+                        let createResponse,
+                            createResponseBody;
 
                         try {
-                            const createResponse = await Wreck.request(
+                            createResponse = await Wreck.request(
                                 "POST",
                                 `${req.server.app.player.baseUrl}/api/v1/registration`,
                                 {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                    },
                                     payload: {
                                         courseId: course.playerId,
                                         actor: req.payload.actor
@@ -63,7 +67,11 @@ module.exports = {
                             createResponseBody = await Wreck.read(createResponse, {json: true});
                         }
                         catch (ex) {
-                            throw Boom.internal(new Error(`Failed to create registration: ${ex}`));
+                            throw Boom.internal(new Error(`Failed request to create player registration: ${ex}`));
+                        }
+
+                        if (createResponse.statusCode !== 200) {
+                            throw Boom.internal(new Error(`Failed to create player registration (${createResponse.statusCode}): ${createResponseBody.message} (${createResponseBody.srcError})`));
                         }
 
                         createResponseBody.actor = JSON.parse(createResponseBody.actor);
@@ -72,7 +80,7 @@ module.exports = {
                         try {
                             insertResult = await db.insert(
                                 {
-                                    tenant_id: 1,
+                                    tenant_id: req.auth.credentials.tenantId,
                                     player_id: createResponseBody.id,
                                     code: createResponseBody.code,
                                     course_id: req.payload.courseId,
@@ -86,7 +94,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
                         }
 
-                        const result = db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where("id", insertResult);
+                        const result = db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: insertResult});
 
                         delete result.playerId;
 
@@ -98,7 +106,7 @@ module.exports = {
                     method: "GET",
                     path: "/tests/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                         if (! result) {
                             return Boom.notFound();
@@ -117,7 +125,7 @@ module.exports = {
                             xforward: true,
 
                             mapUri: async (req) => {
-                                const result = await req.server.app.db.first("playerId").from("courses").where("id", req.params.id);
+                                const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                                 return {
                                     uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`

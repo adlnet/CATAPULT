@@ -38,7 +38,7 @@
                         <template #button-content>
                             <b-icon-person-fill class="rounded-circle bg-info" scale="0.75" variant="light" />
                         </template>
-                        <b-dropdown-item>Sign Out</b-dropdown-item>
+                        <b-dropdown-item @click="doSignOut">Sign Out</b-dropdown-item>
                     </b-nav-item-dropdown>
                 </b-nav-form>
             </b-navbar-nav>
@@ -83,6 +83,16 @@
                     this.newTestContentIsShown = isJustShown;
                 }
             );
+        },
+        methods: {
+            async doSignOut () {
+                try {
+                    await this.$store.dispatch("service/apiAccess/clearCredential");
+                }
+                catch (ex) {
+                    console.log(`Failed call to clear credential: ${ex}`);
+                }
+            }
         }
     };
 </script>

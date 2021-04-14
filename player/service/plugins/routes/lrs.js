@@ -20,17 +20,76 @@ const Wreck = require("@hapi/wreck");
 module.exports = {
     name: "catapult-player-api-routes-lrs",
     register: (server, options) => {
+        server.auth.strategy(
+            "proxied-lrs",
+            "basic",
+            {
+                allowEmptyUsername: true,
+                validate: async (request, key, secret) => {
+                    const session = await request.server.app.db.first("*").from("sessions").where({launch_token_id: secret});
+                    if (! session) {
+                        return {isValid: false, credentials: null};
+                    }
+
+                    return {
+                        isValid: true,
+                        credentials: {
+                            id: session.id,
+                            tenantId: session.tenantId
+                        }
+                    };
+                }
+            }
+        );
+
+        // OPTIONS requests don't provide an authorization header, so set this up
+        // as a separate route without auth
+        server.route(
+            {
+                method: [
+                    "OPTIONS"
+                ],
+                path: "/lrs/{resource*}",
+                options: {
+                    auth: false,
+
+                    //
+                    // turn off CORS for this handler because the LRS will provide back the right headers
+                    // this just needs to pass them through, enabling CORS for this route means they get
+                    // overwritten by the Hapi handling
+                    //
+                    cors: false
+                },
+                handler: {
+                    proxy: {
+                        passThrough: true,
+                        xforward: true,
+
+                        //
+                        // map the requested resource (i.e. "statements" or "activities/state") from the
+                        // provided LRS endpoint to the resource at the underlying LRS endpoint, while
+                        // maintaining any query string parameters
+                        //
+                        mapUri: (req) => ({
+                            uri: `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`
+                        })
+                    }
+                }
+            }
+        );
+
         server.route(
             {
                 method: [
                     "GET",
                     "POST",
                     "PUT",
-                    "DELETE",
-                    "OPTIONS"
+                    "DELETE"
                 ],
                 path: "/lrs/{resource*}",
                 options: {
+                    auth: "proxied-lrs",
+
                     //
                     // turn off CORS for this handler because the LRS will provide back the right headers
                     // this just needs to pass them through, enabling CORS for this route means they get
@@ -44,13 +103,14 @@ module.exports = {
                     //
                     pre: [
                         (req, h) => {
-                            console.log("lrs.pre", req.method, req.params.resource);
 
                             //
                             // switch the authorization credential from the player session based value
                             // to the general credential we have for the underlying LRS
                             //
-                            req.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
+                            if (typeof req.headers.authorization !== "undefined") {
+                                req.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
+                            }
 
                             return null;
                         }

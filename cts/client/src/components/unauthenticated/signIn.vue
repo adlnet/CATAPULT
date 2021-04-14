@@ -15,32 +15,74 @@
  -->
 <template>
     <b-form>
+        <b-alert :show="error" variant="danger">
+            {{ errMsg }}
+        </b-alert>
+
         <b-form-group label="Email address" label-for="username">
             <b-form-input id="username" v-model="username" />
         </b-form-group>
         <b-form-group label="Password" label-for="password">
-            <b-form-input id="password" type="password" v-model="password" />
+            <b-input-group>
+                <b-form-input id="password" :type="passwordVisible ? 'text' : 'password'" v-model="password" />
+                <b-input-group-append>
+                    <b-button variant="outline-primary" style="border-color: #c6cace; font-color: #c6cace;" :pressed="passwordVisible" @click="togglePasswordVisibility">
+                        <b-icon-eye />
+                    </b-button>
+                </b-input-group-append>
+            </b-input-group>
         </b-form-group>
         <b-form-checkbox id="rememberMe" v-model="rememberMe">
             Remember me
         </b-form-checkbox>
-        <b-button @click="doSignIn">
+        <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" @click="doSignIn">
             Log In
         </b-button>
     </b-form>
 </template>
 
 <script>
+    import Vuex from "vuex";
+    import {BIconEye} from "bootstrap-vue";
+
     export default {
-        name: "signIn",
+        name: "apiAccess",
+        components: {
+            BIconEye
+        },
         data: () => ({
-            username: null,
-            password: null,
-            rememberMe: false
+            username: "",
+            password: "",
+            rememberMe: false,
+            passwordVisible: false
         }),
+        computed: {
+            ...Vuex.mapState(
+                "service/apiAccess",
+                {
+                    error: (state) => state.error,
+                    errMsg: (state) => state.errMsg
+                }
+            )
+        },
         methods: {
-            doSignIn () {
-                console.log("sign me in bro", this.username, this.password);
+            async doSignIn () {
+                try {
+                    await this.$store.dispatch(
+                        "service/apiAccess/storeCredential",
+                        {
+                            username: this.username,
+                            password: this.password,
+                            storeCookie: this.rememberMe
+                        }
+                    );
+                }
+                catch (ex) {
+                    console.log(`Failed call to init credential: ${ex}`);
+                }
+            },
+            togglePasswordVisibility () {
+                this.passwordVisible = ! this.passwordVisible;
             }
         }
     };

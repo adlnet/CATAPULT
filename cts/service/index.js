@@ -18,6 +18,9 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
+    AuthBasic = require("@hapi/basic"),
+    AuthCookie = require("@hapi/cookie"),
+    Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
     {
         PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398"
@@ -29,7 +32,9 @@ const provision = async () => {
                 host: process.argv[3],
                 port: process.argv[2] || 3399,
                 routes: {
-                    cors: true,
+                    cors: {
+                        credentials: true
+                    },
                     response: {
                         emptyStatusCode: 204
                     }
@@ -66,9 +71,9 @@ const provision = async () => {
 
     server.ext(
         "onPreResponse",
-        (request, h) => {
-            if (request.response.isBoom) {
-                request.response.output.payload.srcError = request.response.message;
+        (req, h) => {
+            if (req.response.isBoom) {
+                req.response.output.payload.srcError = req.response.message;
             }
 
             return h.continue;
@@ -77,14 +82,135 @@ const provision = async () => {
 
     await server.register(H2o2);
     await server.register(Inert);
+    await server.register(AuthBasic);
+    await server.register(AuthCookie);
+
+    server.method(
+        "getCredentials",
+        (user) => ({
+            id: user.id,
+            tenantId: user.tenantId,
+            username: user.username,
+            playerKey: user.playerKey,
+            playerSecret: user.playerSecret,
+            roles: user.roles
+        }),
+        {
+            generateKey: (user) => user.id.toString(),
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 1000
+            }
+        }
+    );
+    server.method(
+        "basicAuthValidate",
+        async (req, username, password) => {
+            const user = await req.server.app.db.first("*").from("users").queryContext({jsonCols: ["roles"]}).where({username});
+
+            if (! user) {
+                return {isValid: false, credentials: null};
+            }
+
+            if (! await Bcrypt.compare(password, user.password)) {
+                return {isValid: false, credentials: null};
+            }
+
+            return {
+                isValid: true,
+                credentials: await req.server.methods.getCredentials(user)
+            };
+        },
+        {
+            generateKey: (req, username, password) => `${username}-${password}`,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 5000
+            }
+        }
+    );
+    server.method(
+        "cookieAuthValidateFunc",
+        async (req, session) => {
+            const user = await req.server.app.db.first("id").from("users").where({id: session.id});
+
+            if (! user) {
+                return {valid: false};
+            }
+
+            return {valid: true};
+        },
+        {
+            generateKey: (req, session) => session.id.toString(),
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 5000
+            }
+        }
+    );
+    server.method(
+        "playerAuthHeader",
+        (req) => `Basic ${Buffer.from(`${req.auth.credentials.playerKey}:${req.auth.credentials.playerSecret}`).toString("base64")}`,
+        {
+            generateKey: (req) => req.auth.credentials.playerKey,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 1000
+            }
+        }
+    );
+
+    server.auth.strategy(
+        "basic",
+        "basic",
+        {
+            validate: async (req, username, password) => await req.server.methods.basicAuthValidate(req, username, password)
+        }
+    );
+    server.auth.strategy(
+        "session",
+        "cookie",
+        {
+            validateFunc: async (req, session) => await req.server.methods.cookieAuthValidateFunc(req, session),
+            cookie: {
+                password: 'GjW_X*v7fZKarM_4HU4tE!gMu4sp_DYL_j*gdR2jNormrW3-xr@UcXrdEXM8y!s6',
+
+                // switch to use via https
+                isSecure: false,
+
+                ttl: 8 * 60 * 60 * 1000
+            }
+        }
+    );
 
     await server.register(
         [
             require("./plugins/routes/client"),
         ]
     );
+    server.route(
+        {
+            method: "GET",
+            path: "/",
+            handler: (req, h) => h.redirect("/client/"),
+            options: {
+                auth: false
+            }
+        }
+    );
+
+    //
+    // order matters here, specifying the default auth setup then applies to
+    // the rest of the routes registered from this point
+    //
+    server.auth.default(
+        {
+            strategies: ["basic", "session"]
+        }
+    );
     await server.register(
         [
+            require("./plugins/routes/v1/core"),
             require("./plugins/routes/v1/mgmt"),
             require("./plugins/routes/v1/courses"),
             require("./plugins/routes/v1/tests"),
@@ -94,14 +220,6 @@ const provision = async () => {
             routes: {
                 prefix: "/api/v1"
             }
-        }
-    );
-
-    server.route(
-        {
-            method: "GET",
-            path: "/",
-            handler: (req, h) => h.redirect("/client/")
         }
     );
 

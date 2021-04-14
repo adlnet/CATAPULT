@@ -15,12 +15,18 @@
  -->
 <template>
     <b-col>
-        catapult
-        <br>
-        cmi5 conformance test suite
-        <br>
-        <!-- TODO: should this have a separate router view? -->
-        <sign-in />
+        <b-card class="ml-auto mr-auto" style="padding-left: 80px; padding-right: 80px; margin: 40px; width: 40%;">
+            <div class="logo text-center">
+                catapult
+            </div>
+            <p class="about text-center">
+                cmi5 conformance test suite
+            </p>
+            <h2 class="my-3">
+                Please log in.
+            </h2>
+            <sign-in />
+        </b-card>
     </b-col>
 </template>
 
@@ -36,4 +42,19 @@
 </script>
 
 <style lang="scss">
+    .logo {
+        font-size: 4rem;
+        padding: 0px;
+        color: $gray-600;
+        line-height: 1;
+
+        &::first-letter {
+            color: $primary;
+        }
+    }
+
+    .about {
+        font-size: 90%;
+        color: $gray-600;
+    }
 </style>

@@ -22,15 +22,16 @@ module.exports = {
             [
                 {
                     method: "GET",
-                    path: "/api/v1/ping",
+                    path: "/ping",
                     handler: (req, h) => ({
                         ok: true
                     })
                 },
                 {
                     method: "GET",
-                    path: "/api/v1/about",
+                    path: "/about",
                     handler: (req, h) => ({
+                        tenantId: req.auth.credentials.tenantId,
                         description: "catapult-player-service"
                     })
                 }

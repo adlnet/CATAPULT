@@ -38,7 +38,16 @@ Object.defineProperty(
     }
 );
 
-const provision = () => {
+const provision = async () => {
+    //
+    // Try to init the credential to see if there is a cookie already
+    // available, if so, the login screen won't be presented, otherwise
+    // they need to enter their username and password and optionally get
+    // a cookie set, if they don't request a cookie then a refresh of the
+    // page will re-present the login form
+    //
+    await store.dispatch("service/apiAccess/initCredential");
+
     new Vue(
         {
             router,

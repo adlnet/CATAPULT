@@ -65,6 +65,9 @@ module.exports = {
                     return {
                         "auth-token": Buffer.from(":" + session.launchTokenId).toString("base64")
                     };
+                },
+                options: {
+                    auth: false
                 }
             }
         );

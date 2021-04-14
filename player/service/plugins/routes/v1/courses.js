@@ -251,7 +251,7 @@ module.exports = {
                         try {
                             courseId = await db.insert(
                                 {
-                                    tenant_id: 1,
+                                    tenant_id: req.auth.credentials.tenantId,
                                     lms_id: lmsId,
                                     metadata: JSON.stringify({
                                         version: 1,
@@ -268,10 +268,10 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to insert: ${ex}`));
                         }
 
-                        const courseDir = `${__dirname}/../../../var/content/${courseId}`;
+                        const courseDir = `${__dirname}/../../../var/content/${req.auth.credentials.tenantId}/${courseId}`;
 
                         try {
-                            await mkdir(courseDir);
+                            await mkdir(courseDir, {recursive: true});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to create course content directory (${courseDir}): ${ex}`));
@@ -289,7 +289,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to store course content: ${ex}`));
                         }
 
-                        return db.first("*").from("courses").where("id", courseId);
+                        return db.first("*").from("courses").where({tenantId: req.auth.credentials.tenantId, id: courseId});
                     }
                 },
 
@@ -297,7 +297,7 @@ module.exports = {
                     method: "GET",
                     path: "/course/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                         if (! result) {
                             return Boom.notFound();
@@ -312,7 +312,7 @@ module.exports = {
                     path: "/course/{id}",
                     handler: async (req, h) => {
                         try {
-                            const deleteResult = await req.server.app.db("courses").where("id", req.params.id).delete();
+                            const deleteResult = await req.server.app.db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
                         }
                         catch (ex) {
                             throw new Boom.internal(`Failed to delete course (${req.params.id}): ${ex}`);
@@ -331,7 +331,7 @@ module.exports = {
                         console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
                         const db = req.server.app.db,
                             regCode = req.payload.reg,
-                            tenantId = 1,
+                            tenantId = req.auth.credentials.tenantId,
                             course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
                                 {
                                     tenantId,
@@ -417,20 +417,31 @@ module.exports = {
                             contentUrl = course.metadata.aus[req.params.auIndex].url;
                         }
                         else {
-                            contentUrl = `${req.server.app.contentUrl}/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
+                            contentUrl = `${req.server.app.contentUrl}/${req.auth.credentials.tenantId}/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
                         }
 
-                        let lmsLaunchDataResponse;
+                        let lmsLaunchDataResponse,
+                            lmsLaunchDataResponseBody;
 
                         try {
                             const lmsLaunchDataStateParams = new URLSearchParams(
-                                {
-                                    stateId: "LMS.LaunchData",
-                                    agent: actor,
-                                    activityId: lmsActivityId,
-                                    registration: regCode
-                                }
-                            );
+                                    {
+                                        stateId: "LMS.LaunchData",
+                                        agent: actor,
+                                        activityId: lmsActivityId,
+                                        registration: regCode
+                                    }
+                                ),
+                                lmsLaunchDataPayload = {
+                                    launchMode,
+                                    launchMethod,
+                                    moveOn,
+                                    contextTemplate
+                                };
+
+                            if (req.payload.returnUrl) {
+                                lmsLaunchDataPayload.returnURL = req.payload.returnUrl;
+                            }
 
                             lmsLaunchDataResponse = await lrsWreck.request(
                                 "POST",
@@ -439,22 +450,18 @@ module.exports = {
                                     headers: {
                                         "Content-Type": "application/json"
                                     },
-                                    payload: {
-                                        launchMode,
-                                        launchMethod,
-                                        moveOn,
-                                        returnURL,
-                                        contextTemplate
-                                    }
+                                    payload: lmsLaunchDataPayload
                                 }
                             );
+
+                            lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, {json: true});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));
                         }
 
                         if (lmsLaunchDataResponse.statusCode !== 204) {
-                            throw Boom.internal(new Error(`Failed to store LMS.LaunchData state document: ${lmsLaunchDataResponse.statusCode}`));
+                            throw Boom.internal(new Error(`Failed to store LMS.LaunchData state document (${lmsLaunchDataResponse.statusCode}): ${lmsLaunchDataResponseBody}`));
                         }
 
                         let launchedStResponse,
@@ -513,7 +520,7 @@ module.exports = {
 
                         let sessionInsertResult;
                         const session = {
-                            tenantId: tenantId,
+                            tenantId,
                             registrationId: reg.id,
                             isLaunched: true,
                             launchMode,

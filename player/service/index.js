@@ -18,6 +18,8 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
+    AuthBasic = require("@hapi/basic"),
+    Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
     {
         LRS_ENDPOINT,
@@ -72,9 +74,9 @@ const provision = async () => {
 
     server.ext(
         "onPreResponse",
-        (request, h) => {
-            if (request.response.isBoom) {
-                request.response.output.payload.srcError = request.response.message;
+        (req, h) => {
+            if (req.response.isBoom) {
+                req.response.output.payload.srcError = req.response.message;
             }
 
             return h.continue;
@@ -83,6 +85,45 @@ const provision = async () => {
 
     await server.register(H2o2);
     await server.register(Inert);
+    await server.register(AuthBasic);
+
+    server.method(
+        "basicAuthValidate",
+        async (req, key, secret) => {
+            const credential = await req.server.app.db.first("*").from("credentials").where({key});
+
+            if (! credential) {
+                return {isValid: false, credentials: null};
+            }
+
+            if (! await Bcrypt.compare(secret, credential.secret)) {
+                return {isValid: false, credentials: null};
+            }
+
+            return {
+                isValid: true,
+                credentials: {
+                    id: credential.id,
+                    tenantId: credential.tenantId
+                }
+            };
+        },
+        {
+            generateKey: (req, key, secret) => `${key}-${secret}`,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 5000
+            }
+        }
+    );
+
+    server.auth.strategy(
+        "basic",
+        "basic",
+        {
+            validate: async (req, key, secret) => await req.server.methods.basicAuthValidate(req, key, secret)
+        }
+    );
 
     await server.register(
         [
@@ -90,6 +131,12 @@ const provision = async () => {
             require("./plugins/routes/lrs"),
             require("./plugins/routes/spec")
         ]
+    );
+
+    server.auth.default(
+        {
+            strategies: ["basic"]
+        }
     );
     await server.register(
         [

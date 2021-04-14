@@ -13,7 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-import signIn from "./service/signIn";
+import apiAccess from "./service/apiAccess";
 import courses from "./service/courses";
 import tests from "./service/tests";
 import sessions from "./service/sessions";
@@ -21,23 +21,35 @@ import sessions from "./service/sessions";
 export default {
     namespaced: true,
     getters: {
-        makeApiRequest: (state) => (resource, cfg = {}) => {
-            if (state.signIn.access) {
-                // TODO: need to handle authentication, adding base URL, etc.
-                return fetch(
-                    `/api/v1/${resource}`,
-                    cfg
-                );
+        baseApiUrl: () => process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL : "",
+        makeApiRequest: (state, getters) => (resource, cfg = {}) => {
+            const fetchCfg = {
+                ...cfg
+            };
+
+            if (state.apiAccess.username) {
+                fetchCfg.headers = fetchCfg.headers || {};
+                fetchCfg.headers.Authorization = `Basic ${Buffer.from(`${state.apiAccess.username}:${state.apiAccess.password}`).toString("base64")}`;
+            }
+            else {
+                fetchCfg.credentials = "include";
             }
 
-            throw new Error("Unauthenticated");
+            return fetch(`${getters.baseApiUrl}/api/v1/${resource}`, fetchCfg);
         },
-        eventSource: () => (resource) => {
-            return new EventSource(`/api/v1/${resource}`);
+        eventSource: (state, getters) => (resource) => {
+            const ev = new EventSource(
+                `${getters.baseApiUrl}/api/v1/${resource}`,
+                {
+                    withCredentials: true
+                }
+            );
+
+            return ev;
         }
     },
     modules: {
-        signIn,
+        apiAccess,
         courses,
         tests,
         sessions

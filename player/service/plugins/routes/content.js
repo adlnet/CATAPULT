@@ -19,7 +19,6 @@ module.exports = {
     name: "catapult-player-api-routes-content",
     register: (server, options) => {
         server.route(
-            // TODO: cookie auth?
             {
                 method: "GET",
                 path: "/content/{param*}",
@@ -27,6 +26,9 @@ module.exports = {
                     directory: {
                         path: `${__dirname}/../../var/content`
                     }
+                },
+                options: {
+                    auth: false
                 }
             }
         );

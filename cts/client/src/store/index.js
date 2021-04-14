@@ -26,6 +26,16 @@ export default new Vuex.Store(
         modules: {
             alerts,
             service
+        },
+        mutations: {
+            resetState (state) {
+                Object.assign(state.alerts, state.alerts.initialState());
+
+                Object.assign(state.service.apiAccess, state.service.apiAccess.initialState());
+                Object.assign(state.service.sessions, state.service.sessions.initialState());
+                Object.assign(state.service.tests, state.service.tests.initialState());
+                Object.assign(state.service.courses, state.service.courses.initialState());
+            }
         }
     }
 );

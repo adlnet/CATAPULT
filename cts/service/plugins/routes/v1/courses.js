@@ -27,6 +27,15 @@ module.exports = {
                 {
                     method: "POST",
                     path: "/courses",
+                    options: {
+                        pre: [
+                            async (req, h) => {
+                                req.headers.authorization = await req.server.methods.playerAuthHeader(req);
+
+                                return null;
+                            }
+                        ]
+                    },
                     handler: {
                         proxy: {
                             passThrough: true,
@@ -64,7 +73,7 @@ module.exports = {
                                 try {
                                     insertResult = await db.insert(
                                         {
-                                            tenant_id: 1,
+                                            tenant_id: req.auth.credentials.tenantId,
                                             player_id: payload.id,
                                             metadata: JSON.stringify({
                                                 version: 1,
@@ -78,7 +87,7 @@ module.exports = {
                                     throw Boom.internal(new Error(`Failed to insert course (${payload.id}): ${ex}`));
                                 }
 
-                                return db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where("id", insertResult);
+                                return db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: insertResult});
                             }
                         }
                     }
@@ -88,7 +97,7 @@ module.exports = {
                     method: "GET",
                     path: "/courses",
                     handler: async (req, h) => ({
-                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("courses")
+                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("courses").where({tenantId: req.auth.credentials.tenantId})
                     })
                 },
 
@@ -96,7 +105,7 @@ module.exports = {
                     method: "GET",
                     path: "/courses/{id}",
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where("id", req.params.id);
+                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                         if (! result) {
                             return Boom.notFound();
@@ -115,7 +124,7 @@ module.exports = {
                             xforward: true,
 
                             mapUri: async (req) => {
-                                const result = await req.server.app.db.first("playerId").from("courses").where("id", req.params.id);
+                                const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
                                 return {
                                     uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`
@@ -139,7 +148,7 @@ module.exports = {
 
                                 let deleteResult;
                                 try {
-                                    deleteResult = await db("courses").where("id", req.params.id).delete();
+                                    deleteResult = await db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
                                 }
                                 catch (ex) {
                                     throw new Error(ex);
@@ -155,7 +164,7 @@ module.exports = {
                     method: "GET",
                     path: "/courses/{id}/tests",
                     handler: async (req, h) => ({
-                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("registrations").where({courseId: req.params.id})
+                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("registrations").where({tenantId: req.auth.credentials.tenantId, courseId: req.params.id})
                     })
                 }
             ]

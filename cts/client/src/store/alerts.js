@@ -15,10 +15,15 @@
 */
 import Vue from "vue";
 
+const initialState = () => ({
+    cacheContainer: {},
+});
+
 export default {
     namespaced: true,
     state: {
-        cacheContainer: {}
+        initialState,
+        ...initialState()
     },
     getters: {
         list: (state) => (kind) => {

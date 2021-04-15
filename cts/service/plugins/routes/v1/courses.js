@@ -28,6 +28,10 @@ module.exports = {
                     method: "POST",
                     path: "/courses",
                     options: {
+                        // arbitrarily chosen large number (480 MB)
+                        payload: {
+                            maxBytes: 1024 * 1024 * 480,
+                        },
                         pre: [
                             async (req, h) => {
                                 req.headers.authorization = await req.server.methods.playerAuthHeader(req);

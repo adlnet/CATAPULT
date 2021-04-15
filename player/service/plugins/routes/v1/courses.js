@@ -186,6 +186,8 @@ module.exports = {
                     path: "/course",
                     options: {
                         payload: {
+                            // arbitrarily chosen large number (480 MB)
+                            maxBytes: 1024 * 1024 * 480,
                             allow: [
                                 "application/zip",
                                 "application/xml"

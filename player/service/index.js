@@ -18,6 +18,7 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
+    Vision = require("@hapi/vision"),
     AuthBasic = require("@hapi/basic"),
     Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
@@ -86,6 +87,22 @@ const provision = async () => {
     await server.register(H2o2);
     await server.register(Inert);
     await server.register(AuthBasic);
+
+    await server.register(
+        [
+            Vision,
+            {
+                plugin: require("hapi-swagger"),
+                options: {
+                    basePath: "/api/v1",
+                    pathPrefixSize: 3,
+                    info: {
+                        title: "Catapult Player API"
+                    }
+                }
+            }
+        ]
+    );
 
     server.method(
         "basicAuthValidate",

@@ -22,6 +22,9 @@ module.exports = {
             {
                 method: "GET",
                 path: "/ping",
+                options: {
+                    tags: ["api"]
+                },
                 handler: (req, h) => ({
                     ok: true
                 })
@@ -29,6 +32,9 @@ module.exports = {
             {
                 method: "GET",
                 path: "/about",
+                options: {
+                    tags: ["api"]
+                },
                 handler: (req, h) => ({
                     description: "catapult-cts-service"
                 })

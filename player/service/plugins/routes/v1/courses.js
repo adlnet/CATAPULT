@@ -193,7 +193,8 @@ module.exports = {
                                 "application/xml"
                             ],
                             output: "file"
-                        }
+                        },
+                        tags: ["api"]
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
@@ -298,6 +299,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/course/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
@@ -312,6 +316,9 @@ module.exports = {
                 {
                     method: "DELETE",
                     path: "/course/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         try {
                             const deleteResult = await req.server.app.db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
@@ -328,7 +335,10 @@ module.exports = {
 
                 {
                     method: "POST",
-                    path: "/courses/{id}/launch-url/{auIndex}",
+                    path: "/course/{id}/launch-url/{auIndex}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
                         const db = req.server.app.db,

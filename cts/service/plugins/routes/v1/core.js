@@ -41,7 +41,8 @@ module.exports = {
                     options: {
                         auth: {
                             mode: "try"
-                        }
+                        },
+                        tags: ["api"]
                     },
                     handler: async (req, h) => {
                         if (! req.auth.isAuthenticated) {
@@ -69,7 +70,8 @@ module.exports = {
                     method: "POST",
                     path: "/login",
                     options: {
-                        auth: false
+                        auth: false,
+                        tags: ["api"]
                     },
                     handler: async (req, h) => {
                         let user;
@@ -100,7 +102,8 @@ module.exports = {
                     method: "GET",
                     path: "/logout",
                     options: {
-                        auth: false
+                        auth: false,
+                        tags: ["api"]
                     },
                     handler: async (req, h) => {
                         req.cookieAuth.clear();

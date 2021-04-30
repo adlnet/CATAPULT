@@ -28,6 +28,8 @@ module.exports = {
                     method: "POST",
                     path: "/courses",
                     options: {
+                        tags: ["api"],
+
                         // arbitrarily chosen large number (480 MB)
                         payload: {
                             maxBytes: 1024 * 1024 * 480,
@@ -100,6 +102,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/courses",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => ({
                         items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("courses").where({tenantId: req.auth.credentials.tenantId})
                     })
@@ -108,6 +113,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/courses/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
@@ -122,6 +130,9 @@ module.exports = {
                 {
                     method: "DELETE",
                     path: "/courses/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: {
                         proxy: {
                             passThrough: true,
@@ -167,6 +178,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/courses/{id}/tests",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => ({
                         items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("registrations").where({tenantId: req.auth.credentials.tenantId, courseId: req.params.id})
                     })

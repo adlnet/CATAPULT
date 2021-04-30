@@ -29,6 +29,9 @@ module.exports = {
                 {
                     method: "POST",
                     path: "/registration",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             code = uuidv4();
@@ -56,6 +59,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/registration/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("registrations").where("id", req.params.id);
 
@@ -70,6 +76,9 @@ module.exports = {
                 {
                     method: "DELETE",
                     path: "/registration/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const deleteResult = await req.server.app.db("registrations").where("id", req.params.id).delete();
 

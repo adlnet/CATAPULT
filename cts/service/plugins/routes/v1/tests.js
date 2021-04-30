@@ -31,6 +31,9 @@ module.exports = {
                 {
                     method: "POST",
                     path: "/tests",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const db = req.server.app.db;
 
@@ -105,6 +108,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/tests/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
@@ -119,6 +125,9 @@ module.exports = {
                 {
                     method: "DELETE",
                     path: "/tests/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: {
                         proxy: {
                             passThrough: true,

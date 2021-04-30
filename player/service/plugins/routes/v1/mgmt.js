@@ -23,6 +23,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/ping",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: (req, h) => ({
                         ok: true
                     })
@@ -30,6 +33,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/about",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: (req, h) => ({
                         tenantId: req.auth.credentials.tenantId,
                         description: "catapult-player-service"

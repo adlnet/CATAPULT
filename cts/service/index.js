@@ -18,6 +18,7 @@
 const Hapi = require("@hapi/hapi"),
     H2o2 = require("@hapi/h2o2"),
     Inert = require("@hapi/inert"),
+    Vision = require("@hapi/vision"),
     AuthBasic = require("@hapi/basic"),
     AuthCookie = require("@hapi/cookie"),
     Bcrypt = require("bcrypt"),
@@ -84,6 +85,22 @@ const provision = async () => {
     await server.register(Inert);
     await server.register(AuthBasic);
     await server.register(AuthCookie);
+
+    await server.register(
+        [
+            Vision,
+            {
+                plugin: require("hapi-swagger"),
+                options: {
+                    basePath: "/api/v1",
+                    pathPrefixSize: 3,
+                    info: {
+                        title: "Catapult CTS API"
+                    }
+                }
+            }
+        ]
+    );
 
     server.method(
         "getCredentials",

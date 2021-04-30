@@ -51,6 +51,9 @@ module.exports = {
                 {
                     method: "POST",
                     path: "/sessions",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             baseUrl = `${req.url.protocol}//${req.url.host}`;
@@ -79,7 +82,7 @@ module.exports = {
                         try {
                             createResponse = await Wreck.request(
                                 "POST",
-                                `${req.server.app.player.baseUrl}/api/v1/courses/${queryResult.courses.player_id}/launch-url/${req.payload.auIndex}`,
+                                `${req.server.app.player.baseUrl}/api/v1/course/${queryResult.courses.player_id}/launch-url/${req.payload.auIndex}`,
                                 {
                                     headers: {
                                         Authorization: await req.server.methods.playerAuthHeader(req)
@@ -147,6 +150,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/sessions/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
@@ -161,6 +167,9 @@ module.exports = {
                 {
                     method: "DELETE",
                     path: "/sessions/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: {
                         proxy: {
                             passThrough: true,
@@ -204,6 +213,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/sessions/{id}/return-url",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
 
@@ -220,6 +232,9 @@ module.exports = {
                 {
                     method: "GET",
                     path: "/sessions/{id}/events",
+                    options: {
+                        tags: ["api"]
+                    },
                     handler: async (req, h) => {
                         const channel = new stream.PassThrough,
                             response = h.response(channel);
@@ -249,6 +264,12 @@ module.exports = {
                 {
                     method: "POST",
                     path: "/sessions/{id}/fetch",
+                    options: {
+                        tags: ["api"],
+
+                        // turn off auth because this is effectively an auth request
+                        auth: false
+                    },
                     handler: async (req, h) => {
                         try {
                             let session;
@@ -290,10 +311,6 @@ module.exports = {
                                 }
                             ).code(400);
                         }
-                    },
-                    options: {
-                        // turn off auth because this is effectively an auth request
-                        auth: false
                     }
                 },
 

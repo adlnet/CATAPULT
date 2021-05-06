@@ -198,7 +198,7 @@ module.exports = {
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
-                            lmsId = `http://catapult/${uuidv4()}`,
+                            lmsId = `https://w3id.org/xapi/cmi5/catapult/player/course/${uuidv4()}`,
                             contentType = req.headers["content-type"],
                             xmlParser = new xml2js.Parser(
                                 {
@@ -359,7 +359,7 @@ module.exports = {
 
                         if (regCode) {
                             // load registration record and validate details match
-                            reg = await db.first("*").from("registrations").where(
+                            reg = await db.first("*").queryContext({jsonCols: ["actor"]}).from("registrations").where(
                                 {
                                     tenantId,
                                     code: regCode,
@@ -374,8 +374,8 @@ module.exports = {
                             reg = {
                                 code: uuidv4(),
                                 tenant_id: tenantId,
-                                course_id: req.payload.courseId,
-                                actor: req.payload.actor
+                                course_id: req.params.id,
+                                actor: JSON.stringify(req.payload.actor)
                             };
 
                             let insertResult;
@@ -384,6 +384,7 @@ module.exports = {
                                 insertResult = await db.insert(reg).into("registrations");
 
                                 reg.id = insertResult;
+                                reg.actor = JSON.parse(reg.actor);
                             }
                             catch (ex) {
                                 throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
@@ -391,7 +392,7 @@ module.exports = {
                         }
 
                         const actor = reg.actor,
-                            lmsActivityId = course.lmsId,
+                            lmsActivityId = `${course.lmsId}/au/${uuidv4()}`,
                             publisherActivityId = course.structure.course.id,
                             launchMode = "Normal",
                             launchMethod = "AnyWindow",
@@ -439,9 +440,9 @@ module.exports = {
                             const lmsLaunchDataStateParams = new URLSearchParams(
                                     {
                                         stateId: "LMS.LaunchData",
-                                        agent: actor,
+                                        agent: JSON.stringify(actor),
                                         activityId: lmsActivityId,
-                                        registration: regCode
+                                        registration: reg.code
                                     }
                                 ),
                                 lmsLaunchDataPayload = {
@@ -482,7 +483,7 @@ module.exports = {
                         try {
                             const launchedStContext = {
                                 ...contextTemplate,
-                                registration: regCode,
+                                registration: reg.code,
                                 extensions: {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId,
                                     "https://w3id.org/xapi/cmi5/context/extensions/launchmode": launchMode,
@@ -505,7 +506,7 @@ module.exports = {
                                         "Content-Type": "application/json"
                                     },
                                     payload: {
-                                        actor: JSON.parse(actor),
+                                        actor,
                                         verb: {
                                             id: "http://adlnet.gov/expapi/verbs/launched",
                                             display: {
@@ -552,9 +553,9 @@ module.exports = {
                             {
                                 endpoint,
                                 fetch: `${baseUrl}/fetch-url/${session.id}`,
-                                actor,
+                                actor: JSON.stringify(actor),
                                 activityId: lmsActivityId,
-                                registration: regCode
+                                registration: reg.code
                             }
                         );
 

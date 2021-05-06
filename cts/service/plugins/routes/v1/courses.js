@@ -131,7 +131,14 @@ module.exports = {
                     method: "DELETE",
                     path: "/courses/{id}",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        pre: [
+                            async (req, h) => {
+                                req.headers.authorization = await req.server.methods.playerAuthHeader(req);
+
+                                return null;
+                            }
+                        ]
                     },
                     handler: {
                         proxy: {

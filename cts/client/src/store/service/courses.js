@@ -239,15 +239,6 @@ export default {
 
                 state.cacheContainer
 
-                dispatch(
-                    "alert",
-                    {
-                        variant: "success",
-                        content: `Imported course. (${responseBody.id})`,
-                        kind
-                    }
-                );
-
                 return responseBody.id;
             }
             catch (ex) {

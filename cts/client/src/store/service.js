@@ -36,16 +36,6 @@ export default {
             }
 
             return fetch(`${getters.baseApiUrl}/api/v1/${resource}`, fetchCfg);
-        },
-        eventSource: (state, getters) => (resource) => {
-            const ev = new EventSource(
-                `${getters.baseApiUrl}/api/v1/${resource}`,
-                {
-                    withCredentials: true
-                }
-            );
-
-            return ev;
         }
     },
     modules: {

@@ -18,9 +18,16 @@
 const stream = require("stream"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
-    { v4: uuidv4 } = require("uuid");
+    { v4: uuidv4 } = require("uuid"),
+    sessions = {},
+    getClientSafeSession = (session) => {
+        delete session.playerId;
+        delete session.playerAuLaunchUrl;
+        delete session.playerEndpoint;
+        delete session.playerFetch;
 
-const sessions = {};
+        return session;
+    };
 
 module.exports = {
     name: "catapult-cts-api-routes-v1-sessions",
@@ -28,16 +35,19 @@ module.exports = {
         server.decorate(
             "toolkit",
             "sessionEvent",
-            (sessionId, event, rawData) => {
+            async (sessionId, tenantId, db, rawData) => {
+                if (rawData.kind !== "control") {
+                    await db.insert(
+                        {
+                            tenantId,
+                            sessionId,
+                            metadata: JSON.stringify(rawData)
+                        }
+                    ).into("sessions_logs");
+                }
+
                 if (sessions[sessionId]) {
-                    const data = JSON.stringify(rawData);
-
-                    if (event) {
-                        sessions[sessionId].write(`event: ${event}\n`);
-                    }
-
-                    sessions[sessionId].write(`data: ${data}\n`);
-                    sessions[sessionId].write("\n");
+                    sessions[sessionId].write(JSON.stringify(rawData) + "\n");
                 }
             }
         );
@@ -56,6 +66,7 @@ module.exports = {
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
+                            tenantId = req.auth.credentials.tenantId,
                             baseUrl = `${req.url.protocol}//${req.url.host}`;
 
                         let queryResult;
@@ -65,7 +76,7 @@ module.exports = {
                                 .first("*")
                                 .from("registrations")
                                 .leftJoin("courses", "registrations.course_id", "courses.id")
-                                .where({"registrations.tenantId": req.auth.credentials.tenantId, "registrations.id": req.payload.testId})
+                                .where({"registrations.tenantId": tenantId, "registrations.id": req.payload.testId})
                                 .options({nestTables: true});
                         }
                         catch (ex) {
@@ -113,7 +124,7 @@ module.exports = {
                         try {
                             sessionId = await db.insert(
                                 {
-                                    tenant_id: req.auth.credentials.tenantId,
+                                    tenant_id: tenantId,
                                     player_id: createResponseBody.id,
                                     registration_id: req.payload.testId,
                                     player_au_launch_url: playerAuLaunchUrl,
@@ -134,16 +145,11 @@ module.exports = {
                         playerAuLaunchUrlParsed.searchParams.set("fetch", `${baseUrl}/api/v1/sessions/${sessionId}/fetch`);
 
                         const ctsLaunchUrl = playerAuLaunchUrlParsed.href;
-                        const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.id, id: sessionId});
-
-                        delete result.playerId;
-                        delete result.playerAuLaunchUrl;
-                        delete result.playerEndpoint;
-                        delete result.playerFetch;
+                        const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId, id: sessionId});
 
                         result.launchUrl = ctsLaunchUrl;
 
-                        return result;
+                        return getClientSafeSession(result);
                     }
                 },
 
@@ -160,7 +166,7 @@ module.exports = {
                             return Boom.notFound();
                         }
 
-                        return result;
+                        return getClientSafeSession(result);
                     }
                 },
 
@@ -217,13 +223,15 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
+                        const tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId, id: req.params.id});
 
                         if (! result) {
                             return Boom.notFound();
                         }
 
-                        h.sessionEvent(req.params.id, null, {kind: "spec", resource: "returnURL loaded"});
+                        h.sessionEvent(req.params.id, tenantId, db, {kind: "spec", resource: "returnURL loaded"});
 
                         return "<html><body>Session has ended, use &quot;Close&quot; button to return to test details page.</body></html>";
                     }
@@ -236,22 +244,30 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const channel = new stream.PassThrough,
+                        const tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            result = await db.first("id").from("sessions").where({tenantId, id: req.params.id});
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
+                        const logs = await db.select("*").from("sessions_logs").where({tenantId, sessionId: result.id}).orderBy("created_at"),
+                            channel = new stream.PassThrough,
                             response = h.response(channel);
 
                         sessions[req.params.id] = channel;
 
-                        response.header("Content-Type", "text/event-stream");
-                        response.header("Connection", "keep-alive");
-                        response.header("Content-Encoding", "identity");
-                        response.header("Cache-Control", "no-cache");
+                        h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "initialize"});
 
-                        h.sessionEvent(req.params.id, "control", {kind: "initialize"});
+                        for (const log of logs) {
+                            channel.write(log.metadata + "\n");
+                        }
 
                         req.raw.req.on(
                             "close",
                             () => {
-                                h.sessionEvent(req.params.id, "control", {kind: "end"});
+                                h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "end"});
 
                                 delete sessions[req.params.id];
                             }
@@ -271,11 +287,13 @@ module.exports = {
                         auth: false
                     },
                     handler: async (req, h) => {
+                        const db = req.server.app.db;
+
                         try {
                             let session;
 
                             try {
-                                session = await req.server.app.db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({id: req.params.id});
+                                session = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({id: req.params.id});
                             }
                             catch (ex) {
                                 throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
@@ -299,7 +317,7 @@ module.exports = {
                                 throw Boom.internal(new Error(`Failed to request fetch url from player: ${ex}`));
                             }
 
-                            h.sessionEvent(req.params.id, null, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode});
+                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode});
 
                             return h.response(fetchResponseBody).code(fetchResponse.statusCode);
                         }
@@ -344,10 +362,11 @@ module.exports = {
                         //
                         pre: [
                             async (req, h) => {
+                                const db = req.server.app.db;
                                 let session;
 
                                 try {
-                                    session = await req.server.app.db.first("*").from("sessions").where({id: req.params.id});
+                                    session = await db.first("*").from("sessions").where({id: req.params.id});
                                 }
                                 catch (ex) {
                                     throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
@@ -358,7 +377,7 @@ module.exports = {
                                 }
 
                                 if (req.method !== "options") {
-                                    h.sessionEvent(req.params.id, null, {kind: "lrs", method: req.method, resource: req.params.resource});
+                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource});
                                 }
 
                                 return null;

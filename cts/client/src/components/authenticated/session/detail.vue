@@ -29,7 +29,10 @@
                 </template>
                 <b-row class="flex-fill">
                     <b-col cols="8" class="d-flex flex-column">
-                        <iframe :src="model.item.launchUrl" class="flex-fill"></iframe>
+                        <iframe v-if="model.item.launchUrl" :src="model.item.launchUrl" class="flex-fill"></iframe>
+                        <p v-else>
+                            Session appears to be closed, providing session details but no launch.
+                        </p>
                     </b-col>
                     <b-col cols="4" class="d-flex flex-column">
                         <h5>Event Log</h5>
@@ -52,9 +55,10 @@
 </template>
 
 <script>
+    /* globals TextDecoderStream, TransformStream */
     import alerts from "@/components/alerts";
 
-    let eventSource;
+    let stream;
 
     export default {
         name: "SessionDetail",
@@ -94,37 +98,69 @@
                 return result;
             }
         },
-        created () {
+        async created () {
             const self = this;
 
-            this.$store.dispatch("service/sessions/loadById", {id: this.id});
+            await this.$store.dispatch("service/sessions/loadById", {id: this.id});
 
-            eventSource = this.$store.getters["service/eventSource"](`sessions/${this.id}/events`);
+            const response = await this.$store.getters["service/makeApiRequest"](`sessions/${this.id}/events`);
 
-            eventSource.addEventListener(
-                "control",
-                (event) => {
-                    const data = JSON.parse(event.data);
+            stream = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(
+                //
+                // this stream takes the text stream as input, splits the text on \n
+                // and then JSON parses the lines, providing each chunk of JSON to
+                // the next handler in the chain
+                //
+                new TransformStream(
+                    {
+                        start (controller) {
+                            controller.buf = "";
+                            controller.pos = 0;
+                        },
+                        transform (chunk, controller) {
+                            controller.buf += chunk;
 
-                    self.events.unshift(`control: ${JSON.stringify(data)}`);
-                }
+                            while (controller.pos < controller.buf.length) {
+                                if (controller.buf[controller.pos] === "\n") {
+                                    const line = controller.buf.substring(0, controller.pos);
+
+                                    controller.enqueue(JSON.parse(line));
+
+                                    controller.buf = controller.buf.substring(controller.pos + 1);
+                                    controller.pos = 0;
+                                }
+                                else {
+                                    ++controller.pos;
+                                }
+                            }
+                        }
+                    }
+                )
             );
 
-            eventSource.onmessage = (event) => {
-                const data = JSON.parse(event.data);
+            const reader = stream.getReader();
 
-                self.events.unshift(JSON.stringify(data));
-            };
-            eventSource.onopen = () => {
-                self.listening = true;
-            };
-            eventSource.onclose = () => {
-                self.listening = false;
-            };
+            self.listening = true;
+
+            while (true) { // eslint-disable-line no-constant-condition
+                try {
+                    const { done, value} = await reader.read();
+
+                    self.events.unshift(JSON.stringify(value));
+
+                    if (done) {
+                        self.listening = false;
+                        break;
+                    }
+                }
+                catch (ex) {
+                    self.listening = false;
+                    break;
+                }
+            }
         },
         methods: {
             closeAU () {
-                eventSource.close();
 
                 this.$router.push(`/tests/${this.model.item.registrationId}`);
             },

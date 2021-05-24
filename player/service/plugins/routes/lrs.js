@@ -15,8 +15,56 @@
 */
 "use strict";
 
-const Wreck = require("@hapi/wreck");
+const Wreck = require("@hapi/wreck"),
+    Hoek = require("@hapi/hoek"),
+    beforeLRSRequest = (req, h) => {
+        let method = req.method;
 
+        if (method === "POST" && typeof req.query.method !== "undefined") {
+            method = req.query.method;
+        }
+
+        const resource = req.params.resource;
+
+        if (resource === "statements") {
+        }
+        else if (resource === "activities/state") {
+            if (req.query.stateId === "LMS.LaunchData") {
+                if (req.method === "DELETE") {
+                }
+                else if (req.method === "GET") {
+                }
+                else {
+                }
+            }
+        }
+        else if (resource === "agents/profile") {
+            if (req.query.profileId === "LMS.LaunchData") {
+                if (req.method === "DELETE") {
+                }
+                else if (req.method === "GET") {
+                }
+                else {
+                }
+            }
+        }
+    },
+    afterLRSRequest = (res, req, h) => {
+        const method = req.method,
+            resource = req.params.resource;
+
+        if (req.params.resource === "statements") {
+            if (req.method === "post" && res.statusCode === 200) {
+            }
+            else if (req.method === "put" && res.statusCode === 204) {
+            }
+        }
+    };
+
+//
+// all requests here are neceesarily made by the AU because any LMS
+// based requests are being made by this player
+//
 module.exports = {
     name: "catapult-player-api-routes-lrs",
     register: (server, options) => {
@@ -25,8 +73,8 @@ module.exports = {
             "basic",
             {
                 allowEmptyUsername: true,
-                validate: async (request, key, secret) => {
-                    const session = await request.server.app.db.first("*").from("sessions").where({launch_token_id: secret});
+                validate: async (req, key, secret) => {
+                    const session = await req.server.app.db.first("*").from("sessions").where({launch_token_id: secret});
                     if (! session) {
                         return {isValid: false, credentials: null};
                     }
@@ -95,84 +143,62 @@ module.exports = {
                     // this just needs to pass them through, enabling CORS for this route means they get
                     // overwritten by the Hapi handling
                     //
-                    cors: false,
-
-                    //
-                    // set up a pre-request handler to handle any cmi5 requirements validation before
-                    // proxying the request to the underlying LRS
-                    //
-                    pre: [
-                        (req, h) => {
-
-                            //
-                            // switch the authorization credential from the player session based value
-                            // to the general credential we have for the underlying LRS
-                            //
-                            if (typeof req.headers.authorization !== "undefined") {
-                                req.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
-                            }
-
-                            return null;
-                        }
-                    ]
+                    cors: false
                 },
-                handler: {
-                    proxy: {
-                        passThrough: true,
-                        xforward: true,
+                //
+                // not using h2o2 to proxy these resources because there needs to be validation
+                // of the incoming payload which means it needs to be loaded into memory and parsed,
+                // etc. which h2o2 won't do with proxied requests because of the performance overhead
+                // so this code is nearly the same as what the handler for h2o2 does, but with fewer
+                // settings that weren't being used anyways
+                //
+                handler: async (req, h) => {
+                    beforeLRSRequest(req, h);
 
-                        //
-                        // map the requested resource (i.e. "statements" or "activities/state") from the
-                        // provided LRS endpoint to the resource at the underlying LRS endpoint, while
-                        // maintaining any query string parameters
-                        //
-                        mapUri: (req) => ({
-                            uri: `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`
-                        }),
+                    const uri = `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`,
+                        protocol = uri.split(":", 1)[0],
+                        options = {
+                            headers: Hoek.clone(req.headers),
+                            payload: req.payload
+                        };
 
-                        //
-                        // hook into the response provided back from the LRS to capture details such as
-                        // the status code, error messages, etc.
-                        //
-                        onResponse: async (err, res, req, h, settings) => {
-                            console.log(`h2o2.onResponse - request: ${req.method} ${req.params.resource}`);
-                            const resource = req.params.resource;
+                    delete options.headers.host;
+                    delete options.headers["content-length"];
 
-                            if (err !== null) {
-                                // TODO: handle internal errors
-                                console.log(`h2o2.onResponse - err: ${err}`);
-                                throw new Error(err);
-                            }
+                    //
+                    // switch the authorization credential from the player session based value
+                    // to the general credential we have for the underlying LRS
+                    //
+                    if (typeof req.headers.authorization !== "undefined") {
+                        options.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
+                    }
 
-                            console.log(`h2o2.onResponse - statusCode: ${res.statusCode}, statusMessage: '${res.statusMessage}', httpVersion: ${res.httpVersion}`);
+                    if (req.info.remotePort) {
+                        options.headers["x-forwarded-for"] = (options.headers["x-forwarded-for"] ? options.headers["x-forwarded-for"] + "," : "") + req.info.remoteAddress;
+                        options.headers["x-forwarded-port"] = options.headers["x-forwarded-port"] || req.info.remotePort;
+                        options.headers["x-forwarded-proto"] = options.headers["x-forwarded-proto"] || req.server.info.protocol;
+                        options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
+                    }
 
-                            const payload = await Wreck.read(res),
-                                response = h.response(payload);
+                    const res = await Wreck.request(req.method, uri, options),
+                        payload = await Wreck.read(res),
+                        response = h.response(payload).passThrough(true);
 
-                            response.code(res.statusCode);
-                            response.message(res.statusMessage);
+                    response.code(res.statusCode);
+                    response.message(res.statusMessage);
 
-                            for (const [k, v] of Object.entries(res.headers)) {
-                                if (k.toLowerCase() !== "transfer-encoding") {
-                                    response.header(k, v);
-                                }
-                            }
-
-                            // clean up the original response
-                            res.destroy();
-
-                            if (resource === "statements") {
-                                if (req.method === "post" && res.statusCode === 200) {
-                                    console.log("h2o2.onResponse - statement(s) stored", payload.toString());
-                                }
-                                else if (req.method === "put" && res.statusCode === 204) {
-                                    console.log("h2o2.onResponse - statement(s) stored (no content, would need id from request)");
-                                }
-                            }
-
-                            return response;
+                    for (const [k, v] of Object.entries(res.headers)) {
+                        if (k.toLowerCase() !== "transfer-encoding") {
+                            response.header(k, v);
                         }
                     }
+
+                    // clean up the original response
+                    res.destroy();
+
+                    afterLRSRequest(res, req, h);
+
+                    return response;
                 }
             }
         );

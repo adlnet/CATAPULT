@@ -18,6 +18,7 @@
     "@hapi/boom": "^9.1.1",
     "@hapi/h2o2": "^9.0.2",
     "@hapi/hapi": "^20.0.3",
+    "@hapi/hoek": "^9.2.0",
     "@hapi/inert": "^6.0.3",
     "@hapi/vision": "^6.0.1",
     "@hapi/wreck": "^17.1.0",

@@ -19,79 +19,73 @@ const fs = require("fs"),
     util = require("util"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
-    xml2js = require("xml2js"),
+    libxml = require("libxmljs"),
     StreamZip = require("node-stream-zip"),
     { v4: uuidv4 } = require("uuid"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
+    schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
+    schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
     validateAU = (element) => {
         const result = {
-            type: "au",
-            id: element.$.id
-        };
+                type: "au",
+                id: element.attr("id").value()
+            },
+            auTitle = element.get("xmlns:title", schemaNS),
+            auDesc = element.get("xmlns:description", schemaNS);
 
-        if (element.title && element.title.length > 0) {
-            result.title = element.title[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
-        if (element.description && element.description.length > 0) {
-            result.description = element.description[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
-        if (element.url && element.url.length > 0) {
-            result.url = element.url;
-        }
-        else {
-            throw new Error("Invalid AU: 'url' missing or zero length");
-        }
+        result.title = auTitle.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
+        result.description = auDesc.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
+
+        result.url = element.get("xmlns:url", schemaNS).text();
 
         return result;
     },
     validateBlock = (element) => {
         const result = {
-            type: "block",
-            id: element.$.id,
-            children: []
-        };
+                type: "block",
+                id: element.attr("id").value(),
+                children: []
+            },
+            blockTitle = element.get("xmlns:title", schemaNS),
+            blockDesc = element.get("xmlns:description", schemaNS);
 
-        if (element.title && element.title.length > 0) {
-            result.title = element.title[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
-        if (element.description && element.description.length > 0) {
-            result.description = element.description[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
+        result.title = blockTitle.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
+        result.description = blockDesc.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
 
-        for (const child of element.$$) {
-            if (child["#name"] === "au") {
+        for (const child of element.childNodes()) {
+            if (child.name() === "au") {
                 result.children.push(
                     validateAU(child)
                 );
             }
-            else if (child["#name"] === "block") {
+            else if (child.name() === "block") {
                 result.children.push(
                     validateBlock(child)
                 );
             }
-            else if (child["#name"] === "objectives") {
+            else if (child.name() === "objectives") {
             }
             else {
                 console.log("Unrecognized element: ", element);
@@ -100,60 +94,54 @@ const fs = require("fs"),
 
         return result;
     },
-    validateAndReduceStructure = (structure) => {
+    validateAndReduceStructure = (document) => {
         const result = {
-            course: {
-                type: "course",
-                children: [],
-                objectives: null
-            }
-        };
+                course: {
+                    type: "course",
+                    children: [],
+                    objectives: null
+                }
+            },
+            courseStructure = document.root(),
+            course = courseStructure.get("xmlns:course", schemaNS),
+            courseTitle = course.get("xmlns:title", schemaNS),
+            courseDesc = course.get("xmlns:description", schemaNS);
 
-        if (! structure.courseStructure) {
-            throw new Error(`No "courseStructure" element`);
-        }
+        result.course.id = course.attr("id").value();
 
-        const _course = structure.courseStructure.course[0];
+        result.course.title = courseTitle.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
+        result.course.description = courseDesc.childNodes().map(
+            (ls) => ({
+                lang: ls.attr("lang").value(),
+                text: ls.text()
+            })
+        );
 
-        result.course.id = _course.$.id;
-
-        if (_course.title && _course.title.length > 0) {
-            result.course.title = _course.title[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
-        if (_course.description && _course.description.length > 0) {
-            result.course.description = _course.description[0].langstring.map(
-                (ls) => ({
-                    lang: ls.$.lang,
-                    text: ls._
-                })
-            );
-        }
-
-        for (const element of structure.courseStructure.$$) {
+        for (const element of courseStructure.childNodes()) {
             // have already handled the course element
-            if (element["#name"] === "course") {
+            if (element.name() === "course") {
                 continue;
             }
             // objectives is a single static list
-            else if (element["#name"] === "objectives") {
+            else if (element.name() === "objectives") {
             }
-            else if (element["#name"] === "au") {
+            else if (element.name() === "au") {
                 result.course.children.push(
                     validateAU(element)
                 );
             }
-            else if (element["#name"] === "block") {
+            else if (element.name() === "block") {
                 result.course.children.push(
                     validateBlock(element)
                 );
             }
             else {
-                throw new Error(`Unrecognized element: ${element["#name"]}`);
+                throw new Error(`Unrecognized element: ${element.name()}`);
             }
         }
 
@@ -199,45 +187,61 @@ module.exports = {
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             lmsId = `https://w3id.org/xapi/cmi5/catapult/player/course/${uuidv4()}`,
-                            contentType = req.headers["content-type"],
-                            xmlParser = new xml2js.Parser(
-                                {
-                                    explicitChildren: true,
-                                    preserveChildrenOrder: true
-                                }
-                            );
+                            contentType = req.headers["content-type"];
 
-                        let structureAsXml,
+                        let courseStructureData,
                             zip;
 
                         try {
                             if (contentType === "application/zip") {
                                 zip = new StreamZip.async({file: req.payload.path});
 
-                                structureAsXml = await zip.entryData("cmi5.xml");
+                                courseStructureData = await zip.entryData("cmi5.xml");
                             }
                             else {
-                                structureAsXml = await readFile(req.payload.path);
+                                courseStructureData = await readFile(req.payload.path);
                             }
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to read structure file: ${ex}`);
                         }
 
+                        let courseStructureDocument;
+
+                        try {
+                            courseStructureDocument = libxml.parseXml(
+                                courseStructureData,
+                                {
+                                    noblanks: true,
+                                    noent: true,
+                                    nonet: true
+                                }
+                            );
+                        }
+                        catch (ex) {
+                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`);
+                        }
+
+                        let validationResult;
+
+                        try {
+                            validationResult = courseStructureDocument.validate(schema);
+                        }
+                        catch (ex) {
+                            throw Boom.internal(`Failed to validate structure against schema: ${ex}`);
+                        }
+
+                        if (! validationResult) {
+                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`);
+                        }
+
                         let structure;
 
                         try {
-                            structure = await xmlParser.parseStringPromise(structureAsXml);
+                            structure = validateAndReduceStructure(courseStructureDocument);
                         }
                         catch (ex) {
-                            throw Boom.badRequest(`Failed to parse XML: ${ex}`);
-                        }
-
-                        try {
-                            structure = validateAndReduceStructure(structure);
-                        }
-                        catch (ex) {
-                            throw Boom.badRequest(`Failed to validate course structure XML: ${ex}`);
+                            throw Boom.badRequest(`Failed to reduce course structure: ${ex}`);
                         }
 
                         let aus;

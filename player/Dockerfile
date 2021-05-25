@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:lts-alpine
-RUN apk add dumb-init
+FROM node:lts
+RUN apt-get update && apt-get install dumb-init
 ENV NODE_ENV production
 WORKDIR /usr/src/app
 COPY --chown=node:node entrypoint.sh /usr/src/app

@@ -15,12 +15,13 @@
 */
 "use strict";
 
-const Wreck = require("@hapi/wreck"),
+const Boom = require("@hapi/boom"),
+    Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
     beforeLRSRequest = (req, h) => {
         let method = req.method;
 
-        if (method === "POST" && typeof req.query.method !== "undefined") {
+        if (method === "post" && typeof req.query.method !== "undefined") {
             method = req.query.method;
         }
 
@@ -30,9 +31,10 @@ const Wreck = require("@hapi/wreck"),
         }
         else if (resource === "activities/state") {
             if (req.query.stateId === "LMS.LaunchData") {
-                if (req.method === "DELETE") {
+                if (req.method === "delete") {
+                    throw Boom.unauthorized(new Error(`10.2.1.0-5 - The AU MUST NOT modify or delete the "LMS.LaunchData" State document.`));
                 }
-                else if (req.method === "GET") {
+                else if (req.method === "get") {
                 }
                 else {
                 }
@@ -40,9 +42,9 @@ const Wreck = require("@hapi/wreck"),
         }
         else if (resource === "agents/profile") {
             if (req.query.profileId === "LMS.LaunchData") {
-                if (req.method === "DELETE") {
+                if (req.method === "delete") {
                 }
-                else if (req.method === "GET") {
+                else if (req.method === "get") {
                 }
                 else {
                 }
@@ -137,13 +139,7 @@ module.exports = {
                 path: "/lrs/{resource*}",
                 options: {
                     auth: "proxied-lrs",
-
-                    //
-                    // turn off CORS for this handler because the LRS will provide back the right headers
-                    // this just needs to pass them through, enabling CORS for this route means they get
-                    // overwritten by the Hapi handling
-                    //
-                    cors: false
+                    cors: true
                 },
                 //
                 // not using h2o2 to proxy these resources because there needs to be validation

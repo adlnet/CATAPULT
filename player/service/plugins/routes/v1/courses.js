@@ -21,19 +21,27 @@ const fs = require("fs"),
     Wreck = require("@hapi/wreck"),
     libxml = require("libxmljs"),
     StreamZip = require("node-stream-zip"),
+    iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
     schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
     schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
-    validateAU = (element) => {
+    validateIRI = (input) => {
+        const resolved = new iri.IRI(input).toAbsolute();
+
+        return true;
+    },
+    validateAU = (element, fromZip) => {
         const result = {
                 type: "au",
                 id: element.attr("id").value()
             },
             auTitle = element.get("xmlns:title", schemaNS),
             auDesc = element.get("xmlns:description", schemaNS);
+
+        validateIRI(result.id);
 
         result.title = auTitle.childNodes().map(
             (ls) => ({
@@ -50,6 +58,9 @@ const fs = require("fs"),
 
         result.url = element.get("xmlns:url", schemaNS).text();
 
+        if (! fromZip) {
+        }
+
         return result;
     },
     validateBlock = (element) => {
@@ -60,6 +71,8 @@ const fs = require("fs"),
             },
             blockTitle = element.get("xmlns:title", schemaNS),
             blockDesc = element.get("xmlns:description", schemaNS);
+
+        validateIRI(result.id);
 
         result.title = blockTitle.childNodes().map(
             (ls) => ({
@@ -87,14 +100,14 @@ const fs = require("fs"),
             }
             else if (child.name() === "objectives") {
             }
-            else {
-                console.log("Unrecognized element: ", element);
-            }
         }
 
         return result;
     },
-    validateAndReduceStructure = (document) => {
+    validateObjective = (element) => {
+        validateIRI(element.attr("id").value());
+    },
+    validateAndReduceStructure = (document, fromZip) => {
         const result = {
                 course: {
                     type: "course",
@@ -108,6 +121,8 @@ const fs = require("fs"),
             courseDesc = course.get("xmlns:description", schemaNS);
 
         result.course.id = course.attr("id").value();
+
+        validateIRI(result.course.id);
 
         result.course.title = courseTitle.childNodes().map(
             (ls) => ({
@@ -129,19 +144,26 @@ const fs = require("fs"),
             }
             // objectives is a single static list
             else if (element.name() === "objectives") {
+                for (const objElement of element.childNodes()) {
+                    if (objElement.name() === "objective") {
+                        validateObjective(objElement);
+                    }
+                }
             }
             else if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element)
+                    validateAU(element, fromZip)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element)
+                    validateBlock(element, fromZip)
                 );
             }
             else {
-                throw new Error(`Unrecognized element: ${element.name()}`);
+                // shouldn't need to handle unknown elements since the XSD
+                // checks should have caught them
+                // throw new Error(`Unrecognized element: ${element.name()}`);
             }
         }
 
@@ -178,7 +200,7 @@ module.exports = {
                             maxBytes: 1024 * 1024 * 480,
                             allow: [
                                 "application/zip",
-                                "application/xml"
+                                "text/xml"
                             ],
                             output: "file"
                         },
@@ -228,7 +250,7 @@ module.exports = {
                             validationResult = courseStructureDocument.validate(schema);
                         }
                         catch (ex) {
-                            throw Boom.internal(`Failed to validate structure against schema: ${ex}`);
+                            throw Boom.internal(`Failed to validate course structure against schema: ${ex}`);
                         }
 
                         if (! validationResult) {
@@ -238,10 +260,10 @@ module.exports = {
                         let structure;
 
                         try {
-                            structure = validateAndReduceStructure(courseStructureDocument);
+                            structure = validateAndReduceStructure(courseStructureDocument, zip ? true : false);
                         }
                         catch (ex) {
-                            throw Boom.badRequest(`Failed to reduce course structure: ${ex}`);
+                            throw Boom.badRequest(`Failed to validate course structure: ${ex}`);
                         }
 
                         let aus;

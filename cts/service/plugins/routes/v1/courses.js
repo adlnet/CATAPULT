@@ -70,7 +70,7 @@ module.exports = {
                                 res.destroy();
 
                                 if (res.statusCode !== 200) {
-                                    throw Boom.badRequest(new Error(`Player course import failed: ${payload.message}${payload.srcError}`), {statusCode: res.statusCode});
+                                    throw Boom.badRequest(new Error(`Player course import failed: ${payload.message} (${payload.srcError})`), {statusCode: res.statusCode});
                                 }
 
                                 const db = req.server.app.db;
@@ -147,6 +147,10 @@ module.exports = {
 
                             mapUri: async (req) => {
                                 const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
+
+                                if (! result) {
+                                    throw new Error(`Failed to retrieve player id for course: ${req.params.id}`);
+                                }
 
                                 return {
                                     uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`

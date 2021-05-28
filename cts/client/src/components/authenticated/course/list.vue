@@ -87,6 +87,11 @@
                 <template #cell(testResult)="data">
                     <test-status :status="data.value" />
                 </template>
+                <template #cell(createdAt)="data">
+                    <span v-if="data.value" v-b-popover.hover="data.value">
+                        {{ data.value | moment("from", "now") }}
+                    </span>
+                </template>
                 <template #cell(lastTested)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">
                         {{ data.value | moment("from", "now") }}
@@ -166,6 +171,12 @@
                 {
                     key: "testResult",
                     label: "Test Result",
+                    sortable: true,
+                    class: "text-nowrap px-4 align-middle"
+                },
+                {
+                    key: "createdAt",
+                    label: "Imported",
                     sortable: true,
                     class: "text-nowrap px-4 align-middle"
                 },

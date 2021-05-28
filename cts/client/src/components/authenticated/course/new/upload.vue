@@ -38,7 +38,7 @@
                     const id = await this.import(
                         {
                             body: this.file,
-                            contentType: "application/zip"
+                            contentType: this.file.type
                         }
                     );
 

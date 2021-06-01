@@ -74,6 +74,7 @@ module.exports = {
                         try {
                             queryResult = await db
                                 .first("*")
+                                .queryContext({jsonCols: ["registrations.metadata", "courses.metadata"]})
                                 .from("registrations")
                                 .leftJoin("courses", "registrations.course_id", "courses.id")
                                 .where({"registrations.tenantId": tenantId, "registrations.id": req.payload.testId})
@@ -101,7 +102,14 @@ module.exports = {
                                     payload: {
                                         reg: queryResult.registrations.code,
                                         actor: queryResult.registrations.metadata.actor,
-                                        returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`
+                                        returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`,
+                                        alternateEntitlementKey: req.payload.alternateEntitlementKey,
+                                        contextTemplateAdditions: req.payload.contextTemplateAdditions,
+                                        launchMethod: req.payload.launchMethod,
+                                        launchParameters: req.payload.launchParameters,
+                                        masteryScore: req.payload.masteryScore,
+                                        moveOn: req.payload.moveOn,
+                                        show: req.payload.show
                                     }
                                 }
                             );

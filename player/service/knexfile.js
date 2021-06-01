@@ -13,7 +13,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const waitPort = require("wait-port"),
+const Hoek = require("@hapi/hoek"),
+    waitPort = require("wait-port"),
     {
         MYSQL_HOST: HOST = "rdbms",
         MYSQL_HOST_FILE: HOST_FILE,
@@ -42,8 +43,17 @@ module.exports = async () => {
                     result = result.map(
                         (row) => {
                             for (const k of queryContext.jsonCols) {
+                                const parts = k.split(".");
+                                let match = row,
+                                    field = k;
+
+                                if (parts.length > 1) {
+                                    field = parts[parts.length - 1];
+                                    match = Hoek.reach(row, parts.slice(0, -1).join("."));
+                                }
+
                                 try {
-                                    row[k] = JSON.parse(row[k]);
+                                    match[field] = JSON.parse(match[field]);
                                 }
                                 catch (ex) {
                                     throw new Error(`Failed to parse JSON in key ('${k}' in '${row}'): ${ex}`);
@@ -56,8 +66,18 @@ module.exports = async () => {
                 }
                 else {
                     for (const k of queryContext.jsonCols) {
+                        const parts = k.split(".");
+
+                        let match = result,
+                            field = k;
+
+                        if (parts.length > 1) {
+                            field = parts[parts.length - 1];
+                            match = Hoek.reach(result, parts.slice(0, -1).join("."));
+                        }
+
                         try {
-                            result[k] = JSON.parse(result[k]);
+                            match[field] = JSON.parse(match[field]);
                         }
                         catch (ex) {
                             throw new Error(`Failed to parse JSON in key ('${k}' in '${result}'): ${ex}`);

@@ -19,7 +19,8 @@ const fs = require("fs"),
     util = require("util"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
-    { v4: uuidv4 } = require("uuid");
+    { v4: uuidv4 } = require("uuid"),
+    Registration = require("./lib/registration");
 
 module.exports = {
     name: "catapult-player-api-routes-v1-registrations",
@@ -34,25 +35,16 @@ module.exports = {
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
-                            code = uuidv4();
-
-                        let insertResult;
-
-                        try {
-                            insertResult = await db.insert(
+                            registrationId = await Registration.create(
                                 {
-                                    tenant_id: 1,
-                                    code,
-                                    course_id: req.payload.courseId,
-                                    actor: JSON.stringify(req.payload.actor)
-                                }
-                            ).into("registrations");
-                        }
-                        catch (ex) {
-                            throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
-                        }
+                                    tenantId: req.auth.credentials.tenantId,
+                                    courseId: req.payload.courseId,
+                                    actor: req.payload.actor
+                                },
+                                {db}
+                            );
 
-                        return db.first("*").from("registrations").where("id", insertResult);
+                        return db.first("*").from("registrations").where("id", registrationId);
                     }
                 },
 
@@ -63,7 +55,7 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("registrations").where("id", req.params.id);
+                        const result = await Registration.load({tenantId: req.auth.credentials.tenantId, registrationId: req.params.id}, {db: req.server.app.db});
 
                         if (! result) {
                             return Boom.notFound();
@@ -80,7 +72,8 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const deleteResult = await req.server.app.db("registrations").where("id", req.params.id).delete();
+                        const tenantId = req.auth.credentials.tenantId,
+                            deleteResult = await req.server.app.db("registrations").where({tenantId, "id": req.params.id}).delete();
 
                         return null;
                     }

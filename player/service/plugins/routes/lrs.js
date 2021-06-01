@@ -18,6 +18,14 @@
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
+    CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
+
+    VERB_INITIALIZED_ID = "http://adlnet.gov/expapi/verbs/initialized",
+    VERB_TERMINATED_ID = "http://adlnet.gov/expapi/verbs/terminated",
+    VERB_COMPLETED_ID = "http://adlnet.gov/expapi/verbs/completed",
+    VERB_PASSED_ID = "http://adlnet.gov/expapi/verbs/passed",
+    VERB_FAILED_ID = "http://adlnet.gov/expapi/verbs/failed",
+
     beforeLRSRequest = (req, h) => {
         let method = req.method;
 
@@ -28,38 +36,104 @@ const Boom = require("@hapi/boom"),
         const resource = req.params.resource;
 
         if (resource === "statements") {
-        }
-        else if (resource === "activities/state") {
-            if (req.query.stateId === "LMS.LaunchData") {
-                if (req.method === "delete") {
-                    throw Boom.unauthorized(new Error(`10.2.1.0-5 - The AU MUST NOT modify or delete the "LMS.LaunchData" State document.`));
+            const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
+
+            for (const st of statements) {
+                // all statements have to have the actor, the context based on the template,
+                // timestamp, id, etc.
+                if (typeof st.id === "undefined") {
+                    throw Boom.unauthorized(new Error("9.1.0.0-1 - The AU MUST assign a statement id property in UUID format (as defined in the xAPI specification) for all statements it issues."));
                 }
-                else if (req.method === "get") {
+
+                // throw Boom.unauthorized(new Error(` (${st.id})`));
+
+                const timestampDate = new Date(st.timestamp);
+
+                if (timestampDate.getTimezoneOffset() !== 0) {
+                    throw Boom.unauthorized(new Error(`9.7.0.0-2 - All timestamps MUST be recorded in UTC time. (${st.id})`));
+                }
+
+                if (! st.context || ! st.context.contextActivities) {
+                    throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
+                }
+                if (! st.context.registration) {
+                    throw Boom.unauthorized(new Error(` (${st.id})`));
+                }
+
+                if (st.context.contextActivities
+                    && st.context.contextActivities.category
+                    && Array.isArray(st.context.contextActivities.category)
+                    && st.context.contextActivities.category.some((element) => element.id === CMI5_DEFINED_ID)
+                ) {
+                    if (typeof st.actor === "undefined" || typeof st.actor.objectType === "undefined" || typeof st.actor.objectType !== "Agent") {
+                        throw Boom.unauthorized(new Error(`9.2.0.0-2 - The Actor property for all "cmi5 defined" statements MUST be of objectType "Agent". (${st.id})`));
+                    }
+                    if (typeof st.actor.account === "undefined" || typeof st.actor.account.name === "undefined" || typeof st.actor.account.homePage === "undefined") {
+                        throw Boom.unauthorized(new Error(`9.2.0.0-3 - The Actor property MUST contain an "account" IFI as defined in the xAPI specification. (${st.id})`));
+                    }
+                    if (typeof st.object === "undefined" || st.object.id !== "") {
+                        throw Boom.unauthorized(new Error(` (${st.id})`));
+                    }
+
+                    const verbId = st.verb.id;
+
+                    switch (verbId) {
+                        case VERB_INITIALIZED_ID:
+                            console.log(VERB_INITIALIZED_ID);
+                            break;
+
+                        case VERB_TERMINATED_ID:
+                            console.log(VERB_TERMINATED_ID);
+                            break;
+
+                        case VERB_COMPLETED_ID:
+                            console.log(VERB_COMPLETED_ID);
+                            break;
+
+                        case VERB_PASSED_ID:
+                            console.log(VERB_PASSED_ID);
+                            break;
+
+                        case VERB_FAILED_ID:
+                            console.log(VERB_FAILED_ID);
+                            break;
+                    }
                 }
                 else {
+                    console.log("cmi5 allowed statement", st);
                 }
             }
         }
+        else if (resource === "activities/state") {
+            if (req.query.stateId === "LMS.LaunchData" && method !== "get") {
+                throw Boom.unauthorized(new Error(`10.2.1.0-5 - The AU MUST NOT modify or delete the "LMS.LaunchData" State document. (${method}`));
+            }
+        }
         else if (resource === "agents/profile") {
-            if (req.query.profileId === "LMS.LaunchData") {
-                if (req.method === "delete") {
+            if (req.query.profileId === "cmi5LearnerPreferences") {
+                if (method === "delete") {
+                    throw Boom.unauthorized(new Error("Rejected request to delete the learner preferences Agent Profile document"));
                 }
-                else if (req.method === "get") {
-                }
-                else {
+                else if (method === "put" || method === "post") {
+                    throw Boom.unauthorized(new Error("Rejected request to alter the learner preferences Agent Profile document"));
                 }
             }
         }
     },
     afterLRSRequest = (res, req, h) => {
         const method = req.method,
-            resource = req.params.resource;
+            resource = req.params.resource,
+            status = res.statusCode;
 
-        if (req.params.resource === "statements") {
-            if (req.method === "post" && res.statusCode === 200) {
+        if (resource === "statements") {
+            if (method === "post" && status === 200) {
             }
-            else if (req.method === "put" && res.statusCode === 204) {
+            else if (method === "put" && status === 204) {
             }
+        }
+        else if (resource === "activities/state" && status === 200 && method === "get" && req.query.profileId === "LMS.LaunchData") {
+        }
+        else if (resource === "agents/profile" && status === 200 && method === "get" && req.query.profileId === "cmi5LearnerPreferences") {
         }
     };
 

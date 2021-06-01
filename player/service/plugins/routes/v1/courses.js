@@ -23,6 +23,7 @@ const fs = require("fs"),
     StreamZip = require("node-stream-zip"),
     iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
+    Registration = require("./lib/registration"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
@@ -33,13 +34,24 @@ const fs = require("fs"),
 
         return true;
     },
-    validateAU = (element, fromZip) => {
+    validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
+        for (const objElement of objectiveRefs.childNodes()) {
+            const idref = objElement.attr("idref").value();
+
+            if (! objectiveMap[idref]) {
+                throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
+            }
+        }
+    },
+    validateAU = (element, objectiveMap, fromZip) => {
         const result = {
                 type: "au",
-                id: element.attr("id").value()
+                id: element.attr("id").value(),
+                objectives: null
             },
             auTitle = element.get("xmlns:title", schemaNS),
-            auDesc = element.get("xmlns:description", schemaNS);
+            auDesc = element.get("xmlns:description", schemaNS),
+            objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
         validateIRI(result.id);
 
@@ -56,21 +68,42 @@ const fs = require("fs"),
             })
         );
 
+        if (objectiveRefs) {
+            validateObjectiveRefs(objectiveRefs, objectiveMap);
+        }
+
         result.url = element.get("xmlns:url", schemaNS).text();
 
         if (! fromZip) {
         }
 
+        result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
+        result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
+        result.masteryScore = element.attr("masteryScore") ? element.attr("masteryScore").value() : null;
+        result.activityType = element.attr("activityType") ? element.attr("activityType").value() : null;
+
+        const launchParameters = element.get("xmlns:launchParameters", schemaNS),
+            entitlementKey = element.get("xmlns:entitlementKey", schemaNS);
+
+        if (launchParameters) {
+            result.launchParameters = launchParameters.text();
+        }
+        if (entitlementKey) {
+            result.entitlementKey = entitlementKey.text();
+        }
+
         return result;
     },
-    validateBlock = (element) => {
+    validateBlock = (element, objectiveMap, fromZip) => {
         const result = {
                 type: "block",
                 id: element.attr("id").value(),
-                children: []
+                children: [],
+                objectives: null
             },
             blockTitle = element.get("xmlns:title", schemaNS),
-            blockDesc = element.get("xmlns:description", schemaNS);
+            blockDesc = element.get("xmlns:description", schemaNS),
+            objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
         validateIRI(result.id);
 
@@ -87,15 +120,19 @@ const fs = require("fs"),
             })
         );
 
+        if (objectiveRefs) {
+            validateObjectiveRefs(objectiveRefs, objectiveMap);
+        }
+
         for (const child of element.childNodes()) {
             if (child.name() === "au") {
                 result.children.push(
-                    validateAU(child)
+                    validateAU(child, objectiveMap, fromZip)
                 );
             }
             else if (child.name() === "block") {
                 result.children.push(
-                    validateBlock(child)
+                    validateBlock(child, objectiveMap, fromZip)
                 );
             }
             else if (child.name() === "objectives") {
@@ -103,9 +140,6 @@ const fs = require("fs"),
         }
 
         return result;
-    },
-    validateObjective = (element) => {
-        validateIRI(element.attr("id").value());
     },
     validateAndReduceStructure = (document, fromZip) => {
         const result = {
@@ -118,7 +152,8 @@ const fs = require("fs"),
             courseStructure = document.root(),
             course = courseStructure.get("xmlns:course", schemaNS),
             courseTitle = course.get("xmlns:title", schemaNS),
-            courseDesc = course.get("xmlns:description", schemaNS);
+            courseDesc = course.get("xmlns:description", schemaNS),
+            objectives = courseStructure.get("xmlns:objectives", schemaNS);
 
         result.course.id = course.attr("id").value();
 
@@ -137,32 +172,52 @@ const fs = require("fs"),
             })
         );
 
-        for (const element of courseStructure.childNodes()) {
-            // have already handled the course element
-            if (element.name() === "course") {
-                continue;
-            }
-            // objectives is a single static list
-            else if (element.name() === "objectives") {
-                for (const objElement of element.childNodes()) {
-                    if (objElement.name() === "objective") {
-                        validateObjective(objElement);
+        if (objectives) {
+            result.course.objectives = {};
+
+            for (const objElement of objectives.childNodes()) {
+                if (objElement.name() === "objective") {
+                    const id = objElement.attr("id").value();
+
+                    validateIRI(id);
+
+                    if (result.course.objectives[id]) {
+                        throw new Error(`Invalid objective id (${id}: duplicate not allowed`);
                     }
+
+                    result.course.objectives[id] = {
+                        title: objElement.get("xmlns:title", schemaNS).childNodes().map(
+                            (ls) => ({
+                                lang: ls.attr("lang").value(),
+                                text: ls.text()
+                            })
+                        ),
+                        description: objElement.get("xmlns:description", schemaNS).childNodes().map(
+                            (ls) => ({
+                                lang: ls.attr("lang").value(),
+                                text: ls.text()
+                            })
+                        )
+                    };
                 }
             }
-            else if (element.name() === "au") {
+        }
+
+        for (const element of courseStructure.childNodes()) {
+            if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element, fromZip)
+                    validateAU(element, result.course.objectives, fromZip)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element, fromZip)
+                    validateBlock(element, result.course.objectives, fromZip)
                 );
             }
             else {
                 // shouldn't need to handle unknown elements since the XSD
-                // checks should have caught them
+                // checks should have caught them, anything else is handled
+                // directly above (course, objectives)
                 // throw new Error(`Unrecognized element: ${element.name()}`);
             }
         }
@@ -208,6 +263,7 @@ module.exports = {
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
+                            tenantId = req.auth.credentials.tenantId,
                             lmsId = `https://w3id.org/xapi/cmi5/catapult/player/course/${uuidv4()}`,
                             contentType = req.headers["content-type"];
 
@@ -278,20 +334,43 @@ module.exports = {
                         let courseId;
 
                         try {
-                            courseId = await db.insert(
-                                {
-                                    tenant_id: req.auth.credentials.tenantId,
-                                    lms_id: lmsId,
-                                    metadata: JSON.stringify({
-                                        version: 1,
-                                        aus
-                                    }),
-                                    structure: JSON.stringify({
-                                        version: "1.0.0",
-                                        ...structure
-                                    })
+                            await db.transaction(
+                                async (trx) => {
+                                    courseId = await trx("courses").insert(
+                                        {
+                                            tenantId,
+                                            lmsId,
+                                            metadata: JSON.stringify({
+                                                version: 1,
+                                                aus
+                                            }),
+                                            structure: JSON.stringify({
+                                                version: "1.0.0",
+                                                ...structure
+                                            })
+                                        }
+                                    );
+
+                                    await trx("courses_aus").insert(
+                                        aus.map(
+                                            (au, i) => ({
+                                                tenantId,
+                                                courseId,
+                                                auIndex: i,
+                                                lmsId: `${lmsId}/au/${i}`,
+                                                metadata: JSON.stringify({
+                                                    version: 1,
+                                                    launchMethod: au.launchMethod,
+                                                    launchParameters: au.launchParameters,
+                                                    moveOn: au.moveOn,
+                                                    masteryScore: au.masteryScore,
+                                                    entitlementKey: au.entitlementKey
+                                                })
+                                            })
+                                        )
+                                    );
                                 }
-                            ).into("courses");
+                            );
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to insert: ${ex}`));
@@ -368,61 +447,74 @@ module.exports = {
                     handler: async (req, h) => {
                         console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
                         const db = req.server.app.db,
-                            regCode = req.payload.reg,
+                            courseId = req.params.id,
+                            auIndex = req.params.auIndex,
+                            actor = req.payload.actor,
+                            code = req.payload.reg,
                             tenantId = req.auth.credentials.tenantId,
                             course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
                                 {
                                     tenantId,
-                                    id: req.params.id
+                                    id: courseId
                                 }
                             );
 
                         if (! course) {
-                            throw Boom.notFound(`Unrecognized course: ${req.params.id} (${tenantId})`);
+                            throw Boom.notFound(`Unrecognized course: ${courseId} (${tenantId})`);
                         }
 
-                        let reg;
+                        let registrationId;
 
-                        if (regCode) {
-                            // load registration record and validate details match
-                            reg = await db.first("*").queryContext({jsonCols: ["actor"]}).from("registrations").where(
+                        if (code) {
+                            // check for registration record and validate details match
+                            const selectResult = await db.first("id", "actor").queryContext({jsonCols: ["actor"]}).from("registrations").where(
                                 {
                                     tenantId,
-                                    code: regCode,
-                                    courseId: req.params.id
+                                    courseId,
+                                    code
                                 }
+                            );
+
+                            if (selectResult && selectResult.actor.account.name === actor.account.name && selectResult.actor.account.homePage === actor.account.homePage) {
+                                registrationId = selectResult.id;
+                            }
+                        }
+
+                        if (! registrationId) {
+                            // either this is a new registration or we didn't find one they were expecting
+                            // so go ahead and create the registration now
+                            registrationId = await Registration.create(
+                                {
+                                    tenantId,
+                                    courseId,
+                                    actor,
+                                    code
+                                },
+                                {db}
                             );
                         }
 
-                        if (! reg) {
-                            // either this is a new registration or we didn't find one they were expecting
-                            // so go ahead and create the registration now
-                            reg = {
-                                code: uuidv4(),
-                                tenant_id: tenantId,
-                                course_id: req.params.id,
-                                actor: JSON.stringify(req.payload.actor)
-                            };
+                        const reg = await Registration.load({tenantId, registrationId}, {db}),
+                            {registrationsCoursesAus: regCourseAu, coursesAus: courseAu} = await db
+                                .first("*")
+                                .queryContext({jsonCols: ["registrations_courses_aus.metadata", "courses_aus.metadata"]})
+                                .from("registrations_courses_aus")
+                                .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
+                                .where(
+                                    {
+                                        "registrations_courses_aus.tenant_id": tenantId,
+                                        "registrations_courses_aus.registration_id": registrationId,
+                                        "courses_aus.au_index": auIndex,
+                                    }
+                                )
+                                .options({nestTables: true});
 
-                            let insertResult;
+                        const lmsActivityId = courseAu.lms_id,
+                            publisherActivityId = course.metadata.aus[auIndex].id,
 
-                            try {
-                                insertResult = await db.insert(reg).into("registrations");
-
-                                reg.id = insertResult;
-                                reg.actor = JSON.parse(reg.actor);
-                            }
-                            catch (ex) {
-                                throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
-                            }
-                        }
-
-                        const actor = reg.actor,
-                            lmsActivityId = `${course.lmsId}/au/${uuidv4()}`,
-                            publisherActivityId = course.structure.course.id,
                             launchMode = "Normal",
-                            launchMethod = "AnyWindow",
-                            moveOn = "Completed",
+                            launchMethod = courseAu.metadata.launchMethod || "AnyWindow",
+                            moveOn = courseAu.metadata.moveOn || "NotApplicable",
                             baseUrl = `${req.url.protocol}//${req.url.host}`,
                             endpoint = `${baseUrl}/lrs`,
                             returnURL = `${baseUrl}/return-url`,
@@ -452,11 +544,11 @@ module.exports = {
 
                         let contentUrl;
 
-                        if (/[A-Za-z]+:\/\/.+/.test(course.metadata.aus[req.params.auIndex].url)) {
-                            contentUrl = course.metadata.aus[req.params.auIndex].url;
+                        if (/[A-Za-z]+:\/\/.+/.test(course.metadata.aus[auIndex].url)) {
+                            contentUrl = course.metadata.aus[auIndex].url;
                         }
                         else {
-                            contentUrl = `${req.server.app.contentUrl}/${req.auth.credentials.tenantId}/${course.id}/${course.metadata.aus[req.params.auIndex].url}`;
+                            contentUrl = `${req.server.app.contentUrl}/${req.auth.credentials.tenantId}/${course.id}/${course.metadata.aus[auIndex].url}`;
                         }
 
                         let lmsLaunchDataResponse,
@@ -560,7 +652,7 @@ module.exports = {
                         let sessionInsertResult;
                         const session = {
                             tenantId,
-                            registrationId: reg.id,
+                            registrationsCoursesAusId: regCourseAu.id,
                             isLaunched: true,
                             launchMode,
                             launchTokenId: uuidv4()

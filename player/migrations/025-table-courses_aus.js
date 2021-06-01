@@ -13,7 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const tableName = "courses";
+const tableName = "courses_aus";
 
 exports.up = (knex) => knex.schema.createTable(
     tableName,
@@ -23,10 +23,18 @@ exports.up = (knex) => knex.schema.createTable(
         table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
 
+        table.integer("course_id").unsigned().notNullable().references("id").inTable("courses").onUpdate("CASCADE").onDelete("CASCADE");
+
+        table.string("au_index").notNullable();
         table.string("lms_id").notNullable().unique();
 
+        //
+        // contains values from the course structure specific to the AU such as
+        // activityType, launchMethod, launchParameters, moveOn, masteryScore, entitlementKey
+        //
         table.json("metadata").notNullable();
-        table.json("structure").notNullable();
+
+        table.unique(["course_id", "au_index"]);
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

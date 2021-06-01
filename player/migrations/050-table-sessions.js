@@ -13,7 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const tableName = "courses";
+const tableName = "sessions";
 
 exports.up = (knex) => knex.schema.createTable(
     tableName,
@@ -23,10 +23,20 @@ exports.up = (knex) => knex.schema.createTable(
         table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
 
-        table.string("lms_id").notNullable().unique();
+        table.integer("registrations_courses_aus_id").unsigned().notNullable().references("id").inTable("registrations_courses_aus").onUpdate("CASCADE").onDelete("CASCADE");
 
-        table.json("metadata").notNullable();
-        table.json("structure").notNullable();
+        table.datetime("last_request_time");
+
+        table.enu("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
+        table.uuid("launch_token_id").notNullable();
+        table.boolean("launch_token_fetched").notNullable().default(false);
+        table.boolean("is_launched").notNullable().default(false);
+        table.boolean("is_initialized").notNullable().default(false);
+        table.boolean("is_terminated").notNullable().default(false);
+        table.boolean("is_abandoned").notNullable().default(false);
+        table.boolean("is_failed").notNullable().default(false);
+
+        table.bigInteger("duration");
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

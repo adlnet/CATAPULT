@@ -19,7 +19,9 @@
                 </b-row>
                 <b-row>
                     <b-col>
-                        Course ID: {{ model.item.metadata.structure.course.id }}
+                        LMS ID: {{ model.item.metadata.structure.course.lmsId }}
+                        <br>
+                        Publisher ID: {{ model.item.metadata.structure.course.id }}
                         <br>
                         Imported: {{ model.item.createdAt | moment("from", "now") }}
                         <br>

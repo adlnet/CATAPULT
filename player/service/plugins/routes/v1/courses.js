@@ -43,10 +43,11 @@ const fs = require("fs"),
             }
         }
     },
-    validateAU = (element, objectiveMap, fromZip) => {
+    validateAU = (element, lmsIdHelper, objectiveMap, fromZip) => {
         const result = {
                 type: "au",
                 id: element.attr("id").value(),
+                lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
                 objectives: null
             },
             auTitle = element.get("xmlns:title", schemaNS),
@@ -94,10 +95,11 @@ const fs = require("fs"),
 
         return result;
     },
-    validateBlock = (element, objectiveMap, fromZip) => {
+    validateBlock = (element, lmsIdHelper, objectiveMap, fromZip) => {
         const result = {
                 type: "block",
                 id: element.attr("id").value(),
+                lmsId: `${lmsIdHelper.prefix}/block/${lmsIdHelper.blockIndex++}`,
                 children: [],
                 objectives: null
             },
@@ -127,12 +129,12 @@ const fs = require("fs"),
         for (const child of element.childNodes()) {
             if (child.name() === "au") {
                 result.children.push(
-                    validateAU(child, objectiveMap, fromZip)
+                    validateAU(child, lmsIdHelper, objectiveMap, fromZip)
                 );
             }
             else if (child.name() === "block") {
                 result.children.push(
-                    validateBlock(child, objectiveMap, fromZip)
+                    validateBlock(child, lmsIdHelper, objectiveMap, fromZip)
                 );
             }
             else if (child.name() === "objectives") {
@@ -141,10 +143,11 @@ const fs = require("fs"),
 
         return result;
     },
-    validateAndReduceStructure = (document, fromZip) => {
+    validateAndReduceStructure = (document, lmsId, fromZip) => {
         const result = {
                 course: {
                     type: "course",
+                    lmsId,
                     children: [],
                     objectives: null
                 }
@@ -153,7 +156,12 @@ const fs = require("fs"),
             course = courseStructure.get("xmlns:course", schemaNS),
             courseTitle = course.get("xmlns:title", schemaNS),
             courseDesc = course.get("xmlns:description", schemaNS),
-            objectives = courseStructure.get("xmlns:objectives", schemaNS);
+            objectives = courseStructure.get("xmlns:objectives", schemaNS),
+            lmsIdHelper = {
+                prefix: lmsId,
+                auIndex: 0,
+                blockIndex: 0
+            };
 
         result.course.id = course.attr("id").value();
 
@@ -206,12 +214,12 @@ const fs = require("fs"),
         for (const element of courseStructure.childNodes()) {
             if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element, result.course.objectives, fromZip)
+                    validateAU(element, lmsIdHelper, result.course.objectives, fromZip)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element, result.course.objectives, fromZip)
+                    validateBlock(element, lmsIdHelper, result.course.objectives, fromZip)
                 );
             }
             else {
@@ -316,7 +324,7 @@ module.exports = {
                         let structure;
 
                         try {
-                            structure = validateAndReduceStructure(courseStructureDocument, zip ? true : false);
+                            structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false);
                         }
                         catch (ex) {
                             throw Boom.badRequest(`Failed to validate course structure: ${ex}`);
@@ -357,7 +365,7 @@ module.exports = {
                                                 tenantId,
                                                 courseId,
                                                 auIndex: i,
-                                                lmsId: `${lmsId}/au/${i}`,
+                                                lmsId: au.lmsId,
                                                 metadata: JSON.stringify({
                                                     version: 1,
                                                     launchMethod: au.launchMethod,

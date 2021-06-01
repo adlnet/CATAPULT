@@ -100,6 +100,9 @@ const Boom = require("@hapi/boom"),
                         case VERB_FAILED_ID:
                             console.log(VERB_FAILED_ID);
                             break;
+
+                        default:
+                            throw Boom.unauthorized(new Error(`9.3.0.0-1 - AUs MUST use the below verbs that are indicated as mandatory in other sections of this specification. (Unrecognized cmi5 defined statement: ${verbId} - ${st.id})`));
                     }
                 }
                 else {

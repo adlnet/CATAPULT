@@ -45,7 +45,7 @@
                     const id = await this.import(
                         {
                             body: this.structure,
-                            contentType: "application/xml"
+                            contentType: "text/xml"
                         }
                     );
 

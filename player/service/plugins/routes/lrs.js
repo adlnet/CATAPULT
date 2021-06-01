@@ -31,6 +31,8 @@ const Boom = require("@hapi/boom"),
 
         if (method === "post" && typeof req.query.method !== "undefined") {
             method = req.query.method;
+
+            throw new Error(`Alternate method request syntax not implemented: ${method} to ${req.query.method}`);
         }
 
         const resource = req.params.resource;
@@ -65,14 +67,15 @@ const Boom = require("@hapi/boom"),
                     && Array.isArray(st.context.contextActivities.category)
                     && st.context.contextActivities.category.some((element) => element.id === CMI5_DEFINED_ID)
                 ) {
-                    if (typeof st.actor === "undefined" || typeof st.actor.objectType === "undefined" || typeof st.actor.objectType !== "Agent") {
+                    //
+                    // undefined actor.objectType implies Agent
+                    //
+                    if (typeof st.actor === "undefined" || (typeof st.actor.objectType !== "undefined" && st.actor.objectType !== "Agent")) {
                         throw Boom.unauthorized(new Error(`9.2.0.0-2 - The Actor property for all "cmi5 defined" statements MUST be of objectType "Agent". (${st.id})`));
                     }
+
                     if (typeof st.actor.account === "undefined" || typeof st.actor.account.name === "undefined" || typeof st.actor.account.homePage === "undefined") {
                         throw Boom.unauthorized(new Error(`9.2.0.0-3 - The Actor property MUST contain an "account" IFI as defined in the xAPI specification. (${st.id})`));
-                    }
-                    if (typeof st.object === "undefined" || st.object.id !== "") {
-                        throw Boom.unauthorized(new Error(` (${st.id})`));
                     }
 
                     const verbId = st.verb.id;

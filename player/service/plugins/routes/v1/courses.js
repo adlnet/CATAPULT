@@ -23,6 +23,7 @@ const fs = require("fs"),
     StreamZip = require("node-stream-zip"),
     iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
+    url = require("url"),
     Registration = require("./lib/registration"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
@@ -75,7 +76,28 @@ const fs = require("fs"),
 
         result.url = element.get("xmlns:url", schemaNS).text();
 
-        if (! fromZip) {
+        let launchUrl;
+        try {
+            //
+            // using the legacy URL support because it allows relative URLs
+            // but the newer WHAT-WG API doesn't, see the following issues for details
+            // https://github.com/nodejs/node/issues/12682
+            // https://github.com/whatwg/url/issues/531
+            //
+            launchUrl = url.parse(result.url, true);
+        }
+        catch (ex) {
+            throw new Error(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`);
+        }
+
+        for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
+            if (typeof launchUrl.query[k] !== "undefined") {
+                throw new Error(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`);
+            }
+        }
+
+        if (! fromZip && (launchUrl.protocol === null || launchUrl.host === null)) {
+            throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
         }
 
         result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";

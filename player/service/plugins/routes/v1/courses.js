@@ -45,7 +45,7 @@ const fs = require("fs"),
             }
         }
     },
-    validateAU = (element, lmsIdHelper, objectiveMap, fromZip) => {
+    validateAU = (element, lmsIdHelper, objectiveMap) => {
         const result = {
                 type: "au",
                 id: element.attr("id").value(),
@@ -77,30 +77,6 @@ const fs = require("fs"),
 
         result.url = element.get("xmlns:url", schemaNS).text();
 
-        let launchUrl;
-        try {
-            //
-            // using the legacy URL support because it allows relative URLs
-            // but the newer WHAT-WG API doesn't, see the following issues for details
-            // https://github.com/nodejs/node/issues/12682
-            // https://github.com/whatwg/url/issues/531
-            //
-            launchUrl = url.parse(result.url, true);
-        }
-        catch (ex) {
-            throw new Error(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`);
-        }
-
-        for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
-            if (typeof launchUrl.query[k] !== "undefined") {
-                throw new Error(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`);
-            }
-        }
-
-        if (! fromZip && (launchUrl.protocol === null || launchUrl.host === null)) {
-            throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
-        }
-
         result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
         result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
         result.masteryScore = element.attr("masteryScore") ? element.attr("masteryScore").value() : null;
@@ -118,7 +94,7 @@ const fs = require("fs"),
 
         return result;
     },
-    validateBlock = (element, lmsIdHelper, objectiveMap, fromZip) => {
+    validateBlock = (element, lmsIdHelper, objectiveMap) => {
         const result = {
                 type: "block",
                 id: element.attr("id").value(),
@@ -152,12 +128,12 @@ const fs = require("fs"),
         for (const child of element.childNodes()) {
             if (child.name() === "au") {
                 result.children.push(
-                    validateAU(child, lmsIdHelper, objectiveMap, fromZip)
+                    validateAU(child, lmsIdHelper, objectiveMap)
                 );
             }
             else if (child.name() === "block") {
                 result.children.push(
-                    validateBlock(child, lmsIdHelper, objectiveMap, fromZip)
+                    validateBlock(child, lmsIdHelper, objectiveMap)
                 );
             }
             else if (child.name() === "objectives") {
@@ -166,7 +142,7 @@ const fs = require("fs"),
 
         return result;
     },
-    validateAndReduceStructure = (document, lmsId, fromZip) => {
+    validateAndReduceStructure = (document, lmsId) => {
         const result = {
                 course: {
                     type: "course",
@@ -237,12 +213,12 @@ const fs = require("fs"),
         for (const element of courseStructure.childNodes()) {
             if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element, lmsIdHelper, result.course.objectives, fromZip)
+                    validateAU(element, lmsIdHelper, result.course.objectives)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element, lmsIdHelper, result.course.objectives, fromZip)
+                    validateBlock(element, lmsIdHelper, result.course.objectives)
                 );
             }
             else {
@@ -361,6 +337,44 @@ module.exports = {
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to flatten AUs: ${ex}`);
+                        }
+
+                        //
+                        // review all AUs to confirm their URLs are conformant and for
+                        // relative URLs make sure they are from a zip and that there
+                        // is an entry in the zip for that URL
+                        //
+                        for (const au of aus) {
+                            let launchUrl;
+                            try {
+                                //
+                                // using the legacy URL support because it allows relative URLs
+                                // but the newer WHAT-WG API doesn't, see the following issues for details
+                                // https://github.com/nodejs/node/issues/12682
+                                // https://github.com/whatwg/url/issues/531
+                                //
+                                launchUrl = url.parse(au.url, true);
+                            }
+                            catch (ex) {
+                                throw new Error(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`);
+                            }
+
+                            for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
+                                if (typeof launchUrl.query[k] !== "undefined") {
+                                    throw new Error(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`);
+                                }
+                            }
+
+                            if (launchUrl.protocol === null || launchUrl.host === null) {
+                                if (! zip) {
+                                    throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
+                                }
+
+                                const zipEntry = await zip.entry(launchUrl.path);
+                                if (! zipEntry) {
+                                    throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified. (${launchUrl.path})`);
+                                }
+                            }
                         }
 
                         let courseId;

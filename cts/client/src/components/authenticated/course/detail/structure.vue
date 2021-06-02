@@ -20,7 +20,45 @@
                     </template>
 
                     <div>
-                        ID: {{ selectedNode.item.id }}
+                        <h5>Properties</h5>
+                        <b-table-simple small borderless striped>
+                            <b-tbody>
+                                <b-tr>
+                                    <b-td class="text-nowrap">Publisher ID: </b-td>
+                                    <b-td>{{ selectedNode.item.id }}</b-td>
+                                </b-tr>
+                                <b-tr>
+                                    <b-td class="text-nowrap">LMS ID: </b-td>
+                                    <b-td>{{ selectedNode.item.lmsId }}</b-td>
+                                </b-tr>
+                                <template v-if="selectedNode.item.type === 'au'">
+                                    <b-tr>
+                                        <b-td>URL: </b-td>
+                                        <b-td>{{ selectedNode.item.url }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td>launchMethod: </b-td>
+                                        <b-td>{{ selectedNode.item.launchMethod }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td>moveOn: </b-td>
+                                        <b-td>{{ selectedNode.item.moveOn }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td>activityType: </b-td>
+                                        <b-td>{{ selectedNode.item.activityType }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td>masteryScore: </b-td>
+                                        <b-td>{{ selectedNode.item.masteryScore }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td>launchParameters: </b-td>
+                                        <b-td>{{ selectedNode.item.launchParameters }}</b-td>
+                                    </b-tr>
+                                </template>
+                            </b-tbody>
+                        </b-table-simple>
                     </div>
 
                     <div class="mt-3">
@@ -36,7 +74,6 @@
                             {{ desc.lang }}: {{ desc.text }}<br>
                         </span>
                     </div>
-
                 </b-card>
             </template>
             <template v-else>

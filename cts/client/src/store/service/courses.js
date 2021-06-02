@@ -202,12 +202,18 @@ export default {
                     }
                 }
                 else {
-                    throw new Error(`${response.status} - ${response.srcError}`);
+                    const body = await response.json();
+
+                    throw new Error(`${response.status} - ${body.message}`);
                 }
             }
             catch (ex) {
                 dispatch("alert", {content: `Failed to delete course (id: ${item.id}): ${ex}`});
+
+                return false;
             }
+
+            return true;
         },
 
         import: async ({dispatch, state, getters, rootGetters}, {body, contentType}) => {

@@ -14,7 +14,7 @@
                     </b-col>
                     <b-col cols="auto">
                         <b-button variant="primary" class="mr-2" :to="`/test-new/${id}`">Test</b-button>
-                        <b-button variant="outline-danger">Delete</b-button>
+                        <b-button variant="outline-danger" @click="doDelete">Delete</b-button>
                     </b-col>
                 </b-row>
                 <b-row>
@@ -44,6 +44,8 @@
 </template>
 
 <script>
+    import Vuex from "vuex";
+
     export default {
         name: "CourseDetail",
         props: {
@@ -59,6 +61,31 @@
         },
         created () {
             this.$store.dispatch("service/courses/loadById", {id: this.id});
+        },
+        methods: {
+            ...Vuex.mapActions(
+                "service/courses",
+                {
+                    drop: "delete"
+                }
+            ),
+
+            async doDelete () {
+                try {
+                    const result = await this.drop(
+                        {
+                            item: this.model.item
+                        }
+                    );
+
+                    if (result) {
+                        this.$router.push("/");
+                    }
+                }
+                catch (ex) {
+                    console.log(`Failed call to delete course: ${ex}`);
+                }
+            }
         }
     };
 </script>

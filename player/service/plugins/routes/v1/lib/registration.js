@@ -15,7 +15,9 @@
 */
 "use strict";
 
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require("uuid"),
+    Boom = require("@hapi/boom");
+
 
 module.exports = {
     create: async ({tenantId, courseId, actor, code = uuidv4()}, {db}) => {

@@ -245,7 +245,8 @@
                     const id = await this.create(
                         {
                             testId: this.id,
-                            auIndex: index
+                            auIndex: index,
+                            launchCfg: this.aUconfigs[index] || defaultAUConfig
                         }
                     );
 

@@ -564,17 +564,30 @@ module.exports = {
                                     {
                                         "registrations_courses_aus.tenant_id": tenantId,
                                         "registrations_courses_aus.registration_id": registrationId,
-                                        "courses_aus.au_index": auIndex,
+                                        "courses_aus.au_index": auIndex
                                     }
                                 )
                                 .options({nestTables: true});
 
+                        let contextTemplateAdditions = req.payload.contextTemplateAdditions.trim();
+
+                        if (contextTemplateAdditions !== "") {
+                            try {
+                                contextTemplateAdditions = JSON.parse(contextTemplateAdditions);
+                            }
+                            catch (ex) {
+                                throw Boom.internal(new Error(`Context template additions is not valid JSON: ${ex}`));
+                            }
+                        }
+
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
-
                             launchMode = "Normal",
-                            launchMethod = courseAu.metadata.launchMethod || "AnyWindow",
-                            moveOn = courseAu.metadata.moveOn || "NotApplicable",
+                            launchMethod = req.payload.launchMethod || courseAu.metadata.launchMethod || "AnyWindow",
+                            launchParameters = req.payload.launchParameters || courseAu.metadata.launchParameters,
+                            masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,
+                            moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
+                            alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                             baseUrl = `${req.url.protocol}//${req.url.host}`,
                             endpoint = `${baseUrl}/lrs`,
                             returnURL = `${baseUrl}/return-url`,
@@ -599,7 +612,8 @@ module.exports = {
                                 },
                                 extensions: {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
-                                }
+                                },
+                                ...contextTemplateAdditions
                             };
 
                         let contentUrl;
@@ -626,9 +640,17 @@ module.exports = {
                                 lmsLaunchDataPayload = {
                                     launchMode,
                                     launchMethod,
+                                    masteryScore,
                                     moveOn,
+                                    launchParameters,
                                     contextTemplate
                                 };
+
+                            if (alternateEntitlementKey !== null) {
+                                lmsLaunchDataPayload.entitlementKey = {
+                                    alternate: alternateEntitlementKey
+                                };
+                            }
 
                             if (req.payload.returnUrl) {
                                 lmsLaunchDataPayload.returnURL = req.payload.returnUrl;

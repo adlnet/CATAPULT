@@ -108,8 +108,7 @@ module.exports = {
                                         launchMethod: req.payload.launchMethod,
                                         launchParameters: req.payload.launchParameters,
                                         masteryScore: req.payload.masteryScore,
-                                        moveOn: req.payload.moveOn,
-                                        show: req.payload.show
+                                        moveOn: req.payload.moveOn
                                     }
                                 }
                             );

@@ -28,6 +28,7 @@ const fs = require("fs"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
+    rm = util.promisify(fs.rm),
     schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
     schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
     validateIRI = (input) => {
@@ -269,7 +270,8 @@ const fs = require("fs"),
         }
 
         return result;
-    };
+    },
+    getCourseDir = (tenantId, courseId) => `${__dirname}/../../../var/content/${tenantId}/${courseId}`;
 
 module.exports = {
     name: "catapult-player-api-routes-v1-courses",
@@ -406,7 +408,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to insert: ${ex}`));
                         }
 
-                        const courseDir = `${__dirname}/../../../var/content/${req.auth.credentials.tenantId}/${courseId}`;
+                        const courseDir = getCourseDir(tenantId, courseId);
 
                         try {
                             await mkdir(courseDir, {recursive: true});
@@ -455,14 +457,28 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
+                        const tenantId = req.auth.credentials.tenantId,
+                            courseId = req.params.id;
+
                         try {
-                            const deleteResult = await req.server.app.db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
+                            await rm(
+                                getCourseDir(tenantId, courseId),
+                                {
+                                    force: true,
+                                    recursive: true
+                                }
+                            );
                         }
                         catch (ex) {
-                            throw new Boom.internal(`Failed to delete course (${req.params.id}): ${ex}`);
+                            throw new Boom.internal(`Failed to delete course files (${courseId}): ${ex}`);
                         }
 
-                        // TODO: clean up local files
+                        try {
+                            await req.server.app.db("courses").where({tenantId, id: courseId}).delete();
+                        }
+                        catch (ex) {
+                            throw new Boom.internal(`Failed to delete course (${courseId}): ${ex}`);
+                        }
 
                         return null;
                     }

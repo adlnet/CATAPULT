@@ -19,6 +19,7 @@ const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
     CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
+    CMI5_EXTENSION_SESSION_ID = "https://w3id.org/xapi/cmi5/context/extensions/sessionid",
 
     VERB_INITIALIZED_ID = "http://adlnet.gov/expapi/verbs/initialized",
     VERB_TERMINATED_ID = "http://adlnet.gov/expapi/verbs/terminated",
@@ -47,8 +48,6 @@ const Boom = require("@hapi/boom"),
                     throw Boom.unauthorized(new Error("9.1.0.0-1 - The AU MUST assign a statement id property in UUID format (as defined in the xAPI specification) for all statements it issues."));
                 }
 
-                // throw Boom.unauthorized(new Error(` (${st.id})`));
-
                 const timestampDate = new Date(st.timestamp);
 
                 if (timestampDate.getTimezoneOffset() !== 0) {
@@ -59,7 +58,11 @@ const Boom = require("@hapi/boom"),
                     throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
                 }
                 if (! st.context.registration) {
-                    throw Boom.unauthorized(new Error(` (${st.id})`));
+                    throw Boom.unauthorized(new Error(`9.6.1.0-1 - The value for the registration property used in the context object MUST be the value provided by the LMS. (${st.id})`));
+                }
+
+                if (! st.context.extensions || ! st.context.extensions[CMI5_EXTENSION_SESSION_ID]) {
+                    throw Boom.unauthorized(new Error(`9.6.3.1-4 - An AU MUST include the session ID provided by the LMS in the context as an extension for all "cmi5 defined" and "cmi5 allowed" statements it makes directly in the LRS. (${st.id})`));
                 }
 
                 if (st.context.contextActivities
@@ -79,6 +82,52 @@ const Boom = require("@hapi/boom"),
                     }
 
                     const verbId = st.verb.id;
+
+                    if (! st.result) {
+                        if (verbId === VERB_COMPLETED_ID) {
+                            throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));
+                        }
+                        else if (verbId === VERB_PASSED_ID) {
+                            throw Boom.unauthorized(new Error(`9.5.2.0-1 - The "success" property of the result MUST be set to true for the following cmi5 defined statements ["Passed", "Waived"]. (${st.id})`));
+                        }
+                        else if (verbId === VERB_FAILED_ID) {
+                            throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
+                        }
+                    }
+                    else {
+                        if (typeof st.result.completion !== "undefined") {
+                            // Note: this has to be an AU request and AUs can't send waived
+                            if (verbId !== VERB_COMPLETED_ID) {
+                                throw Boom.unauthorized(new Error(`9.5.3.0-2 - cmi5 defined statements, other than "Completed" or "Waived", MUST NOT include the "completion" property. (${st.id})`));
+                            }
+                            else if (verbId === VERB_COMPLETED_ID && st.result.completion !== true) {
+                                throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));
+                            }
+                        }
+
+                        if (typeof st.result.success !== "undefined") {
+                            // Note: this has to be an AU request and AUs can't send waived
+                            if (verbId !== VERB_PASSED_ID && verbId !== VERB_FAILED_ID) {
+                                throw Boom.unauthorized(new Error(`9.5.2.0-3 - cmi5 defined statements, other than "Passed", "Waived" or "Failed", MUST NOT include the "success" property. (${st.id})`));
+                            }
+                            else if (verbId === VERB_PASSED_ID && st.result.success !== true) {
+                                throw Boom.unauthorized(new Error(`9.5.2.0-1 - The "success" property of the result MUST be set to true for the following cmi5 defined statements ["Passed", "Waived"]. (${st.id})`));
+                            }
+                            else if (verbId === VERB_FAILED_ID && st.result.success !== false) {
+                                throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
+                            }
+                        }
+
+                        if (st.score) {
+                            if (verbId !== VERB_PASSED_ID || verbId !== VERB_FAILED_ID) {
+                                throw Boom.unauthorized(new Error(`9.5.1.0-2 - cmi5 defined statements, other than "Passed" or "Failed", MUST NOT include the "score" property. (${st.id})`));
+                            }
+
+                            if (st.score.raw && (! st.score.min || ! st.score.max)) {
+                                throw Boom.unauthorized(new Error(`9.5.1.0-3 - The AU MUST provide the "min" and "max" values for "score" when the "raw" value is provided. (${st.id})`));
+                            }
+                        }
+                    }
 
                     switch (verbId) {
                         case VERB_INITIALIZED_ID:
@@ -126,8 +175,9 @@ const Boom = require("@hapi/boom"),
             }
         }
     },
-    afterLRSRequest = (res, req, h) => {
-        const method = req.method,
+    afterLRSRequest = async (res, req, h) => {
+        const db = req.server.app.db,
+            method = req.method,
             resource = req.params.resource,
             status = res.statusCode;
 
@@ -140,6 +190,13 @@ const Boom = require("@hapi/boom"),
         else if (resource === "activities/state" && status === 200 && method === "get" && req.query.profileId === "LMS.LaunchData") {
         }
         else if (resource === "agents/profile" && status === 200 && method === "get" && req.query.profileId === "cmi5LearnerPreferences") {
+        }
+
+        try {
+            await db("sessions").update({last_request_time: db.fn.now()}).where(req.auth.credentials);
+        }
+        catch (ex) {
+            console.warn(`Failed to update session.last_request_time: ${ex}`);
         }
     };
 

@@ -135,6 +135,29 @@ export default {
             }
 
             return null;
+        },
+
+        abandon: async ({dispatch, rootGetters}, {id}) => {
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    `sessions/${id}/abandon`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }
+                );
+
+                let responseBody = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                }
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to abandon session: ${ex}`, kind: "sessionDetail"});
+            }
         }
     }
 };

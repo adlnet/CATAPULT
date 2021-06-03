@@ -159,7 +159,8 @@ const provision = async () => {
         [
             require("./plugins/routes/v1/mgmt"),
             require("./plugins/routes/v1/courses"),
-            require("./plugins/routes/v1/registrations")
+            require("./plugins/routes/v1/registrations"),
+            require("./plugins/routes/v1/sessions")
         ],
         {
             routes: {

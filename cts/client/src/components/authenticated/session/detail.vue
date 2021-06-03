@@ -22,8 +22,8 @@
                             </h5>
                         </b-col>
                         <b-col cols="auto" class="text-right">
-                            <b-button variant="primary" @click="closeAU" class="mr-3">Close</b-button>
-                            <b-button @click="abandonSession">Abandon</b-button>
+                            <b-button variant="primary" @click="doCloseAU" class="mr-3">Close</b-button>
+                            <b-button @click="doAbandon">Abandon</b-button>
                         </b-col>
                     </b-row>
                 </template>
@@ -56,6 +56,7 @@
 
 <script>
     /* globals TextDecoderStream, TransformStream */
+    import Vuex from "vuex";
     import alerts from "@/components/alerts";
 
     let stream;
@@ -160,11 +161,27 @@
             }
         },
         methods: {
-            closeAU () {
+            ...Vuex.mapActions(
+                "service/sessions",
+                [
+                    "abandon"
+                ]
+            ),
+            doCloseAU () {
 
                 this.$router.push(`/tests/${this.model.item.registrationId}`);
             },
-            abandonSession () {
+            async doAbandon () {
+                try {
+                    await this.abandon(
+                        {
+                            id: this.id
+                        }
+                    );
+                }
+                catch (ex) {
+                    console.log(`Failed call to abandon (${this.id}): ${ex}`);
+                }
             }
         }
     };

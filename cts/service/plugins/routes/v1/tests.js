@@ -171,6 +171,41 @@ module.exports = {
                             }
                         }
                     }
+                },
+
+                {
+                    method: "POST",
+                    path: "/tests/{id}/waive-au/{auIndex}",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        let waiveResponse,
+                            waiveResponseBody;
+
+                        try {
+                            waiveResponse = await Wreck.request(
+                                "POST",
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${req.params.id}/waive-au/${req.params.auIndex}`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                    },
+                                    payload: {
+                                        reason: req.payload.reason
+                                    }
+                                }
+                            );
+                            waiveResponseBody = await Wreck.read(waiveResponse, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to waive AU: ${ex}`));
+                        }
+
+                        if (waiveResponse.statusCode !== 200) {
+                            throw Boom.internal(new Error(`Failed to waive AU in player registration (${waiveResponse.statusCode}): ${waiveResponseBody.message} (${waiveResponseBody.srcError})`));
+                        }
+                    }
                 }
             ]
         );

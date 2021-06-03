@@ -81,12 +81,16 @@
                             </b-row>
                             <b-row>
                                 <b-col>
-                                    <b-button variant="primary" class="mr-3" @click="launchAU(index)">
+                                    <b-button variant="primary" class="mr-3" @click="doLaunchAU(index)">
                                         Launch
                                     </b-button>
-                                    <b-button @click="waiveAU(index)">
-                                        Waive
-                                    </b-button>
+                                    <b-dropdown lazy text="Waive AU">
+                                        <b-dropdown-header>Reason</b-dropdown-header>
+                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Tested Out')">Tested Out</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent AU')">Equivalent AU</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent Outside Activity')">Equivalent Outside Activity</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Administrative')">Administrative</b-dropdown-item-button>
+                                    </b-dropdown>
                                 </b-col>
                                 <b-col class="text-right">
                                     <b-form-checkbox
@@ -213,10 +217,16 @@
         },
         methods: {
             ...Vuex.mapActions(
-                "service/sessions",
+                "service/tests",
                 [
-                    "create"
+                    "waiveAU"
                 ]
+            ),
+            ...Vuex.mapActions(
+                "service/sessions",
+                {
+                    "createSession": "create"
+                }
             ),
 
             toggleConfig (index) {
@@ -240,9 +250,9 @@
                 }
             },
 
-            async launchAU (index) {
+            async doLaunchAU (index) {
                 try {
-                    const id = await this.create(
+                    const id = await this.createSession(
                         {
                             testId: this.id,
                             auIndex: index,
@@ -261,8 +271,19 @@
                 }
             },
 
-            waiveAU (index) {
-                console.log("test:detail:waiveAU", index);
+            async doWaiveAU (auIndex, reason) {
+                try {
+                    await this.waiveAU(
+                        {
+                            id: this.id,
+                            auIndex,
+                            reason
+                        }
+                    );
+                }
+                catch (ex) {
+                    console.log(`Failed call to waive AU (${auIndex}): ${ex}`);
+                }
             }
         }
     };

@@ -229,6 +229,32 @@ export default {
             }
 
             return null;
+        },
+
+        waiveAU: async ({dispatch, rootGetters}, {id, auIndex, reason}) => {
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    `tests/${id}/waive-au/${auIndex}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            reason
+                        })
+                    }
+                );
+
+                let responseBody = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                }
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to waive AU: ${ex}`, kind: "testDetail"});
+            }
         }
     }
 };

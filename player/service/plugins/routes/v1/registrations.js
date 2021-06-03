@@ -15,11 +15,7 @@
 */
 "use strict";
 
-const fs = require("fs"),
-    util = require("util"),
-    Boom = require("@hapi/boom"),
-    Wreck = require("@hapi/wreck"),
-    { v4: uuidv4 } = require("uuid"),
+const Boom = require("@hapi/boom"),
     Registration = require("./lib/registration");
 
 module.exports = {
@@ -76,6 +72,17 @@ module.exports = {
                             deleteResult = await req.server.app.db("registrations").where({tenantId, "id": req.params.id}).delete();
 
                         return null;
+                    }
+                },
+
+                {
+                    method: "POST",
+                    path: "/registration/{id}/waive-au/{auIndex}",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        throw new Error(`Not implemented, waive AU`);
                     }
                 }
             ]

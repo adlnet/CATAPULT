@@ -67,6 +67,8 @@ module.exports = {
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             tenantId = req.auth.credentials.tenantId,
+                            testId = req.payload.testId,
+                            auIndex = req.payload.auIndex,
                             baseUrl = `${req.url.protocol}//${req.url.host}`;
 
                         let queryResult;
@@ -77,15 +79,15 @@ module.exports = {
                                 .queryContext({jsonCols: ["registrations.metadata", "courses.metadata"]})
                                 .from("registrations")
                                 .leftJoin("courses", "registrations.course_id", "courses.id")
-                                .where({"registrations.tenantId": tenantId, "registrations.id": req.payload.testId})
+                                .where({"registrations.tenantId": tenantId, "registrations.id": testId})
                                 .options({nestTables: true});
                         }
                         catch (ex) {
-                            throw Boom.internal(new Error(`Failed to retrieve registration for id ${req.payload.testId}: ${ex}`));
+                            throw Boom.internal(new Error(`Failed to retrieve registration for id ${testId}: ${ex}`));
                         }
 
                         if (! queryResult) {
-                            throw Boom.notFound(`registration: ${req.payload.testId}`);
+                            throw Boom.notFound(`registration: ${testId}`);
                         }
 
                         let createResponse,
@@ -94,7 +96,7 @@ module.exports = {
                         try {
                             createResponse = await Wreck.request(
                                 "POST",
-                                `${req.server.app.player.baseUrl}/api/v1/course/${queryResult.courses.player_id}/launch-url/${req.payload.auIndex}`,
+                                `${req.server.app.player.baseUrl}/api/v1/course/${queryResult.courses.player_id}/launch-url/${auIndex}`,
                                 {
                                     headers: {
                                         Authorization: await req.server.methods.playerAuthHeader(req)
@@ -133,7 +135,7 @@ module.exports = {
                                 {
                                     tenant_id: tenantId,
                                     player_id: createResponseBody.id,
-                                    registration_id: req.payload.testId,
+                                    registration_id: testId,
                                     player_au_launch_url: playerAuLaunchUrl,
                                     player_endpoint: playerEndpoint,
                                     player_fetch: playerFetch,
@@ -286,10 +288,40 @@ module.exports = {
 
                 {
                     method: "POST",
+                    path: "/sessions/{id}/abandon",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        let abandonResponse,
+                            abandonResponseBody;
+
+                        try {
+                            abandonResponse = await Wreck.request(
+                                "POST",
+                                `${req.server.app.player.baseUrl}/api/v1/session/${req.params.id}/abandon`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                    }
+                                }
+                            );
+                            abandonResponseBody = await Wreck.read(abandonResponse, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to abandon session: ${ex}`));
+                        }
+
+                        if (abandonResponse.statusCode !== 200) {
+                            throw Boom.internal(new Error(`Failed to abandon session in player (${abandonResponse.statusCode}): ${abandonResponseBody.message} (${abandonResponseBody.srcError})`));
+                        }
+                    }
+                },
+
+                {
+                    method: "POST",
                     path: "/sessions/{id}/fetch",
                     options: {
-                        tags: ["api"],
-
                         // turn off auth because this is effectively an auth request
                         auth: false
                     },

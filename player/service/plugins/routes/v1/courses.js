@@ -25,6 +25,7 @@ const fs = require("fs"),
     { v4: uuidv4 } = require("uuid"),
     url = require("url"),
     Registration = require("./lib/registration"),
+    Hoek = require("@hapi/hoek"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
@@ -612,9 +613,10 @@ module.exports = {
                                 },
                                 extensions: {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
-                                },
-                                ...contextTemplateAdditions
+                                }
                             };
+
+                        Hoek.merge(contextTemplate, contextTemplateAdditions, {nullOverride: false});
 
                         let contentUrl;
 

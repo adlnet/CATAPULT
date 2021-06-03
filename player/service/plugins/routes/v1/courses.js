@@ -616,7 +616,9 @@ module.exports = {
                                 }
                             };
 
-                        Hoek.merge(contextTemplate, contextTemplateAdditions, {nullOverride: false});
+                        if (contextTemplateAdditions !== "") {
+                            Hoek.merge(contextTemplate, contextTemplateAdditions, {nullOverride: false});
+                        }
 
                         let contentUrl;
 

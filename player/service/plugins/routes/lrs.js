@@ -27,7 +27,12 @@ const Boom = require("@hapi/boom"),
     VERB_PASSED_ID = "http://adlnet.gov/expapi/verbs/passed",
     VERB_FAILED_ID = "http://adlnet.gov/expapi/verbs/failed",
 
-    beforeLRSRequest = (req, h) => {
+    beforeLRSRequest = (req, session) => {
+        const result = {
+            launchData: null,
+            learnerPrefs: null,
+            statements: []
+        };
         let method = req.method;
 
         if (method === "post" && typeof req.query.method !== "undefined") {
@@ -63,6 +68,14 @@ const Boom = require("@hapi/boom"),
 
                 if (! st.context.extensions || ! st.context.extensions[CMI5_EXTENSION_SESSION_ID]) {
                     throw Boom.unauthorized(new Error(`9.6.3.1-4 - An AU MUST include the session ID provided by the LMS in the context as an extension for all "cmi5 defined" and "cmi5 allowed" statements it makes directly in the LRS. (${st.id})`));
+                }
+
+                if (! session.isInitialized && st.verb.id !== VERB_INITIALIZED_ID) {
+                    throw Boom.unauthorized(new Error(`9.3.0.0-4 - The "Initialized" verb MUST be the first statement (cmi5 allowed or defined). (${st.id})`));
+                }
+
+                if (session.isTerminated) {
+                    throw Boom.unauthorized(new Error(`9.3.0.0-5 - The "Terminated" verb MUST be the last statement (cmi5 allowed or defined). (${st.id})`));
                 }
 
                 if (st.context.contextActivities
@@ -132,71 +145,120 @@ const Boom = require("@hapi/boom"),
                     switch (verbId) {
                         case VERB_INITIALIZED_ID:
                             console.log(VERB_INITIALIZED_ID);
+                            if (session.isInitialized || result.statements.includes(VERB_INITIALIZED_ID)) {
+                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                            }
                             break;
 
                         case VERB_TERMINATED_ID:
                             console.log(VERB_TERMINATED_ID);
+                            if (result.statements.includes(VERB_TERMINATED_ID)) {
+                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                            }
                             break;
 
                         case VERB_COMPLETED_ID:
                             console.log(VERB_COMPLETED_ID);
+                            if (session.isCompleted || result.statements.includes(VERB_COMPLETED_ID)) {
+                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                            }
                             break;
 
                         case VERB_PASSED_ID:
                             console.log(VERB_PASSED_ID);
+                            if (session.isPassed || result.statements.includes(VERB_PASSED_ID)) {
+                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                            }
                             break;
 
                         case VERB_FAILED_ID:
                             console.log(VERB_FAILED_ID);
+                            if (session.isFailed || result.statements.includes(VERB_FAILED_ID)) {
+                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                            }
                             break;
 
                         default:
                             throw Boom.unauthorized(new Error(`9.3.0.0-1 - AUs MUST use the below verbs that are indicated as mandatory in other sections of this specification. (Unrecognized cmi5 defined statement: ${verbId} - ${st.id})`));
                     }
+
+                    // do this after the checks so that we can check the list for a particular verb
+                    result.statements.push(verbId);
                 }
                 else {
                     console.log("cmi5 allowed statement", st);
                 }
             }
         }
-        else if (resource === "activities/state") {
-            if (req.query.stateId === "LMS.LaunchData" && method !== "get") {
+        else if (resource === "activities/state" && req.query.stateId === "LMS.LaunchData") {
+            if (method === "get") {
+                result.launchData = true;
+            }
+            else {
                 throw Boom.unauthorized(new Error(`10.2.1.0-5 - The AU MUST NOT modify or delete the "LMS.LaunchData" State document. (${method}`));
             }
         }
-        else if (resource === "agents/profile") {
-            if (req.query.profileId === "cmi5LearnerPreferences") {
-                if (method === "delete") {
-                    throw Boom.unauthorized(new Error("Rejected request to delete the learner preferences Agent Profile document"));
-                }
-                else if (method === "put" || method === "post") {
-                    throw Boom.unauthorized(new Error("Rejected request to alter the learner preferences Agent Profile document"));
-                }
+        else if (resource === "agents/profile" && req.query.profileId === "cmi5LearnerPreferences") {
+            if (method === "get") {
+                result.learnerPrefs = true;
+            }
+            else if (method === "delete") {
+                throw Boom.unauthorized(new Error("Rejected request to delete the learner preferences Agent Profile document"));
+            }
+            else if (method === "put" || method === "post") {
+                throw Boom.unauthorized(new Error("Rejected request to alter the learner preferences Agent Profile document"));
             }
         }
-    },
-    afterLRSRequest = async (res, req, h) => {
-        const db = req.server.app.db,
-            method = req.method,
-            resource = req.params.resource,
-            status = res.statusCode;
 
-        if (resource === "statements") {
-            if (method === "post" && status === 200) {
-            }
-            else if (method === "put" && status === 204) {
+        return result;
+    },
+    afterLRSRequest = async (req, res, txn, beforeResult) => {
+        const status = res.statusCode,
+            sessionUpdates = {
+                lastRequestTime: txn.fn.now()
+            };
+
+        let checkSatisfied = false;
+
+        if (beforeResult.statements.length > 0 && (status === 200 || status === 204)) {
+            for (const verbId of beforeResult.statements) {
+                switch (verbId) {
+                    case VERB_INITIALIZED_ID:
+                        sessionUpdates.is_initialized = true;
+                        break;
+
+                    case VERB_TERMINATED_ID:
+                        sessionUpdates.is_terminated = true;
+                        break;
+
+                    case VERB_COMPLETED_ID:
+                        sessionUpdates.is_completed = true;
+                        checkSatisfied = true;
+                        break;
+
+                    case VERB_PASSED_ID:
+                        sessionUpdates.is_passed = true;
+                        checkSatisfied = true;
+                        break;
+
+                    case VERB_FAILED_ID:
+                        sessionUpdates.is_failed = true;
+                        break;
+                }
             }
         }
-        else if (resource === "activities/state" && status === 200 && method === "get" && req.query.profileId === "LMS.LaunchData") {
+        else if (beforeResult.launchData && status === 200) {
+            sessionUpdates.launch_data_fetched = true;
         }
-        else if (resource === "agents/profile" && status === 200 && method === "get" && req.query.profileId === "cmi5LearnerPreferences") {
+        else if (beforeResult.learnerPrefs && (status === 200 || status === 404)) {
+            sessionUpdates.learner_prefs_fetched = true;
         }
 
         try {
-            await db("sessions").update({last_request_time: db.fn.now()}).where(req.auth.credentials);
+            await txn("sessions").update(sessionUpdates).where(req.auth.credentials);
         }
         catch (ex) {
-            console.warn(`Failed to update session.last_request_time: ${ex}`);
+            console.warn(`Failed to update session: ${ex}`);
         }
     };
 
@@ -286,50 +348,65 @@ module.exports = {
                 // settings that weren't being used anyways
                 //
                 handler: async (req, h) => {
-                    beforeLRSRequest(req, h);
+                    const db = req.server.app.db,
+                        txn = await db.transaction(),
+                        session = await txn("sessions").forUpdate().first("*").where(req.auth.credentials);
 
-                    const uri = `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`,
-                        protocol = uri.split(":", 1)[0],
-                        options = {
-                            headers: Hoek.clone(req.headers),
-                            payload: req.payload
-                        };
+                    let response;
 
-                    delete options.headers.host;
-                    delete options.headers["content-length"];
+                    try {
+                        const beforeResult = beforeLRSRequest(req, session);
 
-                    //
-                    // switch the authorization credential from the player session based value
-                    // to the general credential we have for the underlying LRS
-                    //
-                    if (typeof req.headers.authorization !== "undefined") {
-                        options.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
-                    }
+                        const uri = `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`,
+                            protocol = uri.split(":", 1)[0],
+                            options = {
+                                headers: Hoek.clone(req.headers),
+                                payload: req.payload
+                            };
 
-                    if (req.info.remotePort) {
-                        options.headers["x-forwarded-for"] = (options.headers["x-forwarded-for"] ? options.headers["x-forwarded-for"] + "," : "") + req.info.remoteAddress;
-                        options.headers["x-forwarded-port"] = options.headers["x-forwarded-port"] || req.info.remotePort;
-                        options.headers["x-forwarded-proto"] = options.headers["x-forwarded-proto"] || req.server.info.protocol;
-                        options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
-                    }
+                        delete options.headers.host;
+                        delete options.headers["content-length"];
 
-                    const res = await Wreck.request(req.method, uri, options),
-                        payload = await Wreck.read(res),
+                        //
+                        // switch the authorization credential from the player session based value
+                        // to the general credential we have for the underlying LRS
+                        //
+                        if (typeof req.headers.authorization !== "undefined") {
+                            options.headers.authorization = `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`;
+                        }
+
+                        if (req.info.remotePort) {
+                            options.headers["x-forwarded-for"] = (options.headers["x-forwarded-for"] ? options.headers["x-forwarded-for"] + "," : "") + req.info.remoteAddress;
+                            options.headers["x-forwarded-port"] = options.headers["x-forwarded-port"] || req.info.remotePort;
+                            options.headers["x-forwarded-proto"] = options.headers["x-forwarded-proto"] || req.server.info.protocol;
+                            options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
+                        }
+
+                        const res = await Wreck.request(req.method, uri, options),
+                            payload = await Wreck.read(res);
+
                         response = h.response(payload).passThrough(true);
 
-                    response.code(res.statusCode);
-                    response.message(res.statusMessage);
+                        response.code(res.statusCode);
+                        response.message(res.statusMessage);
 
-                    for (const [k, v] of Object.entries(res.headers)) {
-                        if (k.toLowerCase() !== "transfer-encoding") {
-                            response.header(k, v);
+                        for (const [k, v] of Object.entries(res.headers)) {
+                            if (k.toLowerCase() !== "transfer-encoding") {
+                                response.header(k, v);
+                            }
                         }
+
+                        // clean up the original response
+                        res.destroy();
+
+                        await afterLRSRequest(req, res, txn, beforeResult);
+
+                        txn.commit();
                     }
-
-                    // clean up the original response
-                    res.destroy();
-
-                    afterLRSRequest(res, req, h);
+                    catch (ex) {
+                        txn.rollback();
+                        throw ex;
+                    }
 
                     return response;
                 }

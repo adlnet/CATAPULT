@@ -51,7 +51,7 @@ services:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player
-      - CONTENT_URL=http://localhost:${PLAYER_HOST_PORT}/content
+      - CONTENT_URL=${PLAYER_CONTENT_URL}
       - LRS_ENDPOINT
       - LRS_USERNAME
       - LRS_PASSWORD

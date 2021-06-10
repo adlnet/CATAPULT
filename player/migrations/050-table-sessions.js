@@ -30,6 +30,8 @@ exports.up = (knex) => knex.schema.createTable(
         table.enu("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
         table.uuid("launch_token_id").notNullable();
         table.boolean("launch_token_fetched").notNullable().default(false);
+        table.boolean("launch_data_fetched").notNullable().default(false);
+        table.boolean("learner_prefs_fetched").notNullable().default(false);
         table.boolean("is_launched").notNullable().default(false);
         table.boolean("is_initialized").notNullable().default(false);
         table.boolean("is_terminated").notNullable().default(false);

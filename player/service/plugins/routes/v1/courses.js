@@ -268,7 +268,23 @@ module.exports = {
                             ],
                             output: "file"
                         },
-                        tags: ["api"]
+                        tags: ["api"],
+                        ext: {
+                            onPostResponse: {
+                                method: (req) => {
+                                    if (req.payload.path) {
+                                        rm(req.payload.path).then(
+                                            (err) => {
+                                                if (err) {
+                                                    console.log(`Failed to clean up payload.path: ${err}`);
+                                                }
+                                                // nothing to do if it works
+                                            }
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,

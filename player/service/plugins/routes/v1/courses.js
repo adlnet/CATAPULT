@@ -666,10 +666,15 @@ module.exports = {
                                     contextTemplate
                                 };
 
-                            if (alternateEntitlementKey !== null) {
+                            if (courseAu.metadata.entitlementKey) {
                                 lmsLaunchDataPayload.entitlementKey = {
-                                    alternate: alternateEntitlementKey
+                                    courseStructure: courseAu.metadata.entitlementKey
                                 };
+                            }
+
+                            if (alternateEntitlementKey !== null) {
+                                lmsLaunchDataPayload.entitlementKey = lmsLaunchDataPayload.entitlementKey || {};
+                                lmsLaunchDataPayload.entitlementKey.alternate = alternateEntitlementKey;
                             }
 
                             if (req.payload.returnUrl) {

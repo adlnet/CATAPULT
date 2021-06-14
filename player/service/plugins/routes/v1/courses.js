@@ -62,13 +62,13 @@ const fs = require("fs"),
         result.title = auTitle.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
         result.description = auDesc.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
 
@@ -76,7 +76,7 @@ const fs = require("fs"),
             validateObjectiveRefs(objectiveRefs, objectiveMap);
         }
 
-        result.url = element.get("xmlns:url", schemaNS).text();
+        result.url = element.get("xmlns:url", schemaNS).text().trim();
 
         result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
         result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
@@ -87,10 +87,10 @@ const fs = require("fs"),
             entitlementKey = element.get("xmlns:entitlementKey", schemaNS);
 
         if (launchParameters) {
-            result.launchParameters = launchParameters.text();
+            result.launchParameters = launchParameters.text().trim();
         }
         if (entitlementKey) {
-            result.entitlementKey = entitlementKey.text();
+            result.entitlementKey = entitlementKey.text().trim();
         }
 
         return result;
@@ -112,13 +112,13 @@ const fs = require("fs"),
         result.title = blockTitle.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
         result.description = blockDesc.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
 
@@ -170,13 +170,13 @@ const fs = require("fs"),
         result.course.title = courseTitle.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
         result.course.description = courseDesc.childNodes().map(
             (ls) => ({
                 lang: ls.attr("lang").value(),
-                text: ls.text()
+                text: ls.text().trim()
             })
         );
 
@@ -197,13 +197,13 @@ const fs = require("fs"),
                         title: objElement.get("xmlns:title", schemaNS).childNodes().map(
                             (ls) => ({
                                 lang: ls.attr("lang").value(),
-                                text: ls.text()
+                                text: ls.text().trim()
                             })
                         ),
                         description: objElement.get("xmlns:description", schemaNS).childNodes().map(
                             (ls) => ({
                                 lang: ls.attr("lang").value(),
-                                text: ls.text()
+                                text: ls.text().trim()
                             })
                         )
                     };

@@ -387,9 +387,9 @@ module.exports = {
                                     throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
                                 }
 
-                                const zipEntry = await zip.entry(launchUrl.path);
+                                const zipEntry = await zip.entry(launchUrl.pathname);
                                 if (! zipEntry) {
-                                    throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified. (${launchUrl.path})`);
+                                    throw new Error(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`);
                                 }
                             }
                         }

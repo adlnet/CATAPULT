@@ -786,7 +786,7 @@ module.exports = {
 
                         return {
                             id: session.id,
-                            url: `${contentUrl}?${launchUrlParams.toString()}`
+                            url: `${contentUrl}${contentUrl.indexOf("?") === -1 ? "?" : "&"}${launchUrlParams.toString()}`
                         };
                     }
                 }

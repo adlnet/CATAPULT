@@ -44,149 +44,151 @@ const Boom = require("@hapi/boom"),
         const resource = req.params.resource;
 
         if (resource === "statements") {
-            const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
+            if (method === "post" || method === "put") {
+                const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
 
-            for (const st of statements) {
-                // all statements have to have the actor, the context based on the template,
-                // timestamp, id, etc.
-                if (typeof st.id === "undefined") {
-                    throw Boom.unauthorized(new Error("9.1.0.0-1 - The AU MUST assign a statement id property in UUID format (as defined in the xAPI specification) for all statements it issues."));
-                }
-
-                const timestampDate = new Date(st.timestamp);
-
-                if (timestampDate.getTimezoneOffset() !== 0) {
-                    throw Boom.unauthorized(new Error(`9.7.0.0-2 - All timestamps MUST be recorded in UTC time. (${st.id})`));
-                }
-
-                if (! st.context || ! st.context.contextActivities) {
-                    throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
-                }
-                if (! st.context.registration) {
-                    throw Boom.unauthorized(new Error(`9.6.1.0-1 - The value for the registration property used in the context object MUST be the value provided by the LMS. (${st.id})`));
-                }
-
-                if (! st.context.extensions || ! st.context.extensions[CMI5_EXTENSION_SESSION_ID]) {
-                    throw Boom.unauthorized(new Error(`9.6.3.1-4 - An AU MUST include the session ID provided by the LMS in the context as an extension for all "cmi5 defined" and "cmi5 allowed" statements it makes directly in the LRS. (${st.id})`));
-                }
-
-                if (! session.isInitialized && st.verb.id !== VERB_INITIALIZED_ID) {
-                    throw Boom.unauthorized(new Error(`9.3.0.0-4 - The "Initialized" verb MUST be the first statement (cmi5 allowed or defined). (${st.id})`));
-                }
-
-                if (session.isTerminated) {
-                    throw Boom.unauthorized(new Error(`9.3.0.0-5 - The "Terminated" verb MUST be the last statement (cmi5 allowed or defined). (${st.id})`));
-                }
-
-                if (st.context.contextActivities
-                    && st.context.contextActivities.category
-                    && Array.isArray(st.context.contextActivities.category)
-                    && st.context.contextActivities.category.some((element) => element.id === CMI5_DEFINED_ID)
-                ) {
-                    //
-                    // undefined actor.objectType implies Agent
-                    //
-                    if (typeof st.actor === "undefined" || (typeof st.actor.objectType !== "undefined" && st.actor.objectType !== "Agent")) {
-                        throw Boom.unauthorized(new Error(`9.2.0.0-2 - The Actor property for all "cmi5 defined" statements MUST be of objectType "Agent". (${st.id})`));
+                for (const st of statements) {
+                    // all statements have to have the actor, the context based on the template,
+                    // timestamp, id, etc.
+                    if (typeof st.id === "undefined") {
+                        throw Boom.unauthorized(new Error("9.1.0.0-1 - The AU MUST assign a statement id property in UUID format (as defined in the xAPI specification) for all statements it issues. (Statement id missing)"));
                     }
 
-                    if (typeof st.actor.account === "undefined" || typeof st.actor.account.name === "undefined" || typeof st.actor.account.homePage === "undefined") {
-                        throw Boom.unauthorized(new Error(`9.2.0.0-3 - The Actor property MUST contain an "account" IFI as defined in the xAPI specification. (${st.id})`));
+                    const timestampDate = new Date(st.timestamp);
+
+                    if (timestampDate.getTimezoneOffset() !== 0) {
+                        throw Boom.unauthorized(new Error(`9.7.0.0-2 - All timestamps MUST be recorded in UTC time. (${st.id})`));
                     }
 
-                    const verbId = st.verb.id;
-
-                    if (! st.result) {
-                        if (verbId === VERB_COMPLETED_ID) {
-                            throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));
-                        }
-                        else if (verbId === VERB_PASSED_ID) {
-                            throw Boom.unauthorized(new Error(`9.5.2.0-1 - The "success" property of the result MUST be set to true for the following cmi5 defined statements ["Passed", "Waived"]. (${st.id})`));
-                        }
-                        else if (verbId === VERB_FAILED_ID) {
-                            throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
-                        }
+                    if (! st.context || ! st.context.contextActivities) {
+                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
                     }
-                    else {
-                        if (typeof st.result.completion !== "undefined") {
-                            // Note: this has to be an AU request and AUs can't send waived
-                            if (verbId !== VERB_COMPLETED_ID) {
-                                throw Boom.unauthorized(new Error(`9.5.3.0-2 - cmi5 defined statements, other than "Completed" or "Waived", MUST NOT include the "completion" property. (${st.id})`));
-                            }
-                            else if (verbId === VERB_COMPLETED_ID && st.result.completion !== true) {
+                    if (! st.context.registration) {
+                        throw Boom.unauthorized(new Error(`9.6.1.0-1 - The value for the registration property used in the context object MUST be the value provided by the LMS. (registration missing in ${st.id})`));
+                    }
+
+                    if (! st.context.extensions || ! st.context.extensions[CMI5_EXTENSION_SESSION_ID]) {
+                        throw Boom.unauthorized(new Error(`9.6.3.1-4 - An AU MUST include the session ID provided by the LMS in the context as an extension for all "cmi5 defined" and "cmi5 allowed" statements it makes directly in the LRS. (${st.id})`));
+                    }
+
+                    if (! session.isInitialized && st.verb.id !== VERB_INITIALIZED_ID) {
+                        throw Boom.unauthorized(new Error(`9.3.0.0-4 - The "Initialized" verb MUST be the first statement (cmi5 allowed or defined). (${st.id})`));
+                    }
+
+                    if (session.isTerminated) {
+                        throw Boom.unauthorized(new Error(`9.3.0.0-5 - The "Terminated" verb MUST be the last statement (cmi5 allowed or defined). (${st.id})`));
+                    }
+
+                    if (st.context.contextActivities
+                        && st.context.contextActivities.category
+                        && Array.isArray(st.context.contextActivities.category)
+                        && st.context.contextActivities.category.some((element) => element.id === CMI5_DEFINED_ID)
+                    ) {
+                        //
+                        // undefined actor.objectType implies Agent
+                        //
+                        if (typeof st.actor === "undefined" || (typeof st.actor.objectType !== "undefined" && st.actor.objectType !== "Agent")) {
+                            throw Boom.unauthorized(new Error(`9.2.0.0-2 - The Actor property for all "cmi5 defined" statements MUST be of objectType "Agent". (${st.id})`));
+                        }
+
+                        if (typeof st.actor.account === "undefined" || typeof st.actor.account.name === "undefined" || typeof st.actor.account.homePage === "undefined") {
+                            throw Boom.unauthorized(new Error(`9.2.0.0-3 - The Actor property MUST contain an "account" IFI as defined in the xAPI specification. (${st.id})`));
+                        }
+
+                        const verbId = st.verb.id;
+
+                        if (! st.result) {
+                            if (verbId === VERB_COMPLETED_ID) {
                                 throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));
                             }
-                        }
-
-                        if (typeof st.result.success !== "undefined") {
-                            // Note: this has to be an AU request and AUs can't send waived
-                            if (verbId !== VERB_PASSED_ID && verbId !== VERB_FAILED_ID) {
-                                throw Boom.unauthorized(new Error(`9.5.2.0-3 - cmi5 defined statements, other than "Passed", "Waived" or "Failed", MUST NOT include the "success" property. (${st.id})`));
-                            }
-                            else if (verbId === VERB_PASSED_ID && st.result.success !== true) {
+                            else if (verbId === VERB_PASSED_ID) {
                                 throw Boom.unauthorized(new Error(`9.5.2.0-1 - The "success" property of the result MUST be set to true for the following cmi5 defined statements ["Passed", "Waived"]. (${st.id})`));
                             }
-                            else if (verbId === VERB_FAILED_ID && st.result.success !== false) {
+                            else if (verbId === VERB_FAILED_ID) {
                                 throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
                             }
                         }
-
-                        if (st.score) {
-                            if (verbId !== VERB_PASSED_ID || verbId !== VERB_FAILED_ID) {
-                                throw Boom.unauthorized(new Error(`9.5.1.0-2 - cmi5 defined statements, other than "Passed" or "Failed", MUST NOT include the "score" property. (${st.id})`));
+                        else {
+                            if (typeof st.result.completion !== "undefined") {
+                                // Note: this has to be an AU request and AUs can't send waived
+                                if (verbId !== VERB_COMPLETED_ID) {
+                                    throw Boom.unauthorized(new Error(`9.5.3.0-2 - cmi5 defined statements, other than "Completed" or "Waived", MUST NOT include the "completion" property. (${st.id})`));
+                                }
+                                else if (verbId === VERB_COMPLETED_ID && st.result.completion !== true) {
+                                    throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));
+                                }
                             }
 
-                            if (st.score.raw && (! st.score.min || ! st.score.max)) {
-                                throw Boom.unauthorized(new Error(`9.5.1.0-3 - The AU MUST provide the "min" and "max" values for "score" when the "raw" value is provided. (${st.id})`));
+                            if (typeof st.result.success !== "undefined") {
+                                // Note: this has to be an AU request and AUs can't send waived
+                                if (verbId !== VERB_PASSED_ID && verbId !== VERB_FAILED_ID) {
+                                    throw Boom.unauthorized(new Error(`9.5.2.0-3 - cmi5 defined statements, other than "Passed", "Waived" or "Failed", MUST NOT include the "success" property. (${st.id})`));
+                                }
+                                else if (verbId === VERB_PASSED_ID && st.result.success !== true) {
+                                    throw Boom.unauthorized(new Error(`9.5.2.0-1 - The "success" property of the result MUST be set to true for the following cmi5 defined statements ["Passed", "Waived"]. (${st.id})`));
+                                }
+                                else if (verbId === VERB_FAILED_ID && st.result.success !== false) {
+                                    throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
+                                }
+                            }
+
+                            if (st.score) {
+                                if (verbId !== VERB_PASSED_ID || verbId !== VERB_FAILED_ID) {
+                                    throw Boom.unauthorized(new Error(`9.5.1.0-2 - cmi5 defined statements, other than "Passed" or "Failed", MUST NOT include the "score" property. (${st.id})`));
+                                }
+
+                                if (st.score.raw && (! st.score.min || ! st.score.max)) {
+                                    throw Boom.unauthorized(new Error(`9.5.1.0-3 - The AU MUST provide the "min" and "max" values for "score" when the "raw" value is provided. (${st.id})`));
+                                }
                             }
                         }
+
+                        switch (verbId) {
+                            case VERB_INITIALIZED_ID:
+                                console.log(VERB_INITIALIZED_ID);
+                                if (session.isInitialized || result.statements.includes(VERB_INITIALIZED_ID)) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                                }
+                                break;
+
+                            case VERB_TERMINATED_ID:
+                                console.log(VERB_TERMINATED_ID);
+                                if (result.statements.includes(VERB_TERMINATED_ID)) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                                }
+                                break;
+
+                            case VERB_COMPLETED_ID:
+                                console.log(VERB_COMPLETED_ID);
+                                if (session.isCompleted || result.statements.includes(VERB_COMPLETED_ID)) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                                }
+                                break;
+
+                            case VERB_PASSED_ID:
+                                console.log(VERB_PASSED_ID);
+                                if (session.isPassed || result.statements.includes(VERB_PASSED_ID)) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                                }
+                                break;
+
+                            case VERB_FAILED_ID:
+                                console.log(VERB_FAILED_ID);
+                                if (session.isFailed || result.statements.includes(VERB_FAILED_ID)) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
+                                }
+                                break;
+
+                            default:
+                                throw Boom.unauthorized(new Error(`9.3.0.0-1 - AUs MUST use the below verbs that are indicated as mandatory in other sections of this specification. (Unrecognized cmi5 defined statement: ${verbId} - ${st.id})`));
+                        }
+
+                        // do this after the checks so that we can check the list for a particular verb
+                        result.statements.push(verbId);
                     }
-
-                    switch (verbId) {
-                        case VERB_INITIALIZED_ID:
-                            console.log(VERB_INITIALIZED_ID);
-                            if (session.isInitialized || result.statements.includes(VERB_INITIALIZED_ID)) {
-                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
-                            }
-                            break;
-
-                        case VERB_TERMINATED_ID:
-                            console.log(VERB_TERMINATED_ID);
-                            if (result.statements.includes(VERB_TERMINATED_ID)) {
-                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
-                            }
-                            break;
-
-                        case VERB_COMPLETED_ID:
-                            console.log(VERB_COMPLETED_ID);
-                            if (session.isCompleted || result.statements.includes(VERB_COMPLETED_ID)) {
-                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
-                            }
-                            break;
-
-                        case VERB_PASSED_ID:
-                            console.log(VERB_PASSED_ID);
-                            if (session.isPassed || result.statements.includes(VERB_PASSED_ID)) {
-                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
-                            }
-                            break;
-
-                        case VERB_FAILED_ID:
-                            console.log(VERB_FAILED_ID);
-                            if (session.isFailed || result.statements.includes(VERB_FAILED_ID)) {
-                                throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
-                            }
-                            break;
-
-                        default:
-                            throw Boom.unauthorized(new Error(`9.3.0.0-1 - AUs MUST use the below verbs that are indicated as mandatory in other sections of this specification. (Unrecognized cmi5 defined statement: ${verbId} - ${st.id})`));
+                    else {
+                        console.log("cmi5 allowed statement", st.verb.id);
                     }
-
-                    // do this after the checks so that we can check the list for a particular verb
-                    result.statements.push(verbId);
-                }
-                else {
-                    console.log("cmi5 allowed statement", st);
                 }
             }
         }
@@ -220,30 +222,32 @@ const Boom = require("@hapi/boom"),
 
         let checkSatisfied = false;
 
-        if (beforeResult.statements.length > 0 && (status === 200 || status === 204)) {
-            for (const verbId of beforeResult.statements) {
-                switch (verbId) {
-                    case VERB_INITIALIZED_ID:
-                        sessionUpdates.is_initialized = true;
-                        break;
+        if (beforeResult.statements.length > 0) {
+            if ((status === 200 || status === 204)) {
+                for (const verbId of beforeResult.statements) {
+                    switch (verbId) {
+                        case VERB_INITIALIZED_ID:
+                            sessionUpdates.is_initialized = true;
+                            break;
 
-                    case VERB_TERMINATED_ID:
-                        sessionUpdates.is_terminated = true;
-                        break;
+                        case VERB_TERMINATED_ID:
+                            sessionUpdates.is_terminated = true;
+                            break;
 
-                    case VERB_COMPLETED_ID:
-                        sessionUpdates.is_completed = true;
-                        checkSatisfied = true;
-                        break;
+                        case VERB_COMPLETED_ID:
+                            sessionUpdates.is_completed = true;
+                            checkSatisfied = true;
+                            break;
 
-                    case VERB_PASSED_ID:
-                        sessionUpdates.is_passed = true;
-                        checkSatisfied = true;
-                        break;
+                        case VERB_PASSED_ID:
+                            sessionUpdates.is_passed = true;
+                            checkSatisfied = true;
+                            break;
 
-                    case VERB_FAILED_ID:
-                        sessionUpdates.is_failed = true;
-                        break;
+                        case VERB_FAILED_ID:
+                            sessionUpdates.is_failed = true;
+                            break;
+                    }
                 }
             }
         }

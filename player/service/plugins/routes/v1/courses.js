@@ -80,7 +80,7 @@ const fs = require("fs"),
 
         result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
         result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
-        result.masteryScore = element.attr("masteryScore") ? element.attr("masteryScore").value() : null;
+        result.masteryScore = element.attr("masteryScore") ? Number.parseFloat(element.attr("masteryScore").value()) : null;
         result.activityType = element.attr("activityType") ? element.attr("activityType").value() : null;
 
         const launchParameters = element.get("xmlns:launchParameters", schemaNS),

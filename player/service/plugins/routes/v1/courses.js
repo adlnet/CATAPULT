@@ -723,6 +723,13 @@ module.exports = {
                                 }
                             ];
 
+                            if (launchParameters !== "") {
+                                launchedStContext.extensions["https://w3id.org/xapi/cmi5/context/extensions/launchparameters"] = launchParameters;
+                            }
+                            if (masteryScore) {
+                                launchedStContext.extensions["https://w3id.org/xapi/cmi5/context/extensions/masteryscore"] = masteryScore;
+                            }
+
                             launchedStResponse = await lrsWreck.request(
                                 "POST",
                                 "statements",

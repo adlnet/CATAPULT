@@ -46,7 +46,7 @@
                         <h5>Event Log</h5>
                         <ul>
                             <li v-for="(event, index) in events" :key="index">
-                                {{ event }}
+                                {{ event.summary }}
                             </li>
                         </ul>
                     </b-col>
@@ -155,9 +155,9 @@
 
             while (true) { // eslint-disable-line no-constant-condition
                 try {
-                    const { done, value} = await reader.read();
+                    const {done, value} = await reader.read();
 
-                    this.events.unshift(JSON.stringify(value));
+                    this.events.unshift(value);
 
                     if (done) {
                         this.listening = false;
@@ -178,7 +178,6 @@
                 ]
             ),
             doCloseAU () {
-
                 this.$router.push(`/tests/${this.model.item.registrationId}`);
             },
             async doAbandon () {

@@ -29,7 +29,9 @@ exports.up = (knex) => knex.schema.createTable(
         table.boolean("is_passed").notNullable().default(false);
         table.boolean("is_completed").notNullable().default(false);
         table.boolean("is_waived").notNullable().default(false);
-        // table.boolean("is_satisfied").notNullable().default(false);
+
+        // is_satisfied here is used to track when an AU was already satisfied
+        table.boolean("is_satisfied").notNullable().default(false);
 
         table.json("metadata").notNullable();
     }

@@ -18,6 +18,7 @@
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
+    Registration = require("./v1/lib/registration"),
     CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
     CMI5_EXTENSION_SESSION_ID = "https://w3id.org/xapi/cmi5/context/extensions/sessionid",
 
@@ -71,11 +72,11 @@ const Boom = require("@hapi/boom"),
                         throw Boom.unauthorized(new Error(`9.6.3.1-4 - An AU MUST include the session ID provided by the LMS in the context as an extension for all "cmi5 defined" and "cmi5 allowed" statements it makes directly in the LRS. (${st.id})`));
                     }
 
-                    if (! session.isInitialized && st.verb.id !== VERB_INITIALIZED_ID) {
+                    if (! session.is_initialized && st.verb.id !== VERB_INITIALIZED_ID) {
                         throw Boom.unauthorized(new Error(`9.3.0.0-4 - The "Initialized" verb MUST be the first statement (cmi5 allowed or defined). (${st.id})`));
                     }
 
-                    if (session.isTerminated) {
+                    if (session.is_terminated) {
                         throw Boom.unauthorized(new Error(`9.3.0.0-5 - The "Terminated" verb MUST be the last statement (cmi5 allowed or defined). (${st.id})`));
                     }
 
@@ -145,36 +146,31 @@ const Boom = require("@hapi/boom"),
 
                         switch (verbId) {
                             case VERB_INITIALIZED_ID:
-                                console.log(VERB_INITIALIZED_ID);
-                                if (session.isInitialized || result.statements.includes(VERB_INITIALIZED_ID)) {
+                                if (session.is_initialized || result.statements.includes(VERB_INITIALIZED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
                                 }
                                 break;
 
                             case VERB_TERMINATED_ID:
-                                console.log(VERB_TERMINATED_ID);
                                 if (result.statements.includes(VERB_TERMINATED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
                                 }
                                 break;
 
                             case VERB_COMPLETED_ID:
-                                console.log(VERB_COMPLETED_ID);
-                                if (session.isCompleted || result.statements.includes(VERB_COMPLETED_ID)) {
+                                if (session.is_completed || result.statements.includes(VERB_COMPLETED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
                                 }
                                 break;
 
                             case VERB_PASSED_ID:
-                                console.log(VERB_PASSED_ID);
-                                if (session.isPassed || result.statements.includes(VERB_PASSED_ID)) {
+                                if (session.is_passed || result.statements.includes(VERB_PASSED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
                                 }
                                 break;
 
                             case VERB_FAILED_ID:
-                                console.log(VERB_FAILED_ID);
-                                if (session.isFailed || result.statements.includes(VERB_FAILED_ID)) {
+                                if (session.is_failed || result.statements.includes(VERB_FAILED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (${st.id})`));
                                 }
                                 break;
@@ -214,16 +210,17 @@ const Boom = require("@hapi/boom"),
 
         return result;
     },
-    afterLRSRequest = async (req, res, txn, beforeResult) => {
+    afterLRSRequest = async (req, res, txn, beforeResult, session, regCourseAu, registration) => {
         const status = res.statusCode,
             sessionUpdates = {
                 lastRequestTime: txn.fn.now()
             };
-
-        let checkSatisfied = false;
+        let registrationCourseAuUpdates;
 
         if (beforeResult.statements.length > 0) {
             if ((status === 200 || status === 204)) {
+                let nowSatisfied = false;
+
                 for (const verbId of beforeResult.statements) {
                     switch (verbId) {
                         case VERB_INITIALIZED_ID:
@@ -235,18 +232,89 @@ const Boom = require("@hapi/boom"),
                             break;
 
                         case VERB_COMPLETED_ID:
-                            sessionUpdates.is_completed = true;
-                            checkSatisfied = true;
+                            registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                            registrationCourseAuUpdates.is_completed = true;
+
+                            regCourseAu.is_completed = 1;
+
+                            if (! regCourseAu.isSatisfied
+                                && (regCourseAu.metadata.moveOn === "Completed"
+                                    || regCourseAu.metadata.moveOn === "CompletedOrPassed"
+                                    || (regCourseAu.metadata.moveOn === "CompletedAndPassed" && regCourseAu.is_passed)
+                                )
+                            ) {
+                                nowSatisfied = true;
+                            }
+
                             break;
 
                         case VERB_PASSED_ID:
-                            sessionUpdates.is_passed = true;
-                            checkSatisfied = true;
+                            registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                            registrationCourseAuUpdates.is_passed = true;
+
+                            regCourseAu.is_passed = 1;
+
+                            if (! regCourseAu.isSatisfied
+                                && (regCourseAu.metadata.moveOn === "Passed"
+                                    || regCourseAu.metadata.moveOn === "CompletedOrPassed"
+                                    || (regCourseAu.metadata.moveOn === "CompletedAndPassed" && regCourseAu.is_completed)
+                                )
+                            ) {
+                                nowSatisfied = true;
+                            }
+
                             break;
 
                         case VERB_FAILED_ID:
                             sessionUpdates.is_failed = true;
                             break;
+                    }
+                }
+
+                if (registrationCourseAuUpdates) {
+                    if (nowSatisfied) {
+                        registrationCourseAuUpdates.isSatisfied = true;
+                    }
+
+                    try {
+                        await txn("registrations_courses_aus").update(registrationCourseAuUpdates).where({id: session.registrations_courses_aus_id});
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to update registrations_courses_aus: ${ex}`);
+                    }
+                }
+
+                if (nowSatisfied) {
+                    registrationCourseAuUpdates.is_satisfied = true;
+
+                    try {
+                        await Registration.interpretMoveOn(
+                            registration,
+                            {
+                                auToSetSatisfied: regCourseAu.courseAu.lms_id,
+                                session,
+                                lrsWreck: Wreck.defaults(
+                                    {
+                                        baseUrl: req.server.app.lrs.endpoint,
+                                        headers: {
+                                            "X-Experience-API-Version": "1.0.3",
+                                            Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
+                                        },
+                                        json: true
+                                    }
+                                )
+                            }
+                        );
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to interpret moveOn: ${ex}`);
+                    }
+
+                    try {
+                        await txn("registrations").update({metadata: JSON.stringify(registration.metadata)}).where({id: registration.id});
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to update registration metadata: ${ex}`);
                     }
                 }
             }
@@ -259,10 +327,10 @@ const Boom = require("@hapi/boom"),
         }
 
         try {
-            await txn("sessions").update(sessionUpdates).where(req.auth.credentials);
+            await txn("sessions").update(sessionUpdates).where({id: session.id});
         }
         catch (ex) {
-            console.warn(`Failed to update session: ${ex}`);
+            throw new Error(`Failed to update session: ${ex}`);
         }
     };
 
@@ -353,8 +421,44 @@ module.exports = {
                 //
                 handler: async (req, h) => {
                     const db = req.server.app.db,
-                        txn = await db.transaction(),
-                        session = await txn("sessions").forUpdate().first("*").where(req.auth.credentials);
+                        txn = await db.transaction();
+                    let session,
+                        regCourseAu,
+                        registration,
+                        courseAu,
+                        result;
+
+                    try {
+                        // the extra set of parens are necessary here for non-declaration assignment destructuring,
+                        // and the use of nestTables seems to switch off the automatic string casing
+                        ({
+                            sessions: session,
+                            registrationsCoursesAus: regCourseAu,
+                            registrations: registration,
+                            coursesAus: courseAu
+                        } = await txn
+                            .first("*")
+                            .from("sessions")
+                            .leftJoin("registrations_courses_aus", "sessions.registrations_courses_aus_id", "registrations_courses_aus.id")
+                            .leftJoin("registrations", "registrations_courses_aus.registration_id", "registrations.id")
+                            .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
+                            .where(
+                                {
+                                    "sessions.id": req.auth.credentials.id,
+                                    "sessions.tenant_id": req.auth.credentials.tenantId
+                                }
+                            )
+                            .queryContext({jsonCols: ["registrations_courses_aus.metadata", "registrations.actor", "registrations.metadata", "courses_aus.metadata"]})
+                            .forUpdate()
+                            .options({nestTables: true})
+                        );
+
+                        regCourseAu.courseAu = courseAu;
+                    }
+                    catch (ex) {
+                        txn.rollback();
+                        throw new Error(`Failed to select session, registration course AU, registration and course AU for update: ${ex}`);
+                    }
 
                     let response;
 
@@ -403,7 +507,7 @@ module.exports = {
                         // clean up the original response
                         res.destroy();
 
-                        await afterLRSRequest(req, res, txn, beforeResult);
+                        await afterLRSRequest(req, res, txn, beforeResult, session, regCourseAu, registration);
 
                         txn.commit();
                     }

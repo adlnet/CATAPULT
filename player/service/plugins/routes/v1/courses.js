@@ -738,6 +738,8 @@ module.exports = {
                                         "Content-Type": "application/json"
                                     },
                                     payload: {
+                                        id: uuidv4(),
+                                        timestamp: new Date().toISOString(),
                                         actor,
                                         verb: {
                                             id: "http://adlnet.gov/expapi/verbs/launched",
@@ -767,6 +769,7 @@ module.exports = {
                         const session = {
                             tenantId,
                             registrationsCoursesAusId: regCourseAu.id,
+                            code: sessionId,
                             isLaunched: true,
                             launchMode,
                             launchTokenId: uuidv4()

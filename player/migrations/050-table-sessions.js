@@ -25,9 +25,10 @@ exports.up = (knex) => knex.schema.createTable(
 
         table.integer("registrations_courses_aus_id").unsigned().notNullable().references("id").inTable("registrations_courses_aus").onUpdate("CASCADE").onDelete("CASCADE");
 
+        table.string("code").notNullable().unique();
         table.datetime("last_request_time");
 
-        table.enu("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
+        table.enum("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
         table.uuid("launch_token_id").notNullable();
         table.boolean("launch_token_fetched").notNullable().default(false);
         table.boolean("launch_data_fetched").notNullable().default(false);

@@ -17,6 +17,7 @@ import Vue from "vue";
 
 const initialState = () => ({
         detailCache: {},
+        logsCache: {},
         cacheContainer: {},
         defaultKeyProperties: {}
     }),
@@ -86,6 +87,24 @@ export default {
             }
 
             return state.detailCache[id];
+        },
+        logsById: (state) => ({id}) => {
+            if (! state.logsCache[id]) {
+                Vue.set(
+                    state.logsCache,
+                    id,
+                    wrapItem(
+                        {
+                            id
+                        },
+                        {
+                            loaded: false
+                        }
+                    )
+                );
+            }
+
+            return state.logsCache[id];
         }
     },
     actions: {
@@ -193,6 +212,39 @@ export default {
 
             // eslint-disable-next-line require-atomic-updates
             cache[busyKey] = false;
+        },
+
+        logsLoadById: async ({getters, rootGetters}, {id, force = false}) => {
+
+            const fromCache = getters.logsById({id});
+
+            if (fromCache.loaded && ! force) {
+                return;
+            }
+
+            fromCache.loading = true;
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](`tests/${id}/logs`);
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${response.status}`);
+                }
+
+                let body = await response.json();
+
+                body = populateItem(body);
+
+                fromCache.items = body;
+                fromCache.loaded = true;
+            }
+            catch (ex) {
+                fromCache.error = true;
+                fromCache.errMsg = `Failed to load from id: ${ex}`;
+            }
+            finally {
+                fromCache.loading = false;
+            }
         },
 
         create: async ({dispatch, state, rootGetters}, {courseId, actor}) => {

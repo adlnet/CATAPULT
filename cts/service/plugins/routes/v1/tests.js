@@ -202,6 +202,53 @@ module.exports = {
                 },
 
                 {
+                    method: "GET",
+                    path: "/tests/{id}/logs",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+
+                        const tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            sessionsLogs = {},
+                            registrationsLogs = {},
+
+                            sessionsLogsResult = await db.select("sessions_logs.id", "sessions_logs.created_at", "sessions_logs.updated_at", "sessions_logs.tenant_id", "sessions_logs.session_id", "sessions_logs.metadata")
+                                .from("sessions_logs")
+                                .queryContext({jsonCols: ["metadata"]})
+                                .leftJoin("sessions", function () {
+                                    this.on("sessions_logs.session_id", "=", "sessions.id") // eslint-disable-line no-invalid-this, semi
+                                    this.andOn("sessions_logs.tenant_id", "=", "sessions.tenant_id") // eslint-disable-line no-invalid-this, semi
+                                })
+                                .where({"sessions.registration_id": req.params.id}, tenantId),
+
+                            registrationsLogsResult = await db.select("registrations_logs.id", "registrations_logs.created_at", "registrations_logs.updated_at", "registrations_logs.tenant_id", "registrations_logs.registration_id", "registrations_logs.metadata")
+                                .from("registrations_logs")
+                                .queryContext({jsonCols: ["metadata"]})
+                                .where({registration_id: req.params.id}, tenantId);
+
+                        sessionsLogsResult.forEach((log) => {
+                            if (sessionsLogs[log.sessionId] === undefined) { // eslint-disable-line no-undefined
+                                sessionsLogs[log.sessionId] = [];
+                            }
+                            sessionsLogs[log.sessionId].push(log);
+                        }
+                        );
+
+                        registrationsLogsResult.forEach((log) => {
+                            if (registrationsLogs[log.registrationId] === undefined) { // eslint-disable-line no-undefined
+                                registrationsLogs[log.registrationId] = [];
+                            }
+                            registrationsLogs[log.registrationId].push(log);
+                        }
+                        );
+
+                        return {sessionsLogs, registrationsLogs};
+                    }
+                },
+
+                {
                     method: "POST",
                     path: "/tests/{id}/waive-au/{auIndex}",
                     options: {

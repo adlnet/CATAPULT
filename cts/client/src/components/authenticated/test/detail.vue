@@ -157,9 +157,30 @@
                                         <h4 style="margin-bottom: 0px;">Test Report</h4>
                                     </b-col>
                                     <b-col cols="auto" class="text-right">
-                                        <b-button variant="primary" disabled size="sm">Download</b-button>
+                                        <b-button size="sm" variant="primary" v-on:click="download">Download</b-button>
                                     </b-col>
                                 </b-row>
+                            </template>
+                            <h5>Conformance Status</h5>
+                            <template v-if="sessionsLogs">
+                                <ul v-for="(sessionId) in Object.keys(sessionsLogs)" :key="sessionId">
+                                    Session {{ sessionId }}
+                                    <ul v-for="(sessionLog) in sessionsLogs[sessionId]" :key="sessionLog.id">
+                                        {{ sessionLog.metadata.summary }}
+                                        <ul v-for="(sessionDetailLog, index) in sessionLog.metadata.summaryDetail" :key="index">
+                                            {{ sessionDetailLog }}
+                                        </ul>
+                                    </ul>
+                                </ul>
+                            </template>
+                            <h5>Registration Log</h5>
+                            <template v-if="registrationsLogs">
+                                <ul v-for="(registrationId) in Object.keys(registrationsLogs)" :key="registrationId">
+                                    Registration {{ registrationId }}
+                                    <ul v-for="(registrationLog) in registrationsLogs[registrationId]" :key="registrationLog.id">
+                                        {{ registrationLog.metadata.summary }}
+                                    </ul>
+                                </ul>
                             </template>
                         </b-card>
                     </b-col>
@@ -193,7 +214,9 @@
         data: () => ({
             aUconfigs: {},
             audioPreference: null,
-            languagePreference: null
+            languagePreference: null,
+            sessionsLogs: [],
+            registrationsLogs: []
         }),
         props: {
             id: {
@@ -215,6 +238,13 @@
                 return result;
             }
         },
+        async mounted () {
+            await this.logsLoadById({id: this.id, force: true});
+            const result = this.$store.getters["service/tests/logsById"]({id: this.id});
+
+            this.sessionsLogs = result.items.sessionsLogs;
+            this.registrationsLogs = result.items.registrationsLogs;
+        },
         created () {
             this.$store.dispatch("service/tests/loadById", {id: this.id});
         },
@@ -222,7 +252,8 @@
             ...Vuex.mapActions(
                 "service/tests",
                 [
-                    "waiveAU"
+                    "waiveAU",
+                    "logsLoadById"
                 ]
             ),
             ...Vuex.mapActions(
@@ -253,6 +284,25 @@
                 }
             },
 
+            download () {
+                const fileContents = {
+                          testId: this.id,
+                          dateCreated: new Date().toJSON(),
+                          sessions: this.sessionsLogs,
+                          registrations: this.registrationsLogs
+                      },
+
+                      element = document.createElement("a");
+
+                element.setAttribute("href", "data:text/plain;charset=utf-8," + JSON.stringify(fileContents, null, 2)); // eslint-disable-line no-magic-numbers
+                element.setAttribute("download", "results.json");
+
+                element.style.display = "none";
+                document.body.appendChild(element);
+
+                element.click();
+                document.body.removeChild(element);
+            },
             async doLaunchAU (index) {
                 try {
                     const id = await this.createSession(

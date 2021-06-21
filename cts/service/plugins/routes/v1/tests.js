@@ -17,11 +17,31 @@
 
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    registrations = {},
     { v4: uuidv4 } = require("uuid");
 
 module.exports = {
     name: "catapult-cts-api-routes-v1-tests",
     register: (server, options) => {
+        server.decorate(
+            "toolkit",
+            "registrationEvent",
+            async (registrationId, tenantId, db, rawData) => {
+                if (rawData.kind !== "control") {
+                    await db.insert(
+                        {
+                            tenantId,
+                            registrationId,
+                            metadata: JSON.stringify(rawData)
+                        }
+                    ).into("registrations_logs");
+                }
+
+                if (registrations[registrationId]) {
+                    registrations[registrationId].write(JSON.stringify(rawData) + "\n");
+                }
+            }
+        );
         server.route(
             [
                 //
@@ -98,6 +118,8 @@ module.exports = {
                         }
 
                         const result = db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: insertResult});
+
+                        h.registrationEvent(insertResult, req.auth.credentials.tenantId, db, {kind: "spec", resource: "create", playerResponseStatusCode: result.statusCode, summary: "Registration Created"});
 
                         delete result.playerId;
 
@@ -189,6 +211,8 @@ module.exports = {
                         let waiveResponse,
                             waiveResponseBody;
 
+                        const db = req.server.app.db;
+
                         try {
                             waiveResponse = await Wreck.request(
                                 "POST",
@@ -203,6 +227,7 @@ module.exports = {
                                 }
                             );
                             waiveResponseBody = await Wreck.read(waiveResponse, {json: true});
+                            h.registrationEvent(req.params.id, req.auth.credentials.tenantId, db, {kind: "spec", resource: "waive-au", playerResponseStatusCode: waiveResponse.statusCode, summary: "AU Waived"});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to player to waive AU: ${ex}`));

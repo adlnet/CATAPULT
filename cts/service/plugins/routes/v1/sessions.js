@@ -152,6 +152,8 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to insert into sessions: ${ex}`));
                         }
 
+                        h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "sessions", summary: "AU " + queryResult.courses.metadata.aus[auIndex].title[0].text + " launch session initiated"});
+
                         //
                         // swap endpoint, fetch for proxied versions
                         //
@@ -252,7 +254,7 @@ module.exports = {
                             return Boom.notFound();
                         }
 
-                        h.sessionEvent(req.params.id, tenantId, db, {kind: "spec", resource: "returnURL loaded"});
+                        h.sessionEvent(req.params.id, tenantId, db, {kind: "spec", resource: "return-url", summary: "Return URL loaded"});
 
                         return "<html><body>Session has ended, use &quot;Close&quot; button to return to test details page.</body></html>";
                     }
@@ -279,7 +281,7 @@ module.exports = {
 
                         sessions[req.params.id] = channel;
 
-                        h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "initialize"});
+                        h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "events", summary: "Event stream started"});
 
                         for (const log of logs) {
                             channel.write(log.metadata + "\n");
@@ -288,8 +290,8 @@ module.exports = {
                         req.raw.req.on(
                             "close",
                             () => {
-                                h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "end"});
 
+                                h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "events", summary: "Event stream closed"});
                                 delete sessions[req.params.id];
                             }
                         );
@@ -367,8 +369,7 @@ module.exports = {
                             catch (ex) {
                                 throw Boom.internal(new Error(`Failed to request fetch url from player: ${ex}`));
                             }
-
-                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode});
+                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode, summary: "Fetch URL used"});
 
                             return h.response(fetchResponseBody).code(fetchResponse.statusCode);
                         }
@@ -427,10 +428,6 @@ module.exports = {
                                     throw Boom.notFound(`session: ${req.params.id}`);
                                 }
 
-                                if (req.method !== "options") {
-                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource});
-                                }
-
                                 return null;
                             }
                         ]
@@ -456,6 +453,20 @@ module.exports = {
                             onResponse: async (err, res, req, h, settings) => {
                                 if (err !== null) {
                                     throw new Error(`LRS request failed: ${err}`);
+                                }
+
+                                let session;
+                                const db = req.server.app.db;
+
+                                try {
+                                    session = await db.first("*").from("sessions").where({id: req.params.id});
+                                }
+                                catch (ex) {
+                                    throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
+                                }
+
+                                if (! session) {
+                                    throw Boom.notFound(`session: ${req.params.id}`);
                                 }
 
                                 let payload;
@@ -497,6 +508,52 @@ module.exports = {
 
                                 // clean up the original response
                                 res.destroy();
+
+                                if (req.method === "get") {
+                                    if (req.params.resource === "activities/state") {
+                                        if (req.query.stateId === "LMS.LaunchData") {
+                                            h.sessionEvent(
+                                                req.params.id,
+                                                session.tenantId,
+                                                db,
+                                                {
+                                                    kind: "lrs",
+                                                    method: req.method,
+                                                    resource: req.params.resource,
+                                                    summary: "LMS Launch Data retrieved",
+                                                    summaryDetail: [
+                                                        response.source.contextTemplate !== null ? "contextTemplate confirmed" : "contextTemplate not present",
+                                                        response.source.launchMode !== null ? "launchMode confirmed" : "launchMode not present",
+                                                        response.source.launchMethod !== null ? "launchMethod confirmed" : "launchMethod not present",
+                                                        response.source.launchParameters !== null ? "launchParameters confirmed" : "launchParameters not present",
+                                                        response.source.entitlementKey !== null ? "entitlementKey confirmed" : "entitlementKey not present",
+                                                        response.source.moveOn !== null ? "moveOn confirmed" : "moveOn not present",
+                                                        response.source.returnUrl !== null ? "returnUrl confirmed" : "returnUrl not present"
+                                                    ]
+                                                }
+                                            )
+                                        }
+                                    }
+                                    else if (req.params.resource === "activities") {
+                                        if (req.query.activityId !== null) {
+                                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
+                                        }
+                                    }
+                                    else if (req.params.resource === "agents/profile") {
+                                        if (req.query.profileId === "cmi5LearnerPreferences") {
+                                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
+                                        }
+                                    }
+                                    else {
+                                        h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
+                                    }
+                                }
+
+                                else if (req.method === "put") {
+                                    if (req.params.resource === "statements") {
+                                        h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Statement recorded"});
+                                    }
+                                }
 
                                 return response;
                             }

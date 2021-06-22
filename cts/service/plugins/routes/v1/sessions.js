@@ -139,7 +139,12 @@ module.exports = {
                                     player_au_launch_url: playerAuLaunchUrl,
                                     player_endpoint: playerEndpoint,
                                     player_fetch: playerFetch,
-                                    metadata: JSON.stringify({})
+                                    metadata: JSON.stringify(
+                                        {
+                                            version: 1,
+                                            launchMethod: createResponseBody.launchMethod
+                                        }
+                                    )
                                 }
                             ).into("sessions");
                         }
@@ -157,6 +162,7 @@ module.exports = {
                         const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId, id: sessionId});
 
                         result.launchUrl = ctsLaunchUrl;
+                        result.launchMethod = createResponseBody.launchMethod;
 
                         return getClientSafeSession(result);
                     }

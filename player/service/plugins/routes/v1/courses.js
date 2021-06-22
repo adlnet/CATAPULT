@@ -600,7 +600,7 @@ module.exports = {
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
                             launchMode = "Normal",
-                            launchMethod = req.payload.launchMethod || courseAu.metadata.launchMethod || "AnyWindow",
+                            launchMethod = req.payload.launchMethod ? req.payload.launchMethod : (courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe"),
                             launchParameters = req.payload.launchParameters || courseAu.metadata.launchParameters,
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
@@ -659,7 +659,6 @@ module.exports = {
                                 ),
                                 lmsLaunchDataPayload = {
                                     launchMode,
-                                    launchMethod,
                                     masteryScore,
                                     moveOn,
                                     launchParameters,
@@ -796,6 +795,7 @@ module.exports = {
 
                         return {
                             id: session.id,
+                            launchMethod,
                             url: `${contentUrl}${contentUrl.indexOf("?") === -1 ? "?" : "&"}${launchUrlParams.toString()}`
                         };
                     }

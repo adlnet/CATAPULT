@@ -113,11 +113,14 @@
                                         </b-col>
                                     </b-row>
                                     <!-- TODO: preset these based on course structure configuration -->
-                                    <b-form-group label="Launch method">
-                                        <b-form-select v-model="aUconfigs[index].launchMethod">
-                                            <b-form-select-option :value="null">From Course Structure</b-form-select-option>
-                                            <b-form-select-option value="AnyWindow">Embedded Player</b-form-select-option>
-                                            <b-form-select-option value="NewWindow">New Window</b-form-select-option>
+                                    <b-form-group :label="`Launch method (${au.launchMethod})`">
+                                        <b-form-select v-if="au.launchMethod === 'AnyWindow'" v-model="aUconfigs[index].launchMethod">
+                                            <b-form-select-option :value="null">Default</b-form-select-option>
+                                            <b-form-select-option value="iframe">This Window</b-form-select-option>
+                                            <b-form-select-option value="newWindow">New Window</b-form-select-option>
+                                        </b-form-select>
+                                        <b-form-select disabled v-else v-model="aUconfigs[index].launchMethod">
+                                            <b-form-select-option selected :value="null">New Window</b-form-select-option>
                                         </b-form-select>
                                     </b-form-group>
                                     <b-form-group label="Launch parameters">

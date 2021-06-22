@@ -29,7 +29,15 @@
                 </template>
                 <b-row class="flex-fill">
                     <b-col cols="8" class="d-flex flex-column">
-                        <iframe v-if="model.item.launchUrl" :src="model.item.launchUrl" class="flex-fill"></iframe>
+                        <template v-if="model.item.launchUrl">
+                            <iframe v-if="model.item.launchMethod === 'iframe'" :src="model.item.launchUrl" class="flex-fill"></iframe>
+                            <p v-else-if="model.item.launchMethod === 'newWindow'">
+                                AU has been launched in a new window.
+                            </p>
+                            <p v-else>
+                                Unrecognized launch method: {{ model.item.launchMethod }}
+                            </p>
+                        </template>
                         <p v-else>
                             Session appears to be closed, providing session details but no launch.
                         </p>
@@ -100,9 +108,11 @@
             }
         },
         async created () {
-            const self = this;
-
             await this.$store.dispatch("service/sessions/loadById", {id: this.id});
+
+            if (this.model.item.launchUrl && this.model.item.launchMethod === "newWindow") {
+                window.open(this.model.item.launchUrl);
+            }
 
             const response = await this.$store.getters["service/makeApiRequest"](`sessions/${this.id}/events`);
 
@@ -141,21 +151,21 @@
 
             const reader = stream.getReader();
 
-            self.listening = true;
+            this.listening = true;
 
             while (true) { // eslint-disable-line no-constant-condition
                 try {
                     const { done, value} = await reader.read();
 
-                    self.events.unshift(JSON.stringify(value));
+                    this.events.unshift(JSON.stringify(value));
 
                     if (done) {
-                        self.listening = false;
+                        this.listening = false;
                         break;
                     }
                 }
                 catch (ex) {
-                    self.listening = false;
+                    this.listening = false;
                     break;
                 }
             }

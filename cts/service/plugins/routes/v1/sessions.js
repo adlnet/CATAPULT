@@ -69,7 +69,7 @@ module.exports = {
                             tenantId = req.auth.credentials.tenantId,
                             testId = req.payload.testId,
                             auIndex = req.payload.auIndex,
-                            baseUrl = `${req.url.protocol}//${req.url.host}`;
+                            baseUrl = (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}:` : req.url.protocol) + `//${req.info.host}`;
 
                         let queryResult;
 

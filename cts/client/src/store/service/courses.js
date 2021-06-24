@@ -235,7 +235,7 @@ export default {
                 let responseBody = await response.json();
 
                 if (! response.ok) {
-                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status})`);
                 }
 
                 responseBody = populateItem(responseBody);

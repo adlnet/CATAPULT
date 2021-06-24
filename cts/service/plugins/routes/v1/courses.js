@@ -54,6 +54,9 @@ module.exports = {
 
                             onResponse: async (err, res, req, h, settings) => {
                                 if (err !== null) {
+                                    // clean up the original response
+                                    res.destroy();
+
                                     throw Boom.internal(new Error(`Failed proxied import request: ${err}`));
                                 }
 
@@ -62,6 +65,9 @@ module.exports = {
                                     payload = await Wreck.read(res, {json: true});
                                 }
                                 catch (ex) {
+                                    // clean up the original response
+                                    res.destroy();
+
                                     throw Boom.internal(new Error(`Failed to parse player request response: ${ex}`));
                                 }
 
@@ -69,7 +75,7 @@ module.exports = {
                                 res.destroy();
 
                                 if (res.statusCode !== 200) {
-                                    throw Boom.internal(new Error(`Player course import failed: ${payload.message} (${payload.srcError})`), {statusCode: res.statusCode});
+                                    throw Boom.badRequest(new Error(`Failed request to player import: ${payload.message} (${payload.srcError})`), {statusCode: res.statusCode});
                                 }
 
                                 const db = req.server.app.db;
@@ -158,6 +164,9 @@ module.exports = {
 
                             onResponse: async (err, res, req, h, settings) => {
                                 if (err !== null) {
+                                    // clean up the original response
+                                    res.destroy();
+
                                     throw Boom.internal(new Error(`Failed proxied delete request: ${err}`));
                                 }
 
@@ -167,23 +176,30 @@ module.exports = {
                                         payload = await Wreck.read(res, {json: true});
                                     }
                                     catch (ex) {
+                                        // clean up the original response
+                                        res.destroy();
+
                                         throw Boom.internal(new Error(`Failed to parse player request response (${res.statusCode}): ${ex}`));
                                     }
 
-                                    throw Boom.internal(new Error(`Player course delete failed: ${payload.message} (${payload.srcError})`), {statusCode: res.statusCode});
+                                    // clean up the original response
+                                    res.destroy();
+
+                                    throw Boom.internal(new Error(`Failed request to player delete: ${payload.message} (${payload.srcError})`), {statusCode: res.statusCode});
                                 }
 
-                                const db = req.server.app.db;
 
                                 // clean up the original response
                                 res.destroy();
+
+                                const db = req.server.app.db;
 
                                 let deleteResult;
                                 try {
                                     deleteResult = await db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
                                 }
                                 catch (ex) {
-                                    throw Boom.internal(new Error(`Failed delete from database: ${ex}`));
+                                    throw Boom.internal(new Error(`Failed to delete course from database: ${ex}`));
                                 }
 
                                 return null;

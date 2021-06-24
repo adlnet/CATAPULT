@@ -143,10 +143,16 @@ module.exports = {
 
                             onResponse: async (err, res, req, h, settings) => {
                                 if (err !== null) {
+                                    // clean up the original response
+                                    res.destroy();
+
                                     throw new Error(err);
                                 }
 
                                 if (res.statusCode !== 204) {
+                                    // clean up the original response
+                                    res.destroy();
+
                                     throw new Error(res.statusCode);
                                 }
 

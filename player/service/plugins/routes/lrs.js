@@ -49,6 +49,15 @@ const Boom = require("@hapi/boom"),
                 const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
 
                 for (const st of statements) {
+                    for (const prop of ["actor", "verb", "object"]) {
+                        if (typeof st[prop] === "undefined") {
+                            throw Boom.badRequest(new Error(`4.1.0.0-1 - An Assignable Unit MUST conform to all requirements as specified in the xAPI specification. (Invalid statement missing: ${prop})`));
+                        }
+                    }
+                    if (typeof st.verb.id === "undefined") {
+                        throw Boom.badRequest(new Error("4.1.0.0-1 - An Assignable Unit MUST conform to all requirements as specified in the xAPI specification. (Invalid statement missing: verb.id)"));
+                    }
+
                     // all statements have to have the actor, the context based on the template,
                     // timestamp, id, etc.
                     if (typeof st.id === "undefined") {
@@ -88,7 +97,7 @@ const Boom = require("@hapi/boom"),
                         //
                         // undefined actor.objectType implies Agent
                         //
-                        if (typeof st.actor === "undefined" || (typeof st.actor.objectType !== "undefined" && st.actor.objectType !== "Agent")) {
+                        if (typeof st.actor.objectType !== "undefined" && st.actor.objectType !== "Agent") {
                             throw Boom.unauthorized(new Error(`9.2.0.0-2 - The Actor property for all "cmi5 defined" statements MUST be of objectType "Agent". (${st.id})`));
                         }
 

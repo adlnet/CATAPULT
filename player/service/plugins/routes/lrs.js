@@ -241,6 +241,8 @@ const Boom = require("@hapi/boom"),
                             break;
 
                         case VERB_COMPLETED_ID:
+                            sessionUpdates.is_completed = true;
+
                             registrationCourseAuUpdates = registrationCourseAuUpdates || {};
                             registrationCourseAuUpdates.is_completed = true;
 
@@ -258,6 +260,8 @@ const Boom = require("@hapi/boom"),
                             break;
 
                         case VERB_PASSED_ID:
+                            sessionUpdates.is_passed = true;
+
                             registrationCourseAuUpdates = registrationCourseAuUpdates || {};
                             registrationCourseAuUpdates.is_passed = true;
 

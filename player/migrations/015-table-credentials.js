@@ -37,5 +37,13 @@ exports.up = async (knex) => {
             secret: await bcrypt.hash("player!", 8)
         }
     );
+    await knex(tableName).insert(
+        {
+            id: 2,
+            tenant_id: 2,
+            key: "lms_test",
+            secret: await bcrypt.hash("quartz!", 8)
+        }
+    );
 };
 exports.down = (knex) => knex.schema.dropTable(tableName);

@@ -32,6 +32,12 @@ exports.up = async (knex) => {
             code: "default"
         }
     );
+    await knex(tableName).insert(
+        {
+            id: 2,
+            code: "lms_test"
+        }
+    );
 };
 
 exports.down = (knex) => knex.schema.dropTable(tableName);

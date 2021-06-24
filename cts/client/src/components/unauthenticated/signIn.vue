@@ -32,8 +32,8 @@
                 </b-input-group-append>
             </b-input-group>
         </b-form-group>
-        <b-form-checkbox id="rememberMe" v-model="rememberMe">
-            Remember me
+        <b-form-checkbox id="keepLoggedIn" v-model="keepLoggedIn">
+            Keep me logged in
         </b-form-checkbox>
         <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" @click="doSignIn">
             Log In
@@ -53,7 +53,7 @@
         data: () => ({
             username: "",
             password: "",
-            rememberMe: false,
+            keepLoggedIn: false,
             passwordVisible: false
         }),
         computed: {
@@ -73,7 +73,7 @@
                         {
                             username: this.username,
                             password: this.password,
-                            storeCookie: this.rememberMe
+                            storeCookie: this.keepLoggedIn
                         }
                     );
                 }

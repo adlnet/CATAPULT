@@ -23,7 +23,7 @@ exports.up = (knex) => knex.schema.createTable(
         table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
 
-        table.integer("course_au_id").unsigned().notNullable().references("id").inTable("courses_aus").onUpdate("CASCADE").onDelete("RESTRICT");
+        table.integer("course_au_id").unsigned().notNullable().references("id").inTable("courses_aus").onUpdate("CASCADE").onDelete("CASCADE");
         table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
 
         table.boolean("is_passed").notNullable().default(false);

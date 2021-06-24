@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2021 Rustici Software
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<courseStructure xmlns="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
+    <course id="https://w3id.org/xapi/cmi5/catapult/lts/course/004-4-moveOn-CompletedOrPassed">
+        <title>
+            <langstring lang="en">CATAPULT LMS Test Course: 004-4 moveOn CompletedOrPassed</langstring>
+        </title>
+        <description>
+            <langstring lang="en">CATAPULT LMS Test Course: 004-4 moveOn CompletedOrPassed</langstring>
+        </description>
+    </course>
+    <block id="https://w3id.org/xapi/cmi5/catapult/lts/block/004-4-moveOn-CompletedOrPassed">
+        <title>
+            <langstring lang="en">CATAPULT LMS Test Block: 004-4 moveOn CompletedOrPassed</langstring>
+        </title>
+        <description>
+            <langstring lang="en">CATAPULT LMS Test Block: 004-4 moveOn CompletedOrPassed</langstring>
+        </description>
+        <au
+            id="https://w3id.org/xapi/cmi5/catapult/lts/au/004-4-moveOn-CompletedOrPassed"
+            moveOn="CompletedOrPassed"
+        >
+            <title>
+                <langstring lang="en">CATAPULT LMS Test AU: 004-4 moveOn CompletedOrPassed</langstring>
+            </title>
+            <description>
+                <langstring lang="en">CATAPULT LMS Test AU: 004-4 moveOn CompletedOrPassed</langstring>
+            </description>
+            <url>index.html</url>
+        </au>
+    </block>
+</courseStructure>

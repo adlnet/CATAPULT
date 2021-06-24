@@ -3,3 +3,4 @@ node_modules
 player/.env
 cts/.env
 cts/var
+lts/pkg/dist

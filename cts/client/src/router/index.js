@@ -26,6 +26,7 @@ import courseDetailTestList from "@/components/authenticated/course/detail/testL
 import testNew from "@/components/authenticated/test/new";
 import testDetail from "@/components/authenticated/test/detail";
 import sessionDetail from "@/components/authenticated/session/detail";
+import requirementsList from "@/components/authenticated/requirements/list";
 
 Vue.use(VueRouter);
 
@@ -77,6 +78,10 @@ const router = new VueRouter(
                 path: "/sessions/:id",
                 component: sessionDetail,
                 props: true
+            },
+            {
+                path: "/requirements",
+                component: requirementsList,
             },
             {
                 path: "/",

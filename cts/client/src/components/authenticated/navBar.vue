@@ -38,6 +38,7 @@
                         <template #button-content>
                             <b-icon-person-fill class="rounded-circle bg-info" scale="0.75" variant="light" />
                         </template>
+                        <b-dropdown-item :to="{path: '/requirements'}">Spec Requirements</b-dropdown-item>
                         <b-dropdown-item @click="doSignOut">Sign Out</b-dropdown-item>
                     </b-nav-item-dropdown>
                 </b-nav-form>

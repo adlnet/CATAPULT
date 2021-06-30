@@ -706,7 +706,7 @@ module.exports = {
 
                         try {
                             const launchedStContext = {
-                                ...contextTemplate,
+                                ...Hoek.clone(contextTemplate),
                                 registration: reg.code,
                                 extensions: {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId,
@@ -772,7 +772,14 @@ module.exports = {
                             isLaunched: true,
                             launchMode,
                             masteryScore,
-                            launchTokenId: uuidv4()
+                            launchTokenId: uuidv4(),
+
+                            //
+                            // capture the contextTemplate in the DB because it is possible to pass
+                            // per session data to alter it, and it needs to be validated in aggregate
+                            // when receiving the statements from the AU
+                            //
+                            contextTemplate: JSON.stringify(contextTemplate)
                         };
 
                         try {

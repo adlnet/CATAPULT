@@ -42,6 +42,31 @@ const Boom = require("@hapi/boom"),
         }
     },
 
+    matchContextTemplate = (provided, expected, msg = "") => {
+        for (const prop of Object.keys(expected)) {
+            if (prop === "contextActivities") {
+                for (const k of Object.keys(expected[prop])) {
+                    for (let i = 0; i < expected[prop][k].length; i += 1) {
+                        if (typeof provided[prop][k][i] === "undefined" || provided[prop][k][i].id !== expected[prop][k][i].id) {
+                            throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} ${k} ${i} value differs)`));
+                        }
+                    }
+                }
+            }
+            else {
+                if (typeof provided[prop] === "undefined") {
+                    throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} missing)`));
+                }
+
+                for (const [k, v] of Object.entries(expected[prop])) {
+                    if (typeof provided[prop][k] === "undefined" || ! Hoek.deepEqual(provided[prop][k], expected[prop][k])) {
+                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} value differs)`));
+                    }
+                }
+            }
+        }
+    },
+
     beforeLRSRequest = (req, session, regCourseAu, registration) => {
         const result = {
             launchData: null,
@@ -98,11 +123,14 @@ const Boom = require("@hapi/boom"),
                     matchActor(st.actor, registration.actor, st.id);
 
                     if (! st.context) {
-                        throw Boom.unauthorized(new Error(`9.6.0.0-1 - All cmi5 defined statements MUST contain a context that includes all properties as defined in this section [9.6]. (${st.id})`));
+                        throw Boom.unauthorized(new Error(`9.6.0.0-1 - All cmi5 defined statements MUST contain a context that includes all properties as defined in this section [9.6]. (no context: ${st.id})`));
                     }
                     if (! st.context.contextActivities) {
-                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
+                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (no contextActivities: ${st.id})`));
                     }
+
+                    matchContextTemplate(st.context, session.context_template);
+
                     if (
                         st.context.contextActivities.category
                         &&
@@ -263,7 +291,7 @@ const Boom = require("@hapi/boom"),
                                 break;
 
                             case VERB_PASSED_ID:
-                                if (session.mastery_score && st.result.score.scaled < session.mastery_score) {
+                                if (session.mastery_score && st.result.score && st.result.score.scaled < session.mastery_score) {
                                     throw Boom.unauthorized(new Error(`9.3.4.0-2 - If the "Passed" statement contains a (scaled) score, the (scaled) score MUST be equal to or greater than the "masteryScore" indicated in the LMS Launch Data. (Score '${st.result.score.scaled}' less than mastery score '${session.mastery_score}': ${st.id})`));
                                 }
 
@@ -279,7 +307,7 @@ const Boom = require("@hapi/boom"),
                                 break;
 
                             case VERB_FAILED_ID:
-                                if (session.mastery_score && st.result.score.scaled >= session.mastery_score) {
+                                if (session.mastery_score && st.result.score && st.result.score.scaled >= session.mastery_score) {
                                     throw Boom.unauthorized(new Error(`9.3.6.0-1 - If the "Failed" statement contains a (scaled) score, the (scaled) score MUST be less than the "masteryScore" indicated in the LMS Launch Data. (Score '${st.result.score.scaled}' greater than or equal to mastery score '${session.mastery_score}': ${st.id})`));
                                 }
 
@@ -634,7 +662,17 @@ module.exports = {
                                     "sessions.tenant_id": req.auth.credentials.tenantId
                                 }
                             )
-                            .queryContext({jsonCols: ["registrations_courses_aus.metadata", "registrations.actor", "registrations.metadata", "courses_aus.metadata"]})
+                            .queryContext(
+                                {
+                                    jsonCols: [
+                                        "registrations_courses_aus.metadata",
+                                        "registrations.actor",
+                                        "registrations.metadata",
+                                        "courses_aus.metadata",
+                                        "sessions.context_template"
+                                    ]
+                                }
+                            )
                             .forUpdate()
                             .options({nestTables: true})
                         );

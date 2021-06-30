@@ -611,8 +611,14 @@
     "9.6.2.2-1": {
         "txt": "cmi5 defined statements with a Result object (Section 9.5) that include either \"success\" or \"completion\" properties MUST have an Activity object with an \"id\" of \"https://w3id.org/xapi/cmi5/context/categories/moveon\" in the \"category\" context activities list."
     },
-    "9.6.2.2-1 (d)": {
-        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list."
+    "9.6.2.2-1 (d1)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Completed]"
+    },
+    "9.6.2.2-1 (d2)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Passed]"
+    },
+    "9.6.2.2-1 (d3)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Failed]"
     },
     "9.6.2.2-2": {
         "txt": "Other statements [than those with a result.completion or result.success property] MUST NOT include this Activity [the moveOn Category Activity]."

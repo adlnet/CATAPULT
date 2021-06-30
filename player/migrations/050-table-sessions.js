@@ -30,6 +30,7 @@ exports.up = (knex) => knex.schema.createTable(
 
         table.enum("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
         table.float("mastery_score");
+        table.json("context_template").notNullable();
         table.uuid("launch_token_id").notNullable();
         table.boolean("launch_token_fetched").notNullable().default(false);
         table.boolean("launch_data_fetched").notNullable().default(false);
@@ -41,8 +42,6 @@ exports.up = (knex) => knex.schema.createTable(
         table.boolean("is_failed").notNullable().default(false);
         table.boolean("is_terminated").notNullable().default(false);
         table.boolean("is_abandoned").notNullable().default(false);
-
-        table.bigInteger("duration");
     }
 );
 exports.down = (knex) => knex.schema.dropTable(tableName);

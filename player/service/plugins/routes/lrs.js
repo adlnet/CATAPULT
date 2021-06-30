@@ -21,6 +21,8 @@ const Boom = require("@hapi/boom"),
     Registration = require("./v1/lib/registration"),
     CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
     CMI5_EXTENSION_SESSION_ID = "https://w3id.org/xapi/cmi5/context/extensions/sessionid",
+    CMI5_EXTENSION_MASTERY_SCORE = "https://w3id.org/xapi/cmi5/context/extensions/masteryscore",
+    CMI5_CATEGORY_ACTIVITY_MOVEON_ID = "https://w3id.org/xapi/cmi5/context/categories/moveon",
 
     VERB_INITIALIZED_ID = "http://adlnet.gov/expapi/verbs/initialized",
     VERB_TERMINATED_ID = "http://adlnet.gov/expapi/verbs/terminated",
@@ -58,6 +60,10 @@ const Boom = require("@hapi/boom"),
 
         if (resource === "statements") {
             if (method === "post" || method === "put") {
+                if (! session.learner_prefs_fetched) {
+                    throw Boom.unauthorized(new Error("11.0.0.0-3 - The AU MUST retrieve the Learner Preferences document from the Agent Profile on startup. (Learner Prefs not yet retrieved)"));
+                }
+
                 const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
 
                 for (const st of statements) {
@@ -96,6 +102,19 @@ const Boom = require("@hapi/boom"),
                     }
                     if (! st.context.contextActivities) {
                         throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (${st.id})`));
+                    }
+                    if (
+                        st.context.contextActivities.category
+                        &&
+                        st.context.contextActivities.category.some((element) => element.id === CMI5_CATEGORY_ACTIVITY_MOVEON_ID)
+                        &&
+                        (
+                            (! st.context.contextActivities.category.some((element) => element.id === CMI5_DEFINED_ID)
+                                || (st.verb.id !== VERB_PASSED_ID && st.verb.id !== VERB_FAILED_ID && st.verb.id !== VERB_COMPLETED_ID)
+                            )
+                        )
+                    ) {
+                        throw Boom.unauthorized(new Error(`9.6.2.2-2 - Other statements [than those with a result.completion or result.success property] MUST NOT include this Activity [the moveOn Category Activity]. (${st.id})`));
                     }
                     if (! st.context.registration) {
                         throw Boom.unauthorized(new Error(`9.6.1.0-1 - The value for the registration property used in the context object MUST be the value provided by the LMS. (registration missing in ${st.id})`));
@@ -176,6 +195,13 @@ const Boom = require("@hapi/boom"),
                                 throw Boom.unauthorized(new Error(`9.5.2.0-2 - The "success" property of the result MUST be set to false for the following cmi5 defined statements ["Failed"]. (${st.id})`));
                             }
 
+                            if (
+                                (typeof st.result.completion !== "undefined" || typeof st.result.success !== "undefined")
+                                && ! st.context.contextActivities.category.some((element) => element.id === CMI5_CATEGORY_ACTIVITY_MOVEON_ID)
+                            ) {
+                                throw Boom.unauthorized(new Error(`9.6.2.2-1 - cmi5 defined statements with a Result object (Section 9.5) that include either "success" or "completion" properties MUST have an Activity object with an "id" of "https://w3id.org/xapi/cmi5/context/categories/moveon" in the "category" context activities list. (${st.id})`));
+                            }
+
                             if (st.result.score) {
                                 if (verbId !== VERB_PASSED_ID && verbId !== VERB_FAILED_ID) {
                                     throw Boom.unauthorized(new Error(`9.5.1.0-2 - cmi5 defined statements, other than "Passed" or "Failed", MUST NOT include the "score" property. (${st.id})`));
@@ -183,6 +209,17 @@ const Boom = require("@hapi/boom"),
 
                                 if (st.result.score.raw && (typeof st.result.score.min === "undefined" || typeof st.result.score.max === "undefined")) {
                                     throw Boom.unauthorized(new Error(`9.5.1.0-3 - The AU MUST provide the "min" and "max" values for "score" when the "raw" value is provided. (${st.id})`));
+                                }
+
+                                if (session.mastery_score) {
+                                    const extValue = st.context.extensions["https://w3id.org/xapi/cmi5/context/extensions/masteryscore"];
+
+                                    if (typeof extValue === "undefined") {
+                                        throw Boom.unauthorized(new Error(`9.6.3.2-2 - An AU MUST include the "masteryScore" value provided by the LMS in the context as an extension for "passed"/"failed" Statements it makes based on the "masteryScore". (extension missing ${st.id})`));
+                                    }
+                                    else if (extValue !== session.mastery_score) {
+                                        throw Boom.unauthorized(new Error(`9.6.3.2-2 - An AU MUST include the "masteryScore" value provided by the LMS in the context as an extension for "passed"/"failed" Statements it makes based on the "masteryScore". (extension value '${extValue}' does not match session value '${session.mastery_score}' ${st.id})`));
+                                    }
                                 }
                             }
 
@@ -226,6 +263,10 @@ const Boom = require("@hapi/boom"),
                                 break;
 
                             case VERB_PASSED_ID:
+                                if (session.mastery_score && st.result.score.scaled < session.mastery_score) {
+                                    throw Boom.unauthorized(new Error(`9.3.4.0-2 - If the "Passed" statement contains a (scaled) score, the (scaled) score MUST be equal to or greater than the "masteryScore" indicated in the LMS Launch Data. (Score '${st.result.score.scaled}' less than mastery score '${session.mastery_score}': ${st.id})`));
+                                }
+
                                 if (session.is_passed || result.statements.includes(VERB_PASSED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (Already passed: ${st.id})`));
                                 }
@@ -238,6 +279,10 @@ const Boom = require("@hapi/boom"),
                                 break;
 
                             case VERB_FAILED_ID:
+                                if (session.mastery_score && st.result.score.scaled >= session.mastery_score) {
+                                    throw Boom.unauthorized(new Error(`9.3.6.0-1 - If the "Failed" statement contains a (scaled) score, the (scaled) score MUST be less than the "masteryScore" indicated in the LMS Launch Data. (Score '${st.result.score.scaled}' greater than or equal to mastery score '${session.mastery_score}': ${st.id})`));
+                                }
+
                                 if (session.is_failed || result.statements.includes(VERB_FAILED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-2 - Verbs MUST NOT be duplicated (in cmi5 defined statements). (Already failed: ${st.id})`));
                                 }
@@ -263,8 +308,17 @@ const Boom = require("@hapi/boom"),
         else if (resource === "activities/state") {
             const msg = `state request: ${req.query.stateId}`;
 
+            let parsedAgent;
+
+            try {
+                parsedAgent = JSON.parse(req.query.agent);
+            }
+            catch (ex) {
+                throw Boom.badRequest(`Failed to parse JSON from agent parameter: ${ex}`);
+            }
+
             // all state requests require an actor, and that actor must be the launch actor
-            matchActor(JSON.parse(req.query.agent), registration.actor, msg);
+            matchActor(parsedAgent, registration.actor, msg);
 
             if (req.query.registration) {
                 matchRegistration(req.query.registration, registration.code, msg);
@@ -281,11 +335,32 @@ const Boom = require("@hapi/boom"),
         }
         else if (resource === "agents") {
             // all agents requests require an actor, and that actor must be the launch actor
-            matchActor(JSON.parse(req.query.agent), registration.actor, `agents request`);
+            try {
+                parsedAgent = JSON.parse(req.query.agent);
+            }
+            catch (ex) {
+                throw Boom.badRequest(`Failed to parse JSON from agent parameter: ${ex}`);
+            }
+
+            matchActor(parsedAgent, registration.actor, `agents request`);
         }
         else if (resource === "agents/profile") {
-            // all agents/profile requests require an actor, and that actor must be the launch actor
-            matchActor(JSON.parse(req.query.agent), registration.actor, `agents/profile request: ${req.query.profile}`);
+            // all agents/profile requests require an actor,
+            if (typeof req.query.agent === "undefined") {
+                throw Boom.unauthorized(new Error("11.0.0.0-1 - The Agent used in xAPI Agent Profile requests MUST match the actor property generated by the LMS at AU launch time. ('agent' parameter missing"));
+            }
+
+            let parsedAgent;
+
+            try {
+                parsedAgent = JSON.parse(req.query.agent);
+            }
+            catch (ex) {
+                throw Boom.badRequest(`Failed to parse JSON from agent parameter: ${ex}`);
+            }
+
+            // all agents/profile requests require the agent must be the launch actor
+            matchActor(parsedAgent, registration.actor, `agents/profile request: ${req.query.profileId}`);
 
             if (req.query.profileId === "cmi5LearnerPreferences") {
                 if (method === "get") {
@@ -295,6 +370,21 @@ const Boom = require("@hapi/boom"),
                     throw Boom.unauthorized(new Error("Rejected request to delete the learner preferences Agent Profile document"));
                 }
                 else if (method === "put" || method === "post") {
+                    if (! req.headers["content-type"].startsWith("application/json")) {
+                        throw Boom.unauthorized(new Error(`11.0.0.0-5 - The [Agent Profile] document content MUST be a JSON object with the "languagePreference" and "audioPreference" properties as described in Section 11.1 and 11.2. (Content-Type is not application/json: ${req.headers["content-type"]}`));
+                    }
+
+                    if (typeof req.payload.languagePreference === "undefined") {
+                        throw Boom.unauthorized(new Error(`11.0.0.0-5 - The [Agent Profile] document content MUST be a JSON object with the "languagePreference" and "audioPreference" properties as described in Section 11.1 and 11.2. ('languagePreference' property missing)`));
+                    }
+                    if (typeof req.payload.audioPreference === "undefined") {
+                        throw Boom.unauthorized(new Error(`11.0.0.0-5 - The [Agent Profile] document content MUST be a JSON object with the "languagePreference" and "audioPreference" properties as described in Section 11.1 and 11.2. ('audioPreference' property missing)`));
+                    }
+
+                    if (! /^[-A-Za-z0-9]+(?:,[-A-Za-z0-9])*$/.test(req.payload.languagePreference)) {
+                        throw Boom.unauthorized(new Error(`11.1.0.0-1 - The languagePreference MUST be a comma-separated list of RFC 5646 Language Tags as indicated in the xAPI specification (Section 5.2). ('languagePreference' value invalid: '${req.payload.languagePreference}')`));
+                    }
+
                     throw Boom.unauthorized(new Error("Rejected request to alter the learner preferences Agent Profile document"));
                 }
             }

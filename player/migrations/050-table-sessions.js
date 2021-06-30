@@ -29,6 +29,7 @@ exports.up = (knex) => knex.schema.createTable(
         table.datetime("last_request_time");
 
         table.enum("launch_mode", ["Normal", "Browse", "Review"]).notNullable();
+        table.float("mastery_score");
         table.uuid("launch_token_id").notNullable();
         table.boolean("launch_token_fetched").notNullable().default(false);
         table.boolean("launch_data_fetched").notNullable().default(false);

@@ -771,6 +771,7 @@ module.exports = {
                             code: sessionId,
                             isLaunched: true,
                             launchMode,
+                            masteryScore,
                             launchTokenId: uuidv4()
                         };
 

@@ -97,9 +97,9 @@
                             <b-row>
                                 <b-col>
                                     <b-dropdown split text="Launch" variant="primary" class="mr-3" @click="doLaunchAU(index)">
-                                        Launch
-                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Browse</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Review</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Normal')">Force Normal</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Force Browse</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Force Review</b-dropdown-item-button>
                                     </b-dropdown>
                                     <b-dropdown lazy text="Waive AU">
                                         <b-dropdown-header>Reason</b-dropdown-header>

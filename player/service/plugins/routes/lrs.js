@@ -48,6 +48,7 @@ const Boom = require("@hapi/boom"),
                 for (const k of Object.keys(expected[prop])) {
                     for (let i = 0; i < expected[prop][k].length; i += 1) {
                         if (typeof provided[prop][k][i] === "undefined" || provided[prop][k][i].id !== expected[prop][k][i].id) {
+                            // also covers 9.6.2.0-1
                             throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} ${k} ${i} value differs)`));
                         }
                     }
@@ -323,6 +324,9 @@ const Boom = require("@hapi/boom"),
                                 }
                                 if (session.is_passed || result.statements.includes(VERB_PASSED_ID)) {
                                     throw Boom.unauthorized(new Error(`9.3.0.0-3 - More than one of the set of {"Passed","Failed"} verbs MUST NOT be used (in cmi5 defined statements). (Already passed: ${st.id})`));
+                                }
+                                if (regCourseAu.is_passed) {
+                                    throw Boom.unauthorized(new Error(`9.3.0.0-8 - A "Failed" statement MUST NOT follow a "Passed" statement (in cmi5 defined statements) per registration. (Already passed: ${st.id})`));
                                 }
                                 break;
 

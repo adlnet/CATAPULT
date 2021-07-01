@@ -607,7 +607,6 @@ module.exports = {
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                             baseUrl = `${req.url.protocol}//${req.url.host}`,
                             endpoint = `${baseUrl}/lrs`,
-                            returnURL = `${baseUrl}/return-url`,
                             lrsWreck = Wreck.defaults(
                                 {
                                     baseUrl: req.server.app.lrs.endpoint,

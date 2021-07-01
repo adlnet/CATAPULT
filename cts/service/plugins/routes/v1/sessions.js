@@ -550,7 +550,7 @@ module.exports = {
                                     }
                                 }
 
-                                else if (req.method === "put") {
+                                else if (req.method === "put" || req.method === "post") {
                                     if (req.params.resource === "statements") {
                                         h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Statement recorded"});
                                     }

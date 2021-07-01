@@ -599,7 +599,7 @@ module.exports = {
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
-                            launchMode = "Normal",
+                            launchMode = req.payload.launchMode || (regCourseAu.is_satisfied ? "Review" : "Normal"),
                             launchMethod = req.payload.launchMethod ? req.payload.launchMethod : (courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe"),
                             launchParameters = req.payload.launchParameters || courseAu.metadata.launchParameters,
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,

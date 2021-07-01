@@ -107,6 +107,7 @@ module.exports = {
                                         returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`,
                                         alternateEntitlementKey: req.payload.alternateEntitlementKey,
                                         contextTemplateAdditions: req.payload.contextTemplateAdditions,
+                                        launchMode: req.payload.launchMode,
                                         launchMethod: req.payload.launchMethod,
                                         launchParameters: req.payload.launchParameters,
                                         masteryScore: req.payload.masteryScore,

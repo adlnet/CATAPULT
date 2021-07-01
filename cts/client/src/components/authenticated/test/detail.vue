@@ -96,9 +96,11 @@
                             </b-row>
                             <b-row>
                                 <b-col>
-                                    <b-button variant="primary" class="mr-3" @click="doLaunchAU(index)">
+                                    <b-dropdown split text="Launch" variant="primary" class="mr-3" @click="doLaunchAU(index)">
                                         Launch
-                                    </b-button>
+                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Browse</b-dropdown-item-button>
+                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Review</b-dropdown-item-button>
+                                    </b-dropdown>
                                     <b-dropdown lazy text="Waive AU">
                                         <b-dropdown-header>Reason</b-dropdown-header>
                                         <b-dropdown-item-button @click="doWaiveAU(index, 'Tested Out')">Tested Out</b-dropdown-item-button>
@@ -318,13 +320,14 @@
                 element.click();
                 document.body.removeChild(element);
             },
-            async doLaunchAU (index) {
+            async doLaunchAU (index, launchMode) {
                 try {
                     const id = await this.createSession(
                         {
                             testId: this.id,
                             auIndex: index,
-                            launchCfg: this.aUconfigs[index] || defaultAUConfig
+                            launchCfg: this.aUconfigs[index] || defaultAUConfig,
+                            launchMode
                         }
                     );
 

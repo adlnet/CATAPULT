@@ -102,7 +102,7 @@ export default {
             }
         },
 
-        create: async ({dispatch, state, rootGetters}, {testId, auIndex, launchCfg = {}, caller = "testDetail"}) => {
+        create: async ({dispatch, state, rootGetters}, {testId, auIndex, launchCfg = {}, launchMode, caller = "testDetail"}) => {
             try {
                 const response = await rootGetters["service/makeApiRequest"](
                     `sessions`,
@@ -114,6 +114,7 @@ export default {
                         body: JSON.stringify({
                             testId,
                             auIndex,
+                            launchMode,
                             ...launchCfg
                         })
                     }

@@ -732,19 +732,19 @@
         "txt": "The LMS must reject statements that include a \"context\" object that has contextTemplate property values that have been overwritten."
     },
     "10.2.2.0-1": {
-        "txt": "Normal [launchMode] Indicates to the AU that completion-related data MUST be recorded in the LMS using xAPI statements."
+        "txt": "Normal [launchMode] Indicates to the AU that satisfaction-related data MUST be recorded in the LMS using xAPI statements."
     },
     "10.2.2.0-1 (d)": {
         "txt": "The LMS must track what launchMode was used for a given AU launch session."
     },
     "10.2.2.0-2": {
-        "txt": "Browse [launchMode] Indicates to the AU that completion-related data MUST NOT be recorded in the LMS using xAPI statements."
+        "txt": "Browse [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements."
     },
     "10.2.2.0-2 (d)": {
         "txt": "The LMS must reject cmi5 defined statements that use the \"passed\", \"failed\", or \"completed\" verb received from the AU [during a session with a \"Browse\" launchMode]."
     },
     "10.2.2.0-3": {
-        "txt": "Review [launchMode] Indicates to the AU that completion-related data MUST NOT be recorded in the LMS using xAPI statements."
+        "txt": "Review [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements."
     },
     "10.2.2.0-3 (d)": {
         "txt": "The LMS must reject cmi5 defined statements that use the \"passed\", \"failed\", or \"completed\" verb received from the AU [during a session with a \"Review\" launchMode]."

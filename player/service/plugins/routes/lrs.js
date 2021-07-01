@@ -189,6 +189,13 @@ const Boom = require("@hapi/boom"),
 
                         const verbId = st.verb.id;
 
+                        if (session.launch_mode === "Browse" && (verbId === VERB_COMPLETED_ID || verbId === VERB_PASSED_ID || verbId === VERB_FAILED_ID)) {
+                            throw Boom.unauthorized(new Error(`10.2.2.0-2 - Browse [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements. (${st.id})`));
+                        }
+                        else if (session.launch_mode === "Review" && (verbId === VERB_COMPLETED_ID || verbId === VERB_PASSED_ID || verbId === VERB_FAILED_ID)) {
+                            throw Boom.unauthorized(new Error(`10.2.2.0-3 - Review [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements. (${st.id})`));
+                        }
+
                         if (! st.result) {
                             if (verbId === VERB_COMPLETED_ID) {
                                 throw Boom.unauthorized(new Error(`9.5.3.0-1 - The "completion" property of the result MUST be set to true for the following cmi5 defined statements ["Completed", "Waived"]. (${st.id})`));

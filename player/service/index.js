@@ -78,6 +78,9 @@ const provision = async () => {
         (req, h) => {
             if (req.response.isBoom) {
                 req.response.output.payload.srcError = req.response.message;
+                if (req.response.data.violatedReqId) {
+                    req.response.output.payload.violatedReqId = req.response.data.violatedReqId;
+                }
             }
 
             return h.continue;

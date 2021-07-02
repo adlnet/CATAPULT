@@ -33,7 +33,12 @@ const fs = require("fs"),
     schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
     schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
     validateIRI = (input) => {
-        const resolved = new iri.IRI(input).toAbsolute();
+        try {
+            new iri.IRI(input).toAbsolute();
+        }
+        catch (ex) {
+            throw Boom.badRequest(`Invalid IRI: ${input}`, {violatedReqId: "3.0.0.0-1"});
+        }
 
         return true;
     },
@@ -190,7 +195,7 @@ const fs = require("fs"),
                     validateIRI(id);
 
                     if (result.course.objectives[id]) {
-                        throw new Error(`Invalid objective id (${id}: duplicate not allowed`);
+                        throw Boom.badRequest(`Invalid objective id (${id}: duplicate not allowed`, {violatedReqId: "13.1.3.0-1"});
                     }
 
                     result.course.objectives[id] = {
@@ -322,7 +327,7 @@ module.exports = {
                             );
                         }
                         catch (ex) {
-                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`);
+                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`, {violatedReqId: "13.2.0.0-1"});
                         }
 
                         let validationResult;
@@ -335,19 +340,11 @@ module.exports = {
                         }
 
                         if (! validationResult) {
-                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`);
+                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, {violatedReqId: "13.2.0.0-1"});
                         }
 
-                        let structure;
-
-                        try {
-                            structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false);
-                        }
-                        catch (ex) {
-                            throw Boom.badRequest(`Failed to validate course structure: ${ex}`);
-                        }
-
-                        let aus;
+                        let structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false),
+                            aus;
 
                         try {
                             aus = flattenAUs(structure.course.children);
@@ -373,23 +370,23 @@ module.exports = {
                                 launchUrl = url.parse(au.url, true);
                             }
                             catch (ex) {
-                                throw new Error(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`);
+                                throw Boom.badRequest(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`, {violatedReqId: "13.1.4.0-2"});
                             }
 
                             for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
                                 if (typeof launchUrl.query[k] !== "undefined") {
-                                    throw new Error(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`);
+                                    throw Boom.badRequest(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`, {violatedReqId: "8.1.0.0-6"});
                                 }
                             }
 
                             if (launchUrl.protocol === null || launchUrl.host === null) {
                                 if (! zip) {
-                                    throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
+                                    throw Boom.badRequest(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`, {violatedReqId: "14.2.0.0-1"});
                                 }
 
                                 const zipEntry = await zip.entry(launchUrl.pathname);
                                 if (! zipEntry) {
-                                    throw new Error(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`);
+                                    throw Boom.badRequest(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`, {violatedReqId: "14.1.0.0-4"});
                                 }
                             }
                         }

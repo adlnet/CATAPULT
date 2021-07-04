@@ -17,6 +17,7 @@
 
 const Bcrypt = require("bcrypt"),
     Boom = require("@hapi/boom"),
+    AUTH_TTL_SECONDS = require("../../../lib/consts.js").AUTH_TTL_SECONDS,
     getClientSafeUser = (user) => {
         delete user.password;
         delete user.playerKey;
@@ -57,6 +58,8 @@ module.exports = {
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to retrieve user for id ${req.auth.credentials.id}: ${ex}`));
                         }
+                        // Restore whatever the current cookie's expiration is at, for use in managing client side logged in state.
+                        user.expiresAt = req.state.sid.expiresAt;
 
                         return getClientSafeUser(user);
                     }
@@ -86,6 +89,10 @@ module.exports = {
                         if (! user || ! await Bcrypt.compare(req.payload.password, user.password)) {
                             throw Boom.unauthorized();
                         }
+
+                        const expiresAt = new Date();
+                        expiresAt.setSeconds(expiresAt.getSeconds() + AUTH_TTL_SECONDS)
+                        user.expiresAt = expiresAt.toISOString();
 
                         if (req.payload.storeCookie) {
                             req.cookieAuth.set(await req.server.methods.getCredentials(user));

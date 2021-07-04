@@ -308,13 +308,22 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            sessionId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            result = await db.first("*").from("sessions").where({tenantId, id: sessionId });
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
                         let abandonResponse,
                             abandonResponseBody;
 
                         try {
                             abandonResponse = await Wreck.request(
                                 "POST",
-                                `${req.server.app.player.baseUrl}/api/v1/session/${req.params.id}/abandon`,
+                                `${req.server.app.player.baseUrl}/api/v1/session/${result.playerId}/abandon`,
                                 {
                                     headers: {
                                         Authorization: await req.server.methods.playerAuthHeader(req)
@@ -327,9 +336,13 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed request to player to abandon session: ${ex}`));
                         }
 
-                        if (abandonResponse.statusCode !== 200) {
+                        if (abandonResponse.statusCode !== 204) {
                             throw Boom.internal(new Error(`Failed to abandon session in player (${abandonResponse.statusCode}): ${abandonResponseBody.message} (${abandonResponseBody.srcError})`));
                         }
+
+                        h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "sessions", summary: "Session abandoned"});
+
+                        return null;
                     }
                 },
 

@@ -49,7 +49,6 @@
         },
         methods: {
             expireLogin () {
-                // await this.store.dispatch("service/apiAccess/initCredential");
                 if (this.$store.state.service.apiAccess.expiresAt) {
                     if (this.$store.state.service.apiAccess.expiresAt < new Date().toISOString()) {
                         console.log("expires at < now, logging out");

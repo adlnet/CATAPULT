@@ -16,7 +16,7 @@
 "use strict";
 
 const Boom = require("@hapi/boom"),
-    Registration = require("./lib/registration");
+    Registration = require("../lib/registration");
 
 module.exports = {
     name: "catapult-player-api-routes-v1-registrations",

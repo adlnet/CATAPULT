@@ -77,10 +77,11 @@ const provision = async () => {
         "onPreResponse",
         (req, h) => {
             if (req.response.isBoom) {
-                req.response.output.payload.srcError = req.response.message;
-                if (req.response.data.violatedReqId) {
+                if (req.response.data && req.response.data.violatedReqId) {
                     req.response.output.payload.violatedReqId = req.response.data.violatedReqId;
                 }
+
+                req.response.output.payload.srcError = req.response.message;
             }
 
             return h.continue;
@@ -133,6 +134,27 @@ const provision = async () => {
             cache: {
                 expiresIn: 60000,
                 generateTimeout: 5000
+            }
+        }
+    );
+
+    // tried making this just return the Wreck object, that didn't work correctly
+    // probably because of the cache
+    server.method(
+        "lrsWreckDefaults",
+        (req) => ({
+            baseUrl: req.server.app.lrs.endpoint,
+            headers: {
+                "X-Experience-API-Version": "1.0.3",
+                Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
+            },
+            json: true
+        }),
+        {
+            generateKey: (req) => `${req.server.app.lrs.endpoint}-${req.server.app.lrs.username}-${req.server.app.lrs.password}`,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 1000
             }
         }
     );

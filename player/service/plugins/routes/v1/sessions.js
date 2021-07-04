@@ -16,7 +16,9 @@
 "use strict";
 
 const Boom = require("@hapi/boom"),
-    Wreck = require("@hapi/wreck");
+    Wreck = require("@hapi/wreck"),
+    { v4: uuidv4 } = require("uuid"),
+    Session = require("../lib/session");
 
 module.exports = {
     name: "catapult-player-api-routes-v1-sessions",
@@ -27,10 +29,110 @@ module.exports = {
                     method: "POST",
                     path: "/session/{id}/abandon",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        payload: {
+                            parse: true
+                        }
                     },
                     handler: async (req, h) => {
-                        throw new Error(`Not implemented, abandon session`);
+                        const sessionId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
+                            txn = await db.transaction();
+                        let session,
+                            regCourseAu,
+                            registration,
+                            courseAu;
+
+                        try {
+                            ({
+                                session,
+                                regCourseAu,
+                                registration,
+                                courseAu
+                            } = await Session.loadForChange(txn, sessionId, tenantId));
+                        }
+                        catch (ex) {
+                            txn.rollback();
+                            throw Boom.internal(ex);
+                        }
+
+                        if (session.is_terminated) {
+                            txn.rollback();
+                            throw Boom.conflict(new Error("Session is terminated"));
+                        }
+                        if (session.is_abandoned) {
+                            txn.rollback();
+                            throw Boom.conflict(new Error("Session already abandoned"));
+                        }
+
+                        let duration = "PT0S",
+                            stResponse,
+                            stResponseBody;
+
+                        try {
+                            stResponse = await lrsWreck.request(
+                                "POST",
+                                "statements",
+                                {
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    payload: {
+                                        id: uuidv4(),
+                                        timestamp: new Date().toISOString(),
+                                        actor: registration.actor,
+                                        verb: {
+                                            id: "https://w3id.org/xapi/adl/verbs/abandoned",
+                                            display: {
+                                                en: "abandoned"
+                                            }
+                                        },
+                                        object: {
+                                            id: regCourseAu.courseAu.lms_id
+                                        },
+                                        result: {
+                                            duration
+                                        },
+                                        context: {
+                                            registration: registration.code,
+                                            extensions: {
+                                                "https://w3id.org/xapi/cmi5/context/extensions/sessionid": session.code
+                                            },
+                                            contextActivities: {
+                                                category: {
+                                                    id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            );
+
+                            stResponseBody = await Wreck.read(stResponse, {json: true});
+                        }
+                        catch (ex) {
+                            txn.rollback();
+                            throw Boom.internal(new Error(`Failed request to store abandoned statement: ${ex}`));
+                        }
+
+                        if (stResponse.statusCode !== 200) {
+                            txn.rollback();
+                            throw Boom.internal(new Error(`Failed to store abandoned statement (${stResponse.statusCode}): ${stResponseBody}`));
+                        }
+
+                        try {
+                            await txn("sessions").update({is_abandoned: true}).where({id: session.id, tenantId});
+                        }
+                        catch (ex) {
+                            txn.rollback();
+                            throw Boom.internal(`Failed to update session: ${ex}`);
+                        }
+
+                        txn.commit();
+
+                        return null;
                     }
                 }
             ]

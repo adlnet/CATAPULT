@@ -29,10 +29,7 @@ module.exports = {
                     method: "POST",
                     path: "/session/{id}/abandon",
                     options: {
-                        tags: ["api"],
-                        payload: {
-                            parse: true
-                        }
+                        tags: ["api"]
                     },
                     handler: async (req, h) => {
                         const sessionId = req.params.id,
@@ -101,9 +98,11 @@ module.exports = {
                                                 "https://w3id.org/xapi/cmi5/context/extensions/sessionid": session.code
                                             },
                                             contextActivities: {
-                                                category: {
-                                                    id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
-                                                }
+                                                category: [
+                                                    {
+                                                        id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
+                                                    }
+                                                ]
                                             }
                                         }
                                     }

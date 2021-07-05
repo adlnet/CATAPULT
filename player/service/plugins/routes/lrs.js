@@ -514,14 +514,12 @@ const Boom = require("@hapi/boom"),
                 }
 
                 if (nowSatisfied) {
-                    registrationCourseAuUpdates.is_satisfied = true;
-
                     try {
                         await Registration.interpretMoveOn(
                             registration,
                             {
                                 auToSetSatisfied: regCourseAu.courseAu.lms_id,
-                                session,
+                                sessionCode: session.code,
                                 lrsWreck: Wreck.defaults(await req.server.methods.lrsWreckDefaults(req))
                             }
                         );

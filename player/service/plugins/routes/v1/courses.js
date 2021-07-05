@@ -562,7 +562,6 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
                         const db = req.server.app.db,
                             courseId = req.params.id,
                             auIndex = req.params.auIndex,

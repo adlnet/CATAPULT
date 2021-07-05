@@ -164,7 +164,59 @@ module.exports = {
         );
     },
 
-    interpretMoveOn: async (registration, {auToSetSatisfied, session, lrsWreck}) => {
+    loadAuForChange: async (txn, registrationId, auIndex, tenantId) => {
+        let queryResult;
+
+        try {
+            queryResult = await txn
+                .first("*")
+                .from("registrations_courses_aus")
+                .leftJoin("registrations", "registrations_courses_aus.registration_id", "registrations.id")
+                .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
+                .where(
+                    {
+                        "registrations_courses_aus.tenant_id": tenantId,
+                        "courses_aus.au_index": auIndex
+                    }
+                )
+                .andWhere(function () {
+                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId);
+                })
+                .queryContext(
+                    {
+                        jsonCols: [
+                            "registrations_courses_aus.metadata",
+                            "registrations.actor",
+                            "registrations.metadata",
+                            "courses_aus.metadata"
+                        ]
+                    }
+                )
+                .forUpdate()
+                .options({nestTables: true})
+        }
+        catch (ex) {
+            txn.rollback();
+            throw new Error(`Failed to select registration course AU, registration and course AU for update: ${ex}`);
+        }
+
+        if (! queryResult) {
+            txn.rollback();
+            throw Boom.notFound(`registration: ${registrationId}`);
+        }
+
+        const {
+            registrationsCoursesAus: regCourseAu,
+            registrations: registration,
+            coursesAus: courseAu
+        } = queryResult;
+
+        regCourseAu.courseAu = courseAu;
+
+        return {regCourseAu, registration, courseAu};
+    },
+
+    interpretMoveOn: async (registration, {auToSetSatisfied, sessionCode, lrsWreck}) => {
         const moveOn = registration.metadata.moveOn,
 
             //
@@ -192,7 +244,7 @@ module.exports = {
                         grouping: []
                     },
                     extensions: {
-                        "https://w3id.org/xapi/cmi5/context/extensions/sessionid": session.code
+                        "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionCode
                     }
                 }
             });

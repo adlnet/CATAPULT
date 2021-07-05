@@ -298,6 +298,10 @@ export default {
                     }
                 );
 
+                if (response.status === 204) {
+                    return;
+                }
+
                 let responseBody = await response.json();
 
                 if (! response.ok) {

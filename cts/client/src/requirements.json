@@ -435,7 +435,7 @@
         "txt": "A statement containing a \"Waived\" verb MUST include a \"reason\" in the extension property of the Statement Result."
     },
     "9.3.7.0-2 (d)": {
-        "txt": "The LMS must reject \"waived\" statements that do not include a \"reason\" extension property in the result."
+        "txt": "The LMS must include a \"reason\" in the extension property of the result for cmi5 defined statements that it stores using the \"waived\" verb."
     },
     "9.3.7.0-3": {
         "txt": "The LMS MUST generate a unique session id for the statement containing a \"Waived\" verb and MUST NOT issue any other statements (except for statements with the \"Satisfied\" verb) using that session id."
@@ -519,7 +519,7 @@
         "txt": "The LMS must reject cmi5 defined statements that include the \"passed\" verb but do not have \"result.success\" set to `true`."
     },
     "9.5.2.0-1 (d2)": {
-        "txt": "The LMS must reject cmi5 defined statements that include the \"waived\" verb but do not have \"result.success\" set to `true`."
+        "txt": "The LMS must set \"result.success\" to `true` for cmi5 defined statements that it stores using the \"waived\" verb."
     },
     "9.5.2.0-2": {
         "txt": "The \"success\" property of the result MUST be set to false for the following cmi5 defined statements [\"Failed\"]."
@@ -540,7 +540,7 @@
         "txt": "The LMS must reject cmi5 defined statements that include the \"completed\" verb but do not have the \"result.completion\" property set to `true`."
     },
     "9.5.3.0-1 (d2)": {
-        "txt": "The LMS must reject cmi5 defined statements that include the \"waived\" verb but do not have the \"result.completion\" property set to `true`."
+        "txt": "The LMS must set \"result.completion\" to `true` for cmi5 defined statements that it stores using the \"waived\" verb."
     },
     "9.5.3.0-2": {
         "txt": "cmi5 defined statements, other than \"Completed\" or \"Waived\", MUST NOT include the \"completion\" property."
@@ -619,6 +619,9 @@
     },
     "9.6.2.2-1 (d3)": {
         "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Failed]"
+    },
+    "9.6.2.2-1 (d4)": {
+        "txt": "The LMS must have an Activity object with an \"id\" of \"https://w3id.org/xapi/cmi5/context/categories/moveon\" in the \"category\" context activities list for cmi5 defined statements that it stores using the \"waived\" verb."
     },
     "9.6.2.2-2": {
         "txt": "Other statements [than those with a result.completion or result.success property] MUST NOT include this Activity [the moveOn Category Activity]."

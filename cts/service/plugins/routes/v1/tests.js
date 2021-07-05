@@ -17,6 +17,7 @@
 
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Joi = require("joi"),
     registrations = {},
     { v4: uuidv4 } = require("uuid");
 
@@ -252,18 +253,34 @@ module.exports = {
                     method: "POST",
                     path: "/tests/{id}/waive-au/{auIndex}",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        payload: {
+                            parse: true
+                        },
+                        validate: {
+                            payload: Joi.object({
+                                reason: Joi.string().required()
+                            }).label("Request-WaiveAU")
+                        }
                     },
                     handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            registrationId = req.params.id,
+                            auIndex = req.params.auIndex,
+                            tenantId = req.auth.credentials.tenantId,
+                            result = await db.first("*").from("registrations").where({tenantId, id: registrationId});
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
                         let waiveResponse,
                             waiveResponseBody;
-
-                        const db = req.server.app.db;
 
                         try {
                             waiveResponse = await Wreck.request(
                                 "POST",
-                                `${req.server.app.player.baseUrl}/api/v1/registration/${req.params.id}/waive-au/${req.params.auIndex}`,
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${result.playerId}/waive-au/${auIndex}`,
                                 {
                                     headers: {
                                         Authorization: await req.server.methods.playerAuthHeader(req)
@@ -274,15 +291,18 @@ module.exports = {
                                 }
                             );
                             waiveResponseBody = await Wreck.read(waiveResponse, {json: true});
-                            h.registrationEvent(req.params.id, req.auth.credentials.tenantId, db, {kind: "spec", resource: "waive-au", playerResponseStatusCode: waiveResponse.statusCode, summary: "AU Waived"});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to player to waive AU: ${ex}`));
                         }
 
-                        if (waiveResponse.statusCode !== 200) {
+                        if (waiveResponse.statusCode !== 204) {
                             throw Boom.internal(new Error(`Failed to waive AU in player registration (${waiveResponse.statusCode}): ${waiveResponseBody.message} (${waiveResponseBody.srcError})`));
                         }
+
+                        h.registrationEvent(registrationId, tenantId, db, {kind: "spec", resource: "waive-au+AU", summary: `Waived (${auIndex})`});
+
+                        return null;
                     }
                 }
             ]

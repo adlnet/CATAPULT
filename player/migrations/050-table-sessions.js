@@ -37,6 +37,7 @@ exports.up = (knex) => knex.schema.createTable(
         table.boolean("learner_prefs_fetched").notNullable().default(false);
         table.boolean("is_launched").notNullable().default(false);
         table.boolean("is_initialized").notNullable().default(false);
+        table.timestamp("initialized_at");
         table.boolean("is_completed").notNullable().default(false);
         table.boolean("is_passed").notNullable().default(false);
         table.boolean("is_failed").notNullable().default(false);

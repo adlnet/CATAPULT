@@ -450,6 +450,7 @@ const Boom = require("@hapi/boom"),
                     switch (verbId) {
                         case VERB_INITIALIZED_ID:
                             sessionUpdates.is_initialized = true;
+                            sessionUpdates.initialized_at = txn.fn.now();
                             break;
 
                         case VERB_TERMINATED_ID:

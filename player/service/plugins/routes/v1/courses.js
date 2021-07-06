@@ -19,13 +19,14 @@ const fs = require("fs"),
     util = require("util"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Hoek = require("@hapi/hoek"),
     libxml = require("libxmljs"),
     StreamZip = require("node-stream-zip"),
     iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
     url = require("url"),
     Registration = require("../lib/registration"),
-    Hoek = require("@hapi/hoek"),
+    Session = require("../lib/session"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
@@ -628,6 +629,31 @@ module.exports = {
                                     }
                                 )
                                 .options({nestTables: true});
+
+                        //
+                        // check for existing open sessions and abandon them,
+                        // in theory this should only ever return at most one
+                        // but if it were to return more than one then might
+                        // as well abandon them all
+                        //
+                        const openSessions = await db
+                            .select("sessions.id")
+                            .from("sessions")
+                            .leftJoin("registrations_courses_aus", "sessions.registrations_courses_aus_id", "registrations_courses_aus.id")
+                            .where(
+                                {
+                                    "sessions.tenant_id": tenantId,
+                                    "registrations_courses_aus.registration_id": registrationId,
+                                    "sessions.is_terminated": false,
+                                    "sessions.is_abandoned": false
+                                }
+                            );
+
+                        if (openSessions) {
+                            for (const session of openSessions) {
+                                await Session.abandon(session.id, tenantId, {db, lrsWreck});
+                            }
+                        }
 
                         let contextTemplateAdditions = req.payload.contextTemplateAdditions.trim();
 

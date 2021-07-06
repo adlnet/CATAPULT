@@ -15,9 +15,12 @@
 */
 "use strict";
 
-const Boom = require("@hapi/boom");
+const Boom = require("@hapi/boom"),
+    Wreck = require("@hapi/wreck"),
+    { v4: uuidv4 } = require("uuid");
+let Session;
 
-module.exports = {
+module.exports = Session = {
     loadForChange: async (txn, sessionId, tenantId) => {
         let queryResult;
 
@@ -70,5 +73,119 @@ module.exports = {
         regCourseAu.courseAu = courseAu;
 
         return {session, regCourseAu, registration, courseAu};
+    },
+
+    abandon: async (sessionId, tenantId, {db, lrsWreck}) => {
+        const txn = await db.transaction();
+        let session,
+            regCourseAu,
+            registration,
+            courseAu;
+
+        try {
+            ({
+                session,
+                regCourseAu,
+                registration,
+                courseAu
+            } = await Session.loadForChange(txn, sessionId, tenantId));
+        }
+        catch (ex) {
+            txn.rollback();
+            throw Boom.internal(ex);
+        }
+
+        if (session.is_terminated) {
+            //
+            // it's possible that a session gets terminated in between the time
+            // that the check for open sessions occurs and getting here to
+            // abandon it, but in the case that a terminated happens in that time
+            // then there is no reason to abandon the session so just return
+            //
+            txn.rollback();
+
+            return;
+        }
+        if (session.is_abandoned) {
+            //
+            // shouldn't be possible to get here, but if it were to occur there
+            // isn't really a reason to error, better to just return and it is
+            // expected that more than one abandoned would not be recorded
+            //
+            txn.rollback();
+
+            return;
+        }
+
+        let durationSeconds = 0,
+            stResponse,
+            stResponseBody;
+
+        if (session.is_initialized) {
+            durationSeconds = (new Date().getTime() - session.initialized_at.getTime()) / 1000;
+        }
+
+        try {
+            stResponse = await lrsWreck.request(
+                "POST",
+                "statements",
+                {
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    payload: {
+                        id: uuidv4(),
+                        timestamp: new Date().toISOString(),
+                        actor: registration.actor,
+                        verb: {
+                            id: "https://w3id.org/xapi/adl/verbs/abandoned",
+                            display: {
+                                en: "abandoned"
+                            }
+                        },
+                        object: {
+                            id: regCourseAu.courseAu.lms_id
+                        },
+                        result: {
+                            duration: `PT${durationSeconds}S`
+                        },
+                        context: {
+                            registration: registration.code,
+                            extensions: {
+                                "https://w3id.org/xapi/cmi5/context/extensions/sessionid": session.code
+                            },
+                            contextActivities: {
+                                category: [
+                                    {
+                                        id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            );
+
+            stResponseBody = await Wreck.read(stResponse, {json: true});
+        }
+        catch (ex) {
+            txn.rollback();
+            throw Boom.internal(new Error(`Failed request to store abandoned statement: ${ex}`));
+        }
+
+        if (stResponse.statusCode !== 200) {
+            txn.rollback();
+            throw Boom.internal(new Error(`Failed to store abandoned statement (${stResponse.statusCode}): ${stResponseBody}`));
+        }
+
+        try {
+            await txn("sessions").update({is_abandoned: true}).where({id: session.id, tenantId});
+        }
+        catch (ex) {
+            txn.rollback();
+            throw Boom.internal(`Failed to update session: ${ex}`);
+        }
+
+        txn.commit();
     }
 };

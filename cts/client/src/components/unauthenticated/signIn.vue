@@ -32,11 +32,11 @@
                 </b-input-group-append>
             </b-input-group>
         </b-form-group>
-        <b-form-checkbox id="keepLoggedIn" v-model="keepLoggedIn">
-            Keep me logged in
+        <b-form-checkbox id="keepSignedIn" v-model="keepSignedIn">
+            Keep me signed in
         </b-form-checkbox>
         <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" @click="doSignIn">
-            Log In
+            Sign In
         </b-button>
     </b-form>
 </template>
@@ -53,7 +53,7 @@
         data: () => ({
             username: "",
             password: "",
-            keepLoggedIn: false,
+            keepSignedIn: false,
             passwordVisible: false
         }),
         computed: {

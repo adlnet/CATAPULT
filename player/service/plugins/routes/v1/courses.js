@@ -438,8 +438,8 @@ module.exports = {
 
                         try {
                             await db.transaction(
-                                async (trx) => {
-                                    courseId = await trx("courses").insert(
+                                async (txn) => {
+                                    courseId = await txn("courses").insert(
                                         {
                                             tenantId,
                                             lmsId,
@@ -454,7 +454,7 @@ module.exports = {
                                         }
                                     );
 
-                                    await trx("courses_aus").insert(
+                                    await txn("courses_aus").insert(
                                         aus.map(
                                             (au, i) => ({
                                                 tenantId,
@@ -568,6 +568,7 @@ module.exports = {
                             actor = req.payload.actor,
                             code = req.payload.reg,
                             tenantId = req.auth.credentials.tenantId,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
                             course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
                                 {
                                     tenantId,
@@ -606,7 +607,10 @@ module.exports = {
                                     actor,
                                     code
                                 },
-                                {db}
+                                {
+                                    db,
+                                    lrsWreck
+                                }
                             );
                         }
 
@@ -646,7 +650,6 @@ module.exports = {
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                             baseUrl = `${req.url.protocol}//${req.url.host}`,
                             endpoint = `${baseUrl}/lrs`,
-                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
                             sessionId = uuidv4(),
                             contextTemplate = {
                                 contextActivities: {

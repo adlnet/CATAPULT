@@ -34,13 +34,17 @@ module.exports = {
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
                             registrationId = await Registration.create(
                                 {
                                     tenantId: req.auth.credentials.tenantId,
                                     courseId: req.payload.courseId,
                                     actor: req.payload.actor
                                 },
-                                {db}
+                                {
+                                    db,
+                                    lrsWreck
+                                }
                             );
 
                         return db.first("*").from("registrations").where("id", registrationId);

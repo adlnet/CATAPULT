@@ -22,7 +22,7 @@ const { v4: uuidv4 } = require("uuid"),
         lmsId: child.lmsId,
         pubId: child.id,
         type: child.type,
-        satisfied: false,
+        satisfied: (child.type === "au" && child.moveOn === "NotApplicable"),
         ...(child.type === "block" ? {children: child.children.map(mapMoveOnChildren)} : {})
     }),
     isSatisfied = async (node, {auToSetSatisfied, satisfiedStTemplate, lrsWreck}) => {
@@ -102,19 +102,18 @@ const { v4: uuidv4 } = require("uuid"),
 
         return false;
     };
+let Registration;
 
-module.exports = {
-    create: async ({tenantId, courseId, actor, code = uuidv4()}, {db}) => {
+module.exports = Registration = {
+    create: async ({tenantId, courseId, actor, code = uuidv4()}, {db, lrsWreck}) => {
         let registrationId;
 
         try {
             await db.transaction(
-                async (trx) => {
-                    const course = await trx.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId, id: courseId}),
-                        courseAUs = await trx.select("*").from("courses_aus").queryContext({jsonCols: ["metadata"]}).where({tenantId, courseId});
-
-                    registrationId = await trx("registrations").insert(
-                        {
+                async (txn) => {
+                    const course = await txn.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId, id: courseId}),
+                        courseAUs = await txn.select("*").from("courses_aus").queryContext({jsonCols: ["metadata"]}).where({tenantId, courseId}),
+                        registration = {
                             tenantId,
                             code,
                             courseId,
@@ -129,10 +128,11 @@ module.exports = {
                                     children: course.structure.course.children.map(mapMoveOnChildren)
                                 }
                             })
-                        }
-                    );
+                        };
 
-                    await trx("registrations_courses_aus").insert(
+                    registrationId = registration.id = await txn("registrations").insert(registration);
+
+                    await txn("registrations_courses_aus").insert(
                         courseAUs.map(
                             (ca) => ({
                                 tenantId,
@@ -141,10 +141,34 @@ module.exports = {
                                 metadata: JSON.stringify({
                                     version: 1,
                                     moveOn: ca.metadata.moveOn
-                                })
+                                }),
+                                is_satisfied: ca.metadata.moveOn === "NotApplicable"
                             })
                         )
                     );
+
+                    try {
+                        registration.actor = JSON.parse(registration.actor);
+                        registration.metadata = JSON.parse(registration.metadata);
+
+                        await Registration.interpretMoveOn(
+                            registration,
+                            {
+                                sessionCode: uuidv4(),
+                                lrsWreck
+                            }
+                        );
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to interpret moveOn: ${ex}`);
+                    }
+
+                    try {
+                        await txn("registrations").update({metadata: JSON.stringify(registration.metadata)}).where({tenantId, id: registration.id});
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to update registration metadata: ${ex}`);
+                    }
                 }
             );
         }

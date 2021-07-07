@@ -95,7 +95,7 @@
                     </div>
                 </template>
                 <template #cell(title)="data">
-                    <b-link :to="`/courses/${data.item.id}`">
+                    <b-link :to="`/course/${data.item.id}`">
                         {{ data.item.metadata.structure.course.title[0].text }}
                     </b-link>
                 </template>
@@ -221,13 +221,11 @@
             ),
 
             paginationLinkGen (pageNum) {
-                let path = "/courses";
-
-                if (pageNum !== 1) {
-                    path += `/${pageNum}`;
+                if (pageNum === 1) {
+                    return "/";
                 }
 
-                return {path};
+                return `/${pageNum}`;
             },
 
             test ({item}) {

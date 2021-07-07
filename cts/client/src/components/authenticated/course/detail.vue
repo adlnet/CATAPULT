@@ -41,10 +41,10 @@
                         Imported: {{ model.item.createdAt | moment("from", "now") }}
                         <br>
                         <b-nav tabs class="my-3">
-                            <b-nav-item :to="`/courses/${id}`" exact active-class="active">
+                            <b-nav-item :to="`/course/${id}`" exact active-class="active">
                                 Conformance Tests
                             </b-nav-item>
-                            <b-nav-item :to="`/courses/${id}/structure`" active-class="active">
+                            <b-nav-item :to="`/course/${id}/structure`" active-class="active">
                                 Course Structure
                             </b-nav-item>
                         </b-nav>

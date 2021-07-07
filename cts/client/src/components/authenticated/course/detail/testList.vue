@@ -34,7 +34,7 @@
                     </div>
                 </template>
                 <template #cell(registration)="data">
-                    <b-link :to="`/tests/${data.item.id}`">
+                    <b-link :to="`/test/${data.item.id}`">
                         {{ data.item.metadata.actor.name }} ({{ data.item.code }})
                     </b-link>
                 </template>

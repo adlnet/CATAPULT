@@ -193,7 +193,7 @@
                 ]
             ),
             doCloseAU () {
-                this.$router.push(`/tests/${this.model.item.registrationId}`);
+                this.$router.push(`/test/${this.model.item.registrationId}`);
             },
             async doAbandon () {
                 try {

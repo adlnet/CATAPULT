@@ -333,6 +333,7 @@
                 element.click();
                 document.body.removeChild(element);
             },
+
             async doLaunchAU (index, launchMode) {
                 try {
                     const id = await this.createSession(
@@ -348,7 +349,7 @@
                         return;
                     }
 
-                    this.$router.push(`/sessions/${id}`);
+                    this.$router.push(`/session/${id}`);
                 }
                 catch (ex) {
                     console.log(`Failed call to create session: ${ex}`);

@@ -14,7 +14,7 @@
     limitations under the License.
  -->
 <template>
-    <b-form>
+    <b-form @submit.prevent="doSignIn">
         <b-alert :show="error" variant="danger">
             {{ errMsg }}
         </b-alert>
@@ -35,7 +35,7 @@
         <b-form-checkbox id="keepSignedIn" v-model="keepSignedIn">
             Keep me signed in
         </b-form-checkbox>
-        <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" @click="doSignIn">
+        <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" type="submit">
             Sign In
         </b-button>
     </b-form>

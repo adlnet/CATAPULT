@@ -50,7 +50,7 @@
                     </span>
                 </template>
                 <template #cell(actions)="row">
-                    <b-button size="sm" variant="primary" class="mr-2" :to="`/tests/${row.item.id}`">Resume</b-button>
+                    <b-button size="sm" variant="primary" class="mr-2" :to="`/test/${row.item.id}`">Resume</b-button>
                     <b-button size="sm" variant="secondary" @click="download({item: row.item})">Download</b-button>
                 </template>
             </b-table>

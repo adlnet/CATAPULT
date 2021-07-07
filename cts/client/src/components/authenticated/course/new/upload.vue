@@ -63,7 +63,7 @@
 
                     this.file = null;
 
-                    this.$router.push(`/courses/${id}`);
+                    this.$router.push(`/course/${id}`);
                 }
                 catch (ex) {
                     // failing the import should have already posted an alert

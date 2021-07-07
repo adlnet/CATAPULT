@@ -128,7 +128,7 @@
                         return;
                     }
 
-                    this.$router.push(`/tests/${id}`);
+                    this.$router.push(`/test/${id}`);
                 }
                 catch (ex) {
                     console.log(`Failed call to create test: ${ex}`);

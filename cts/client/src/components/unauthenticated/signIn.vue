@@ -73,7 +73,7 @@
                         {
                             username: this.username,
                             password: this.password,
-                            storeCookie: this.keepLoggedIn
+                            storeCookie: this.keepSignedIn
                         }
                     );
                 }

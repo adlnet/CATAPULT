@@ -60,12 +60,15 @@ const fs = require("fs"),
             }
         }
     },
-    validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck) => {
+    validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
         const result = {
                 type: "au",
                 id: element.attr("id").value(),
                 lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
-                objectives: null
+                objectives: null,
+                parents: parents.map(
+                    (e) => ({id: e.id, title: e.title})
+                )
             },
             auTitle = element.get("xmlns:title", schemaNS),
             auDesc = element.get("xmlns:description", schemaNS),
@@ -115,7 +118,7 @@ const fs = require("fs"),
 
         return result;
     },
-    validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck) => {
+    validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
         const result = {
                 type: "block",
                 id: element.attr("id").value(),
@@ -126,6 +129,8 @@ const fs = require("fs"),
             blockTitle = element.get("xmlns:title", schemaNS),
             blockDesc = element.get("xmlns:description", schemaNS),
             objectiveRefs = element.get("xmlns:objectives", schemaNS);
+
+        parents.push(result);
 
         validateIRI(result.id);
 
@@ -155,17 +160,19 @@ const fs = require("fs"),
         for (const child of element.childNodes()) {
             if (child.name() === "au") {
                 result.children.push(
-                    validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck)
+                    validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
                 );
             }
             else if (child.name() === "block") {
                 result.children.push(
-                    validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck)
+                    validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
                 );
             }
             else if (child.name() === "objectives") {
             }
         }
+
+        parents.pop(result);
 
         return result;
     },
@@ -241,15 +248,17 @@ const fs = require("fs"),
             }
         }
 
+        const parents = [];
+
         for (const element of courseStructure.childNodes()) {
             if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck)
+                    validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck)
+                    validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
                 );
             }
             else {

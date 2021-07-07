@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:lts-alpine AS client-build
+
+FROM node:14.17.3-alpine AS client-build
 WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm ci

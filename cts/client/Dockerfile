@@ -13,7 +13,7 @@
 # limitations under the License.
 FROM node:lts-alpine AS client-build
 WORKDIR /usr/src/app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci
 ENV PATH /usr/src/app/node_modules/.bin:$PATH
 

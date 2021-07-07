@@ -19,7 +19,7 @@
             {{ errMsg }}
         </b-alert>
 
-        <b-form-group label="Email address" label-for="username">
+        <b-form-group label="Username" label-for="username">
             <b-form-input id="username" v-model="username" />
         </b-form-group>
         <b-form-group label="Password" label-for="password">

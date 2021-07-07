@@ -29,7 +29,9 @@
                     Conformance Test for {{ courseModel.item.metadata.structure.course.title[0].text }}
                 </h3>
                 <p>
-                    Course ID: {{ courseModel.item.metadata.structure.course.id }}
+                    LMS ID: {{ courseModel.item.metadata.structure.course.lmsId }}
+                    <br>
+                    Publisher ID: {{ courseModel.item.metadata.structure.course.id }}
                 </p>
                 <b-form>
                     <b-row>

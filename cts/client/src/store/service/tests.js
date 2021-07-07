@@ -169,26 +169,25 @@ export default {
             cache[busyKey] = true;
 
             try {
-                const response = await rootGetters["service/makeApiRequest"](`courses/${courseId}/tests`),
-                    lastNewItemIndex = cache.items.findIndex((i) => i.id !== null);
+                const response = await rootGetters["service/makeApiRequest"](`courses/${courseId}/tests`);
 
                 if (! response.ok) {
                     throw new Error(`Request failed: ${response.status}`);
                 }
 
-                const body = await response.json();
+                const body = await response.json(),
+                    duplicateCheck = cache.items.map((i) => i.id);
 
-                cache.items.splice(
-                    lastNewItemIndex === -1 ? cache.items.length : lastNewItemIndex + 1,
-                    0,
-                    ...body.items.map(
-                        (i) => {
-                            i.pending = null;
+                for (const i of body.items) {
+                    if (duplicateCheck.includes(i.id)) {
+                        continue;
+                    }
 
-                            return i;
-                        }
-                    )
-                );
+                    i.pending = null;
+
+                    cache.items.push(i);
+                }
+
                 cache.loaded = true;
 
                 for (const i of body.items) {
@@ -215,7 +214,6 @@ export default {
         },
 
         logsLoadById: async ({getters, rootGetters}, {id, force = false}) => {
-
             const fromCache = getters.logsById({id});
 
             if (fromCache.loaded && ! force) {
@@ -247,7 +245,7 @@ export default {
             }
         },
 
-        create: async ({dispatch, state, rootGetters}, {courseId, actor}) => {
+        create: async ({dispatch, state, getters, rootGetters}, {courseId, actor}) => {
             const kind = "testNew";
 
             try {
@@ -273,6 +271,10 @@ export default {
                 responseBody = populateItem(responseBody);
 
                 state.detailCache[responseBody.id] = wrapItem(responseBody, {loaded: true});
+
+                const courseCache = getters.cache({cacheKey: getters.cacheKey({courseId})});
+
+                courseCache.items.unshift(responseBody);
 
                 return responseBody.id;
             }

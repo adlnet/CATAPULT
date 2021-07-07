@@ -13,8 +13,12 @@
 # limitations under the License.
 FROM node:lts-alpine AS client-build
 WORKDIR /usr/src/app
-COPY --chown=node:node . /usr/src/app
+COPY package.json package-lock.json* ./
 RUN npm ci
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
+
+WORKDIR /usr/src/app/src
+COPY --chown=node:node . /usr/src/app/src
 USER node
 CMD ["npm", "run", "serve"]
 EXPOSE 3396/tcp

@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:lts-alpine AS client-build
+FROM node:14.17.3-alpine AS client-build
 WORKDIR /usr/src/app
 COPY --chown=node:node client /usr/src/app
 RUN npm ci
 RUN npm run build
 
-FROM node:lts-alpine
+FROM node:14.17.3-alpine
 RUN apk add dumb-init
 ENV NODE_ENV production
 WORKDIR /usr/src/app

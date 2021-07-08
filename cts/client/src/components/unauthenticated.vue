@@ -23,7 +23,7 @@
                 cmi5 conformance test suite
             </p>
             <h2 class="my-3">
-                Please log in.
+                Please sign in.
             </h2>
             <sign-in />
         </b-card>

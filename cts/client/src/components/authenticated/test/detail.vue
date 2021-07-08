@@ -76,95 +76,108 @@
                         </b-card>
 
                         <h4 class="mt-3">Assignable Units</h4>
-                        <b-card v-for="(au, index) in courseModel.item.metadata.aus" :key="index" class="mb-3">
-                            <b-row>
-                                <b-col>
-                                    <h4>{{ au.title[0].text }}</h4>
-                                </b-col>
-                                <b-col cols="auto" class="text-right">
-                                    <test-status status="pending" />
-                                </b-col>
-                            </b-row>
-                            <b-row>
-                                <b-col>
-                                    <p>
-                                        LMS ID: {{ au.lmsId }}
-                                        <br>
-                                        Publisher ID: {{ au.id }}
-                                    </p>
-                                </b-col>
-                            </b-row>
-                            <b-row>
-                                <b-col>
-                                    <b-dropdown split text="Launch" variant="primary" class="mr-3" @click="doLaunchAU(index)">
-                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Normal')">Force Normal</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Force Browse</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Force Review</b-dropdown-item-button>
-                                    </b-dropdown>
-                                    <b-dropdown lazy text="Waive AU">
-                                        <b-dropdown-header>Reason</b-dropdown-header>
-                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Tested Out')">Tested Out</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent AU')">Equivalent AU</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent Outside Activity')">Equivalent Outside Activity</b-dropdown-item-button>
-                                        <b-dropdown-item-button @click="doWaiveAU(index, 'Administrative')">Administrative</b-dropdown-item-button>
-                                    </b-dropdown>
-                                </b-col>
-                                <b-col class="text-right">
-                                    <b-form-checkbox
-                                        :id="`show-configuration-${index}`"
-                                        switch
-                                        @change="toggleConfig(index)"
-                                    >
-                                        Show Configuration
-                                    </b-form-checkbox>
-                                </b-col>
-                            </b-row>
-                            <b-row v-if="aUconfigs[index] && aUconfigs[index].show" class="mt-3">
-                                <b-col>
-                                    <b-row>
-                                        <b-col>
-                                            <h6>Configuration</h6>
-                                        </b-col>
-                                        <b-col cols="auto">
-                                            <b-button variant="outline-primary" size="sm" @click="resetConfig(index)">Reset</b-button>
-                                        </b-col>
-                                    </b-row>
-                                    <!-- TODO: preset these based on course structure configuration -->
-                                    <b-form-group :label="`Launch method (${au.launchMethod})`">
-                                        <b-form-select v-if="au.launchMethod === 'AnyWindow'" v-model="aUconfigs[index].launchMethod">
-                                            <b-form-select-option :value="null">Default</b-form-select-option>
-                                            <b-form-select-option value="iframe">This Window</b-form-select-option>
-                                            <b-form-select-option value="newWindow">New Window</b-form-select-option>
-                                        </b-form-select>
-                                        <b-form-select disabled v-else v-model="aUconfigs[index].launchMethod">
-                                            <b-form-select-option selected :value="null">New Window</b-form-select-option>
-                                        </b-form-select>
-                                    </b-form-group>
-                                    <b-form-group label="Launch parameters">
-                                        <b-form-textarea v-model="aUconfigs[index].launchParameters"></b-form-textarea>
-                                    </b-form-group>
-                                    <b-form-group label="Mastery score">
-                                        <b-form-input v-model="aUconfigs[index].masteryScore" number type="number" min="0" max="1" step="0.1"></b-form-input>
-                                    </b-form-group>
-                                    <b-form-group label="Move on">
-                                        <b-form-select v-model="aUconfigs[index].moveOn">
-                                            <b-form-select-option :value="null">From Course Structure</b-form-select-option>
-                                            <b-form-select-option value="NotApplicable">Not Applicable</b-form-select-option>
-                                            <b-form-select-option value="Passed">Passed</b-form-select-option>
-                                            <b-form-select-option value="Completed">Completed</b-form-select-option>
-                                            <b-form-select-option value="CompletedAndPassed">CompletedAndPassed</b-form-select-option>
-                                            <b-form-select-option value="CompletedOrPassed">CompletedOrPassed</b-form-select-option>
-                                        </b-form-select>
-                                    </b-form-group>
-                                    <b-form-group label="Alternate entitlement key">
-                                        <b-form-input v-model="aUconfigs[index].alternateEntitlementKey"></b-form-input>
-                                    </b-form-group>
-                                    <b-form-group label="Context template additions">
-                                        <b-form-textarea v-model="aUconfigs[index].contextTemplateAdditions"></b-form-textarea>
-                                    </b-form-group>
-                                </b-col>
-                            </b-row>
-                        </b-card>
+                        <template v-if="courseModel.item.metadata && courseModel.item.metadata.aus">
+                            <b-card v-for="(au, index) in courseModel.item.metadata.aus" :key="index" class="mb-3">
+                                <b-row v-if="au.parents && au.parents.length > 0">
+                                    <b-col>
+                                        <span class="block-path">({{ ["Root"].concat(au.parents.map((e) => e.title[0].text)).join(" &raquo; ") }})</span>
+                                    </b-col>
+                                </b-row>
+                                <b-row>
+                                    <b-col>
+                                        <h4>{{ au.title[0].text }}</h4>
+                                    </b-col>
+                                    <b-col cols="auto" class="text-right">
+                                        <test-status status="pending" />
+                                    </b-col>
+                                </b-row>
+                                <b-row>
+                                    <b-col>
+                                        <p>
+                                            LMS ID: {{ au.lmsId }}
+                                            <br>
+                                            Publisher ID: {{ au.id }}
+                                        </p>
+                                    </b-col>
+                                </b-row>
+                                <b-row>
+                                    <b-col>
+                                        <b-dropdown split text="Launch" variant="primary" class="mr-3" @click="doLaunchAU(index)">
+                                            <b-dropdown-item-button @click="doLaunchAU(index, 'Normal')">Force Normal</b-dropdown-item-button>
+                                            <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Force Browse</b-dropdown-item-button>
+                                            <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Force Review</b-dropdown-item-button>
+                                        </b-dropdown>
+                                        <b-dropdown lazy text="Waive AU">
+                                            <b-dropdown-header>Reason</b-dropdown-header>
+                                            <b-dropdown-item-button @click="doWaiveAU(index, 'Tested Out')">Tested Out</b-dropdown-item-button>
+                                            <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent AU')">Equivalent AU</b-dropdown-item-button>
+                                            <b-dropdown-item-button @click="doWaiveAU(index, 'Equivalent Outside Activity')">Equivalent Outside Activity</b-dropdown-item-button>
+                                            <b-dropdown-item-button @click="doWaiveAU(index, 'Administrative')">Administrative</b-dropdown-item-button>
+                                        </b-dropdown>
+                                    </b-col>
+                                    <b-col class="text-right">
+                                        <b-form-checkbox
+                                            :id="`show-configuration-${index}`"
+                                            switch
+                                            @change="toggleConfig(index)"
+                                        >
+                                            Show Configuration
+                                        </b-form-checkbox>
+                                    </b-col>
+                                </b-row>
+                                <b-row v-if="aUconfigs[index] && aUconfigs[index].show" class="mt-3">
+                                    <b-col>
+                                        <b-row>
+                                            <b-col>
+                                                <h6>Configuration</h6>
+                                            </b-col>
+                                            <b-col cols="auto">
+                                                <b-button variant="outline-primary" size="sm" @click="resetConfig(index)">Reset</b-button>
+                                            </b-col>
+                                        </b-row>
+                                        <!-- TODO: preset these based on course structure configuration -->
+                                        <b-form-group :label="`Launch method (${au.launchMethod})`">
+                                            <b-form-select v-if="au.launchMethod === 'AnyWindow'" v-model="aUconfigs[index].launchMethod">
+                                                <b-form-select-option :value="null">Default</b-form-select-option>
+                                                <b-form-select-option value="iframe">This Window</b-form-select-option>
+                                                <b-form-select-option value="newWindow">New Window</b-form-select-option>
+                                            </b-form-select>
+                                            <b-form-select disabled v-else v-model="aUconfigs[index].launchMethod">
+                                                <b-form-select-option selected :value="null">New Window</b-form-select-option>
+                                            </b-form-select>
+                                        </b-form-group>
+                                        <b-form-group label="Launch parameters">
+                                            <b-form-textarea v-model="aUconfigs[index].launchParameters"></b-form-textarea>
+                                        </b-form-group>
+                                        <b-form-group label="Mastery score">
+                                            <b-form-input v-model="aUconfigs[index].masteryScore" number type="number" min="0" max="1" step="0.1"></b-form-input>
+                                        </b-form-group>
+                                        <b-form-group label="Move on">
+                                            <b-form-select v-model="aUconfigs[index].moveOn">
+                                                <b-form-select-option :value="null">From Course Structure</b-form-select-option>
+                                                <b-form-select-option value="NotApplicable">Not Applicable</b-form-select-option>
+                                                <b-form-select-option value="Passed">Passed</b-form-select-option>
+                                                <b-form-select-option value="Completed">Completed</b-form-select-option>
+                                                <b-form-select-option value="CompletedAndPassed">CompletedAndPassed</b-form-select-option>
+                                                <b-form-select-option value="CompletedOrPassed">CompletedOrPassed</b-form-select-option>
+                                            </b-form-select>
+                                        </b-form-group>
+                                        <b-form-group label="Alternate entitlement key">
+                                            <b-form-input v-model="aUconfigs[index].alternateEntitlementKey"></b-form-input>
+                                        </b-form-group>
+                                        <b-form-group label="Context template additions">
+                                            <b-form-textarea v-model="aUconfigs[index].contextTemplateAdditions"></b-form-textarea>
+                                        </b-form-group>
+                                    </b-col>
+                                </b-row>
+                            </b-card>
+                        </template>
+                        <p v-else-if="courseModel.item.loading">
+                            Loading course metadata...
+                        </p>
+                        <p v-else>
+                            List of AUs unavailable.
+                        </p>
                     </b-col>
                     <b-col cols="5">
                         <b-card>
@@ -320,6 +333,7 @@
                 element.click();
                 document.body.removeChild(element);
             },
+
             async doLaunchAU (index, launchMode) {
                 try {
                     const id = await this.createSession(
@@ -335,7 +349,7 @@
                         return;
                     }
 
-                    this.$router.push(`/sessions/${id}`);
+                    this.$router.push(`/session/${id}`);
                 }
                 catch (ex) {
                     console.log(`Failed call to create session: ${ex}`);
@@ -361,5 +375,8 @@
 </script>
 
 <style lang="scss" scoped>
+    .block-path {
+        font-weight: bold;
+        font-size: smaller;
+    }
 </style>
-

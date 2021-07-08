@@ -19,21 +19,35 @@ const fs = require("fs"),
     util = require("util"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Hoek = require("@hapi/hoek"),
     libxml = require("libxmljs"),
     StreamZip = require("node-stream-zip"),
     iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
     url = require("url"),
-    Registration = require("./lib/registration"),
-    Hoek = require("@hapi/hoek"),
+    Registration = require("../lib/registration"),
+    Session = require("../lib/session"),
     readFile = util.promisify(fs.readFile),
     copyFile = util.promisify(fs.copyFile),
     mkdir = util.promisify(fs.mkdir),
     rm = util.promisify(fs.rm),
     schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
     schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
+
+    //
+    // this is basically a check for a scheme, assume that if there is a scheme
+    // that the URL is absolute, not checking for `://` because it could be a
+    // non-ip based URL per rfc1738
+    //
+    isAbsolute = (url) => /^[A-Za-z]+:.+/.test(url),
+
     validateIRI = (input) => {
-        const resolved = new iri.IRI(input).toAbsolute();
+        try {
+            new iri.IRI(input).toAbsolute();
+        }
+        catch (ex) {
+            throw Boom.badRequest(`Invalid IRI: ${input}`, {violatedReqId: "3.0.0.0-1"});
+        }
 
         return true;
     },
@@ -46,18 +60,27 @@ const fs = require("fs"),
             }
         }
     },
-    validateAU = (element, lmsIdHelper, objectiveMap) => {
+    validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
         const result = {
                 type: "au",
                 id: element.attr("id").value(),
                 lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
-                objectives: null
+                objectives: null,
+                parents: parents.map(
+                    (e) => ({id: e.id, title: e.title})
+                )
             },
             auTitle = element.get("xmlns:title", schemaNS),
             auDesc = element.get("xmlns:description", schemaNS),
             objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
         validateIRI(result.id);
+
+        if (duplicateCheck.aus[result.id]) {
+            throw Boom.badRequest(`Invalid AU id (${result.id}: duplicate not allowed`, {violatedReqId: "13.1.4.0-1"});
+        }
+
+        duplicateCheck.aus[result.id] = true;
 
         result.title = auTitle.childNodes().map(
             (ls) => ({
@@ -95,7 +118,7 @@ const fs = require("fs"),
 
         return result;
     },
-    validateBlock = (element, lmsIdHelper, objectiveMap) => {
+    validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
         const result = {
                 type: "block",
                 id: element.attr("id").value(),
@@ -107,7 +130,15 @@ const fs = require("fs"),
             blockDesc = element.get("xmlns:description", schemaNS),
             objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
+        parents.push(result);
+
         validateIRI(result.id);
+
+        if (duplicateCheck.blocks[result.id]) {
+            throw Boom.badRequest(`Invalid block id (${result.id}: duplicate not allowed`, {violatedReqId: "13.1.2.0-1"});
+        }
+
+        duplicateCheck.blocks[result.id] = true;
 
         result.title = blockTitle.childNodes().map(
             (ls) => ({
@@ -129,17 +160,19 @@ const fs = require("fs"),
         for (const child of element.childNodes()) {
             if (child.name() === "au") {
                 result.children.push(
-                    validateAU(child, lmsIdHelper, objectiveMap)
+                    validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
                 );
             }
             else if (child.name() === "block") {
                 result.children.push(
-                    validateBlock(child, lmsIdHelper, objectiveMap)
+                    validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
                 );
             }
             else if (child.name() === "objectives") {
             }
         }
+
+        parents.pop(result);
 
         return result;
     },
@@ -161,6 +194,10 @@ const fs = require("fs"),
                 prefix: lmsId,
                 auIndex: 0,
                 blockIndex: 0
+            },
+            duplicateCheck = {
+                aus: {},
+                blocks: {}
             };
 
         result.course.id = course.attr("id").value();
@@ -190,7 +227,7 @@ const fs = require("fs"),
                     validateIRI(id);
 
                     if (result.course.objectives[id]) {
-                        throw new Error(`Invalid objective id (${id}: duplicate not allowed`);
+                        throw Boom.badRequest(`Invalid objective id (${id}: duplicate not allowed`, {violatedReqId: "13.1.3.0-1"});
                     }
 
                     result.course.objectives[id] = {
@@ -211,15 +248,17 @@ const fs = require("fs"),
             }
         }
 
+        const parents = [];
+
         for (const element of courseStructure.childNodes()) {
             if (element.name() === "au") {
                 result.course.children.push(
-                    validateAU(element, lmsIdHelper, result.course.objectives)
+                    validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
                 );
             }
             else if (element.name() === "block") {
                 result.course.children.push(
-                    validateBlock(element, lmsIdHelper, result.course.objectives)
+                    validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
                 );
             }
             else {
@@ -262,10 +301,6 @@ module.exports = {
                         payload: {
                             // arbitrarily chosen large number (480 MB)
                             maxBytes: 1024 * 1024 * 480,
-                            allow: [
-                                "application/zip",
-                                "text/xml"
-                            ],
                             output: "file"
                         },
                         tags: ["api"],
@@ -295,18 +330,36 @@ module.exports = {
                         let courseStructureData,
                             zip;
 
-                        try {
-                            if (contentType === "application/zip") {
-                                zip = new StreamZip.async({file: req.payload.path});
+                        if (contentType !== "application/zip" && contentType !== "text/xml") {
+                            throw Boom.badRequest(`14.0.0.0-1 - For the course import and export defined in Section 6.1, the LMS MUST support all of the following formats: Zip32, Zip64, course structure XML file.`, {violatedReqId: "14.0.0.0-1"});
+                        }
 
+                        if (contentType === "application/zip") {
+                            try {
+                                zip = new StreamZip.async({file: req.payload.path});
+                            }
+                            catch (ex) {
+                                throw Boom.badRequest(`14.1.0.0-1 - The two ZIP file formats MUST follow the specification defined at https://www.pkware.com/support/zip-app-note. (${ex})`, {violatedReqId: "14.1.0.0-1"});
+                            }
+
+                            try {
                                 courseStructureData = await zip.entryData("cmi5.xml");
                             }
-                            else {
-                                courseStructureData = await readFile(req.payload.path);
+                            catch (ex) {
+                                if (ex.message === "Bad archive") {
+                                    throw Boom.badRequest(`14.1.0.0-1 - The two ZIP file formats MUST follow the specification defined at https://www.pkware.com/support/zip-app-note. (${ex})`, {violatedReqId: "14.1.0.0-1"});
+                                }
+
+                                throw Boom.badRequest(`14.1.0.0-2 - When the ZIP file is used to package a course, it MUST contain the course structure XML file at its root directory. (${ex})`, {violatedReqId: "14.1.0.0-2"});
                             }
                         }
-                        catch (ex) {
-                            throw Boom.internal(`Failed to read structure file: ${ex}`);
+                        else {
+                            try {
+                                courseStructureData = await readFile(req.payload.path);
+                            }
+                            catch (ex) {
+                                throw Boom.internal(`Failed to read structure file: ${ex}`);
+                            }
                         }
 
                         let courseStructureDocument;
@@ -322,7 +375,7 @@ module.exports = {
                             );
                         }
                         catch (ex) {
-                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`);
+                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`, {violatedReqId: "13.2.0.0-1"});
                         }
 
                         let validationResult;
@@ -335,19 +388,11 @@ module.exports = {
                         }
 
                         if (! validationResult) {
-                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`);
+                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, {violatedReqId: "13.2.0.0-1"});
                         }
 
-                        let structure;
-
-                        try {
-                            structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false);
-                        }
-                        catch (ex) {
-                            throw Boom.badRequest(`Failed to validate course structure: ${ex}`);
-                        }
-
-                        let aus;
+                        let structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false),
+                            aus;
 
                         try {
                             aus = flattenAUs(structure.course.children);
@@ -363,33 +408,38 @@ module.exports = {
                         //
                         for (const au of aus) {
                             let launchUrl;
+
                             try {
                                 //
-                                // using the legacy URL support because it allows relative URLs
-                                // but the newer WHAT-WG API doesn't, see the following issues for details
-                                // https://github.com/nodejs/node/issues/12682
-                                // https://github.com/whatwg/url/issues/531
+                                // validating the URL using the newer URL support because it
+                                // has a more strict implementation of URL parsing, but it
+                                // requires a base URL to be provided to be able to handle
+                                // relative URLs, but then we need to work with the URL in
+                                // a way such that we maintain the relative nature so do that
+                                // after validating
                                 //
-                                launchUrl = url.parse(au.url, true);
+                                launchUrl = new URL(au.url, req.server.app.contentUrl);
                             }
                             catch (ex) {
-                                throw new Error(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${result.url}': ${ex}`);
+                                throw Boom.badRequest(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${au.url}': ${ex}`, {violatedReqId: "13.1.4.0-2"});
                             }
 
-                            for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
-                                if (typeof launchUrl.query[k] !== "undefined") {
-                                    throw new Error(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`);
+                            if (launchUrl.searchParams) {
+                                for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
+                                    if (launchUrl.searchParams.get(k) !== null) {
+                                        throw Boom.badRequest(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`, {violatedReqId: "8.1.0.0-6"});
+                                    }
                                 }
                             }
 
-                            if (launchUrl.protocol === null || launchUrl.host === null) {
+                            if (! isAbsolute(au.url)) {
                                 if (! zip) {
-                                    throw new Error(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`);
+                                    throw Boom.badRequest(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`, {violatedReqId: "14.2.0.0-1"});
                                 }
 
-                                const zipEntry = await zip.entry(launchUrl.pathname);
+                                const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
                                 if (! zipEntry) {
-                                    throw new Error(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`);
+                                    throw Boom.badRequest(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`, {violatedReqId: "14.1.0.0-4"});
                                 }
                             }
                         }
@@ -398,8 +448,8 @@ module.exports = {
 
                         try {
                             await db.transaction(
-                                async (trx) => {
-                                    courseId = await trx("courses").insert(
+                                async (txn) => {
+                                    courseId = await txn("courses").insert(
                                         {
                                             tenantId,
                                             lmsId,
@@ -414,7 +464,7 @@ module.exports = {
                                         }
                                     );
 
-                                    await trx("courses_aus").insert(
+                                    await txn("courses_aus").insert(
                                         aus.map(
                                             (au, i) => ({
                                                 tenantId,
@@ -522,13 +572,13 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        console.log(`POST /courses/${req.params.id}/launch-url/${req.params.auIndex}`, req.payload.reg);
                         const db = req.server.app.db,
                             courseId = req.params.id,
                             auIndex = req.params.auIndex,
                             actor = req.payload.actor,
                             code = req.payload.reg,
                             tenantId = req.auth.credentials.tenantId,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
                             course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
                                 {
                                     tenantId,
@@ -567,7 +617,10 @@ module.exports = {
                                     actor,
                                     code
                                 },
-                                {db}
+                                {
+                                    db,
+                                    lrsWreck
+                                }
                             );
                         }
 
@@ -585,6 +638,31 @@ module.exports = {
                                     }
                                 )
                                 .options({nestTables: true});
+
+                        //
+                        // check for existing open sessions and abandon them,
+                        // in theory this should only ever return at most one
+                        // but if it were to return more than one then might
+                        // as well abandon them all
+                        //
+                        const openSessions = await db
+                            .select("sessions.id")
+                            .from("sessions")
+                            .leftJoin("registrations_courses_aus", "sessions.registrations_courses_aus_id", "registrations_courses_aus.id")
+                            .where(
+                                {
+                                    "sessions.tenant_id": tenantId,
+                                    "registrations_courses_aus.registration_id": registrationId,
+                                    "sessions.is_terminated": false,
+                                    "sessions.is_abandoned": false
+                                }
+                            );
+
+                        if (openSessions) {
+                            for (const session of openSessions) {
+                                await Session.abandon(session.id, tenantId, {db, lrsWreck});
+                            }
+                        }
 
                         let contextTemplateAdditions = req.payload.contextTemplateAdditions.trim();
 
@@ -607,16 +685,6 @@ module.exports = {
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                             baseUrl = `${req.url.protocol}//${req.url.host}`,
                             endpoint = `${baseUrl}/lrs`,
-                            lrsWreck = Wreck.defaults(
-                                {
-                                    baseUrl: req.server.app.lrs.endpoint,
-                                    headers: {
-                                        "X-Experience-API-Version": "1.0.3",
-                                        Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
-                                    },
-                                    json: true
-                                }
-                            ),
                             sessionId = uuidv4(),
                             contextTemplate = {
                                 contextActivities: {
@@ -637,7 +705,7 @@ module.exports = {
 
                         let contentUrl;
 
-                        if (/[A-Za-z]+:\/\/.+/.test(course.metadata.aus[auIndex].url)) {
+                        if (isAbsolute(course.metadata.aus[auIndex].url)) {
                             contentUrl = course.metadata.aus[auIndex].url;
                         }
                         else {

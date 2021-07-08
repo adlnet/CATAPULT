@@ -22,7 +22,7 @@ const { v4: uuidv4 } = require("uuid"),
         lmsId: child.lmsId,
         pubId: child.id,
         type: child.type,
-        satisfied: false,
+        satisfied: (child.type === "au" && child.moveOn === "NotApplicable"),
         ...(child.type === "block" ? {children: child.children.map(mapMoveOnChildren)} : {})
     }),
     isSatisfied = async (node, {auToSetSatisfied, satisfiedStTemplate, lrsWreck}) => {
@@ -102,19 +102,18 @@ const { v4: uuidv4 } = require("uuid"),
 
         return false;
     };
+let Registration;
 
-module.exports = {
-    create: async ({tenantId, courseId, actor, code = uuidv4()}, {db}) => {
+module.exports = Registration = {
+    create: async ({tenantId, courseId, actor, code = uuidv4()}, {db, lrsWreck}) => {
         let registrationId;
 
         try {
             await db.transaction(
-                async (trx) => {
-                    const course = await trx.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId, id: courseId}),
-                        courseAUs = await trx.select("*").from("courses_aus").queryContext({jsonCols: ["metadata"]}).where({tenantId, courseId});
-
-                    registrationId = await trx("registrations").insert(
-                        {
+                async (txn) => {
+                    const course = await txn.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId, id: courseId}),
+                        courseAUs = await txn.select("*").from("courses_aus").queryContext({jsonCols: ["metadata"]}).where({tenantId, courseId}),
+                        registration = {
                             tenantId,
                             code,
                             courseId,
@@ -129,10 +128,11 @@ module.exports = {
                                     children: course.structure.course.children.map(mapMoveOnChildren)
                                 }
                             })
-                        }
-                    );
+                        };
 
-                    await trx("registrations_courses_aus").insert(
+                    registrationId = registration.id = await txn("registrations").insert(registration);
+
+                    await txn("registrations_courses_aus").insert(
                         courseAUs.map(
                             (ca) => ({
                                 tenantId,
@@ -141,10 +141,34 @@ module.exports = {
                                 metadata: JSON.stringify({
                                     version: 1,
                                     moveOn: ca.metadata.moveOn
-                                })
+                                }),
+                                is_satisfied: ca.metadata.moveOn === "NotApplicable"
                             })
                         )
                     );
+
+                    try {
+                        registration.actor = JSON.parse(registration.actor);
+                        registration.metadata = JSON.parse(registration.metadata);
+
+                        await Registration.interpretMoveOn(
+                            registration,
+                            {
+                                sessionCode: uuidv4(),
+                                lrsWreck
+                            }
+                        );
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to interpret moveOn: ${ex}`);
+                    }
+
+                    try {
+                        await txn("registrations").update({metadata: JSON.stringify(registration.metadata)}).where({tenantId, id: registration.id});
+                    }
+                    catch (ex) {
+                        throw new Error(`Failed to update registration metadata: ${ex}`);
+                    }
                 }
             );
         }
@@ -164,7 +188,59 @@ module.exports = {
         );
     },
 
-    interpretMoveOn: async (registration, {auToSetSatisfied, session, lrsWreck}) => {
+    loadAuForChange: async (txn, registrationId, auIndex, tenantId) => {
+        let queryResult;
+
+        try {
+            queryResult = await txn
+                .first("*")
+                .from("registrations_courses_aus")
+                .leftJoin("registrations", "registrations_courses_aus.registration_id", "registrations.id")
+                .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
+                .where(
+                    {
+                        "registrations_courses_aus.tenant_id": tenantId,
+                        "courses_aus.au_index": auIndex
+                    }
+                )
+                .andWhere(function () {
+                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId);
+                })
+                .queryContext(
+                    {
+                        jsonCols: [
+                            "registrations_courses_aus.metadata",
+                            "registrations.actor",
+                            "registrations.metadata",
+                            "courses_aus.metadata"
+                        ]
+                    }
+                )
+                .forUpdate()
+                .options({nestTables: true})
+        }
+        catch (ex) {
+            txn.rollback();
+            throw new Error(`Failed to select registration course AU, registration and course AU for update: ${ex}`);
+        }
+
+        if (! queryResult) {
+            txn.rollback();
+            throw Boom.notFound(`registration: ${registrationId}`);
+        }
+
+        const {
+            registrationsCoursesAus: regCourseAu,
+            registrations: registration,
+            coursesAus: courseAu
+        } = queryResult;
+
+        regCourseAu.courseAu = courseAu;
+
+        return {regCourseAu, registration, courseAu};
+    },
+
+    interpretMoveOn: async (registration, {auToSetSatisfied, sessionCode, lrsWreck}) => {
         const moveOn = registration.metadata.moveOn,
 
             //
@@ -192,7 +268,7 @@ module.exports = {
                         grouping: []
                     },
                     extensions: {
-                        "https://w3id.org/xapi/cmi5/context/extensions/sessionid": session.code
+                        "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionCode
                     }
                 }
             });

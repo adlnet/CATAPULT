@@ -110,7 +110,7 @@
     .navbar-light .title:hover {
         font-size: 2.5rem;
         padding: 0px;
-        color: $gray-500;
+        color: $gray-600;
 
         &::first-letter {
             color: $primary;

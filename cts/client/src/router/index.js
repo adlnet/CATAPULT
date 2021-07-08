@@ -48,7 +48,7 @@ const router = new VueRouter(
                 ]
             },
             {
-                path: "/courses/:id",
+                path: "/course/:id",
                 component: courseDetail,
                 props: true,
                 children: [
@@ -70,12 +70,12 @@ const router = new VueRouter(
                 props: true
             },
             {
-                path: "/tests/:id",
+                path: "/test/:id",
                 component: testDetail,
                 props: true
             },
             {
-                path: "/sessions/:id",
+                path: "/session/:id",
                 component: sessionDetail,
                 props: true
             },
@@ -84,8 +84,9 @@ const router = new VueRouter(
                 component: requirementsList,
             },
             {
-                path: "/",
-                component: courseList
+                path: "/:initPage?",
+                component: courseList,
+                props: true
             }
         ]
     }

@@ -34,7 +34,7 @@
                     </div>
                 </template>
                 <template #cell(registration)="data">
-                    <b-link :to="`/tests/${data.item.id}`">
+                    <b-link :to="`/test/${data.item.id}`">
                         {{ data.item.metadata.actor.name }} ({{ data.item.code }})
                     </b-link>
                 </template>
@@ -50,8 +50,8 @@
                     </span>
                 </template>
                 <template #cell(actions)="row">
-                    <b-button size="sm" variant="primary" class="mr-2" :to="`/tests/${row.item.id}`">Resume</b-button>
-                    <b-button size="sm" variant="outline-danger" @click="download({item: row.item})">Download</b-button>
+                    <b-button size="sm" variant="primary" class="mr-2" :to="`/test/${row.item.id}`">Resume</b-button>
+                    <b-button size="sm" variant="secondary" @click="download({item: row.item})">Download</b-button>
                 </template>
             </b-table>
         </b-col>

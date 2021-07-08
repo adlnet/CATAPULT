@@ -95,7 +95,7 @@
                     </div>
                 </template>
                 <template #cell(title)="data">
-                    <b-link :to="`/courses/${data.item.id}`">
+                    <b-link :to="`/course/${data.item.id}`">
                         {{ data.item.metadata.structure.course.title[0].text }}
                     </b-link>
                 </template>
@@ -115,40 +115,17 @@
                         Never
                     </span>
                 </template>
-                <!--
-                <template #cell(detailToggle)="row">
-                    <b-button size="sm" variant="link" class="detailToggle" @click="row.toggleDetails">
-                        <font-awesome-icon v-if="row.detailsShowing" icon="caret-down"></font-awesome-icon>
-                        <font-awesome-icon v-else icon="caret-right"></font-awesome-icon>
-                    </b-button>
-                </template>
-                -->
                 <template #cell(actions)="row">
                     <b-button size="sm" variant="primary" class="mr-2" :to="`/test-new/${row.item.id}`">Test</b-button>
-                    <!-- TODO: need to do confirmation -->
-                    <b-button size="sm" variant="outline-danger" @click="drop({item: row.item})">Delete</b-button>
-                    <!--
-                    <b-dropdown right variant="primary" size="sm" text="Actions">
-                        <b-dropdown-item-button @click="launch({courseId: row.item.id})">
-                            Launch
-                        </b-dropdown-item-button>
-                        <b-dropdown-item-button variant="danger" @click="drop({courseId: row.item.id})">
-                            Delete
-                        </b-dropdown-item-button>
-                    </b-dropdown>
-                    -->
+                    <b-button size="sm" variant="outline-danger" @click="row.toggleDetails">Delete</b-button>
                 </template>
-                <!--
                 <template #row-details="row">
-                    <b-container fluid class="targetRegistrationDetail mb-4">
-                        <b-row class="mb-4">
-                            <b-col>
-                                {{ row.item.id }} Reg details.
-                            </b-col>
-                        </b-row>
-                    </b-container>
+                    <div class="text-right">
+                        Deleting this course will also delete all associated test data. Do you wish to delete the course?
+                        <b-button size="sm" variant="danger" class="mx-2" @click="drop({item: row.item})">Delete</b-button>
+                        <b-button size="sm" variant="primary" class="mr-3" @click="row.toggleDetails">Cancel</b-button>
+                    </div>
                 </template>
-                -->
             </b-table>
         </b-col>
     </b-row>
@@ -170,13 +147,6 @@
         data: () => ({
             caller: "courses",
             tableFields: [
-                /*
-                {
-                    key: "detailToggle",
-                    label: "",
-                    class: "text-center"
-                },
-                */
                 {
                     key: "title",
                     label: "Title",
@@ -216,11 +186,6 @@
                     cache: "service/courses/defaultCache"
                 }
             ),
-            /*
-            cacheProperties () {
-                return this.$store.getters["target/coursesCacheProperties"]({caller: this.caller});
-            },
-            */
             tableNumberOfPages () {
                 return Math.ceil(this.cache.items.length / this.tablePerPage);
             },
@@ -256,37 +221,16 @@
             ),
 
             paginationLinkGen (pageNum) {
-                let path = "/courses";
-
-                if (pageNum !== 1) {
-                    path += `/${pageNum}`;
+                if (pageNum === 1) {
+                    return "/";
                 }
 
-                return {path};
+                return `/${pageNum}`;
             },
 
             test ({item}) {
                 console.log("components:courses::test", item);
             }
-
-            /*
-            async launch ({courseId}) {
-                const launchUrl = await this.$store.dispatch(
-                    "target/launchUrl",
-                    {
-                        courseId: courseId,
-                        caller: "courses",
-                        createRegistration: false
-                    }
-                );
-
-                // if the above errors then there will be a warning shown,
-                // so this can effectively be silent
-                if (launchUrl) {
-                    window.open(launchUrl);
-                }
-            }
-            */
         }
     };
 </script>

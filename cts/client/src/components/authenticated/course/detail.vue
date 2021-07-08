@@ -29,7 +29,18 @@
                     </b-col>
                     <b-col cols="auto">
                         <b-button variant="primary" class="mr-2" :to="`/test-new/${id}`">Test</b-button>
-                        <b-button variant="outline-danger" @click="doDelete">Delete</b-button>
+                        <b-button id="start-delete" variant="outline-danger">Delete</b-button>
+                        <b-popover :show.sync="showConfirmDelete" target="start-delete" placement="bottomleft">
+                            <template #title>Confirm Course Deletion</template>
+
+                            <p>
+                                Deleting this course will also delete all associated test data. Do you wish to delete the course?
+                            </p>
+                            <div class="text-center">
+                                <b-button size="sm" variant="danger" class="mr-2" @click="doDelete">Confirm</b-button>
+                                <b-button size="sm" variant="primary" @click="showConfirmDelete = !showConfirmDelete">Cancel</b-button>
+                            </div>
+                        </b-popover>
                     </b-col>
                 </b-row>
                 <b-row>
@@ -41,10 +52,10 @@
                         Imported: {{ model.item.createdAt | moment("from", "now") }}
                         <br>
                         <b-nav tabs class="my-3">
-                            <b-nav-item :to="`/courses/${id}`" exact active-class="active">
+                            <b-nav-item :to="`/course/${id}`" exact active-class="active">
                                 Conformance Tests
                             </b-nav-item>
-                            <b-nav-item :to="`/courses/${id}/structure`" active-class="active">
+                            <b-nav-item :to="`/course/${id}/structure`" active-class="active">
                                 Course Structure
                             </b-nav-item>
                         </b-nav>
@@ -69,6 +80,9 @@
                 required: true
             }
         },
+        data: () => ({
+            showConfirmDelete: false
+        }),
         computed: {
             model () {
                 return this.$store.getters["service/courses/byId"]({id: this.id});

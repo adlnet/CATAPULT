@@ -14,12 +14,12 @@
     limitations under the License.
  -->
 <template>
-    <b-form>
+    <b-form @submit.prevent="doSignIn">
         <b-alert :show="error" variant="danger">
             {{ errMsg }}
         </b-alert>
 
-        <b-form-group label="Email address" label-for="username">
+        <b-form-group label="Username" label-for="username">
             <b-form-input id="username" v-model="username" />
         </b-form-group>
         <b-form-group label="Password" label-for="password">
@@ -32,11 +32,11 @@
                 </b-input-group-append>
             </b-input-group>
         </b-form-group>
-        <b-form-checkbox id="keepLoggedIn" v-model="keepLoggedIn">
-            Keep me logged in
+        <b-form-checkbox id="keepSignedIn" v-model="keepSignedIn">
+            Keep me signed in
         </b-form-checkbox>
-        <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" @click="doSignIn">
-            Log In
+        <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" type="submit">
+            Sign In
         </b-button>
     </b-form>
 </template>
@@ -53,7 +53,7 @@
         data: () => ({
             username: "",
             password: "",
-            keepLoggedIn: false,
+            keepSignedIn: false,
             passwordVisible: false
         }),
         computed: {
@@ -73,7 +73,7 @@
                         {
                             username: this.username,
                             password: this.password,
-                            storeCookie: this.keepLoggedIn
+                            storeCookie: this.keepSignedIn
                         }
                     );
                 }

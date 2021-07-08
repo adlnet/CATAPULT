@@ -16,7 +16,8 @@
 "use strict";
 
 const Boom = require("@hapi/boom"),
-    Wreck = require("@hapi/wreck");
+    Wreck = require("@hapi/wreck"),
+    Session = require("../lib/session");
 
 module.exports = {
     name: "catapult-player-api-routes-v1-sessions",
@@ -30,7 +31,14 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        throw new Error(`Not implemented, abandon session`);
+                        const sessionId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req));
+
+                        await Session.abandon(sessionId, tenantId, {db, lrsWreck});
+
+                        return null;
                     }
                 }
             ]

@@ -18,7 +18,8 @@
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
-    Registration = require("./v1/lib/registration"),
+    Registration = require("./lib/registration"),
+    Session = require("./lib/session"),
     CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
     CMI5_EXTENSION_SESSION_ID = "https://w3id.org/xapi/cmi5/context/extensions/sessionid",
     CMI5_EXTENSION_MASTERY_SCORE = "https://w3id.org/xapi/cmi5/context/extensions/masteryscore",
@@ -162,6 +163,9 @@ const Boom = require("@hapi/boom"),
 
                     if (session.is_terminated) {
                         throw Boom.unauthorized(new Error(`9.3.0.0-5 - The "Terminated" verb MUST be the last statement (cmi5 allowed or defined). (${st.id})`));
+                    }
+                    if (session.is_abandoned) {
+                        throw Boom.unauthorized(new Error(`9.3.6.0-2 - The LMS MUST NOT allow any statements to be recorded for a session after recording an "Abandoned" statement.). (${st.id})`));
                     }
 
                     if (st.context.contextActivities
@@ -446,6 +450,7 @@ const Boom = require("@hapi/boom"),
                     switch (verbId) {
                         case VERB_INITIALIZED_ID:
                             sessionUpdates.is_initialized = true;
+                            sessionUpdates.initialized_at = txn.fn.now();
                             break;
 
                         case VERB_TERMINATED_ID:
@@ -510,24 +515,13 @@ const Boom = require("@hapi/boom"),
                 }
 
                 if (nowSatisfied) {
-                    registrationCourseAuUpdates.is_satisfied = true;
-
                     try {
                         await Registration.interpretMoveOn(
                             registration,
                             {
                                 auToSetSatisfied: regCourseAu.courseAu.lms_id,
-                                session,
-                                lrsWreck: Wreck.defaults(
-                                    {
-                                        baseUrl: req.server.app.lrs.endpoint,
-                                        headers: {
-                                            "X-Experience-API-Version": "1.0.3",
-                                            Authorization: `Basic ${Buffer.from(`${req.server.app.lrs.username}:${req.server.app.lrs.password}`).toString("base64")}`
-                                        },
-                                        json: true
-                                    }
-                                )
+                                sessionCode: session.code,
+                                lrsWreck: Wreck.defaults(await req.server.methods.lrsWreckDefaults(req))
                             }
                         );
                     }
@@ -573,8 +567,19 @@ module.exports = {
                 allowEmptyUsername: true,
                 validate: async (req, key, secret) => {
                     const session = await req.server.app.db.first("*").from("sessions").where({launch_token_id: secret});
+
                     if (! session) {
                         return {isValid: false, credentials: null};
+                    }
+
+                    if (! session.launchTokenFetched) {
+                        throw Boom.unauthorized("8.1.2.0-2 - The authorization token returned by the \"fetch\" URL MUST be limited to the duration of a specific user session. (Token not yet fetched)");
+                    }
+                    if (session.isTerminated) {
+                        throw Boom.unauthorized("8.1.2.0-2 - The authorization token returned by the \"fetch\" URL MUST be limited to the duration of a specific user session. (Session terminated)");
+                    }
+                    if (session.isAbandoned) {
+                        throw Boom.unauthorized("8.1.2.0-2 - The authorization token returned by the \"fetch\" URL MUST be limited to the duration of a specific user session. (Session abandoned)");
                     }
 
                     return {
@@ -646,55 +651,13 @@ module.exports = {
                 //
                 handler: async (req, h) => {
                     const db = req.server.app.db,
-                        txn = await db.transaction();
-                    let session,
-                        regCourseAu,
-                        registration,
-                        courseAu,
-                        result;
-
-                    try {
-                        // the extra set of parens are necessary here for non-declaration assignment destructuring,
-                        // and the use of nestTables seems to switch off the automatic string casing
-                        ({
-                            sessions: session,
-                            registrationsCoursesAus: regCourseAu,
-                            registrations: registration,
-                            coursesAus: courseAu
-                        } = await txn
-                            .first("*")
-                            .from("sessions")
-                            .leftJoin("registrations_courses_aus", "sessions.registrations_courses_aus_id", "registrations_courses_aus.id")
-                            .leftJoin("registrations", "registrations_courses_aus.registration_id", "registrations.id")
-                            .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
-                            .where(
-                                {
-                                    "sessions.id": req.auth.credentials.id,
-                                    "sessions.tenant_id": req.auth.credentials.tenantId
-                                }
-                            )
-                            .queryContext(
-                                {
-                                    jsonCols: [
-                                        "registrations_courses_aus.metadata",
-                                        "registrations.actor",
-                                        "registrations.metadata",
-                                        "courses_aus.metadata",
-                                        "sessions.context_template"
-                                    ]
-                                }
-                            )
-                            .forUpdate()
-                            .options({nestTables: true})
-                        );
-
-                        regCourseAu.courseAu = courseAu;
-                    }
-                    catch (ex) {
-                        txn.rollback();
-                        throw new Error(`Failed to select session, registration course AU, registration and course AU for update: ${ex}`);
-                    }
-
+                        txn = await db.transaction(),
+                        {
+                            session,
+                            regCourseAu,
+                            registration,
+                            courseAu
+                        } = await Session.loadForChange(txn, req.auth.credentials.id, req.auth.credentials.tenantId);
                     let response;
 
                     try {

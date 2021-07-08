@@ -149,7 +149,7 @@ export default {
         clearCredentialTimeout: async ({commit, dispatch}) => {
             await dispatch("clearCredential");
             commit("set", {property: "error", value: true});
-            commit("set", {property: "errMsg", value: "Your session has timed out, please log in again."});
+            commit("set", {property: "errMsg", value: "Your session has timed out, please sign in again."});
         }
     }
 };

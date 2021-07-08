@@ -49,12 +49,9 @@
         },
         methods: {
             expireLogin () {
-                if (this.$store.state.service.apiAccess.expiresAt) {
-                    if (this.$store.state.service.apiAccess.expiresAt < new Date().toISOString()) {
-                        console.log("expires at < now, logging out");
-                        this.$store.dispatch("alerts/add", {content: "Your session has expired, please log in again"},{root: true});
-                        this.$store.dispatch("service/apiAccess/clearCredentialTimeout");
-                    }
+                if (this.$store.state.service.apiAccess.expiresAt && this.$store.state.service.apiAccess.expiresAt < new Date().toISOString()) {
+                    this.$store.dispatch("alerts/add", {content: "Your session has expired, please sign in again"},{root: true});
+                    this.$store.dispatch("service/apiAccess/clearCredentialTimeout");
                 }
             }
         }

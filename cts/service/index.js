@@ -23,7 +23,7 @@ const Hapi = require("@hapi/hapi"),
     AuthCookie = require("@hapi/cookie"),
     Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
-    AUTH_TTL_SECONDS = require("./lib/consts.js").AUTH_TTL_SECONDS,
+    AUTH_TTL_SECONDS = require("./lib/consts").AUTH_TTL_SECONDS,
     {
         PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398"
     } = process.env;

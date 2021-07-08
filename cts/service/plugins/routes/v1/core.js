@@ -17,7 +17,7 @@
 
 const Bcrypt = require("bcrypt"),
     Boom = require("@hapi/boom"),
-    AUTH_TTL_SECONDS = require("../../../lib/consts.js").AUTH_TTL_SECONDS,
+    AUTH_TTL_SECONDS = require("../../../lib/consts").AUTH_TTL_SECONDS,
     getClientSafeUser = (user) => {
         delete user.password;
         delete user.playerKey;

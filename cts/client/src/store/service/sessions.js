@@ -115,7 +115,11 @@ export default {
                             testId,
                             auIndex,
                             launchMode,
-                            ...launchCfg
+                            contextTemplateAdditions: launchCfg.contextTemplateAdditions,
+                            launchParameters: launchCfg.launchParameters,
+                            masteryScore: launchCfg.masteryScore,
+                            moveOn: launchCfg.moveOn,
+                            alternateEntitlementKey: launchCfg.alternateEntitlementKey
                         })
                     }
                 );

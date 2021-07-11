@@ -18,6 +18,7 @@
 const stream = require("stream"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
     sessions = {},
     getClientSafeSession = (session) => {
@@ -62,7 +63,21 @@ module.exports = {
                     method: "POST",
                     path: "/sessions",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        validate: {
+                            payload: Joi.object({
+                                testId: Joi.number().integer().min(0).required(),
+                                auIndex: Joi.number().integer().min(0).required(),
+                                alternateEntitlementKey: Joi.string().optional(),
+                                contextTemplateAdditions: Joi.object().optional(),
+                                launchMode: Joi.any().allow("Normal", "Browse", "Review").optional(),
+                                launchMethod: Joi.any().allow("iframe", "newWindow").optional(),
+                                contextTemplateAdditions: Joi.object().optional(),
+                                launchParameters: Joi.string().optional(),
+                                masteryScore: Joi.number().positive().optional(),
+                                moveOn: Joi.any().allow("Passed", "Completed", "CompletedAndPassed", "CompletedOrPassed", "NotApplicable").optional()
+                            }).required().label("Request-PostSession")
+                        }
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
@@ -102,16 +117,15 @@ module.exports = {
                                         Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     },
                                     payload: {
-                                        reg: queryResult.registrations.code,
                                         actor: queryResult.registrations.metadata.actor,
-                                        returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`,
-                                        alternateEntitlementKey: req.payload.alternateEntitlementKey,
+                                        reg: queryResult.registrations.code,
                                         contextTemplateAdditions: req.payload.contextTemplateAdditions,
                                         launchMode: req.payload.launchMode,
-                                        launchMethod: req.payload.launchMethod,
                                         launchParameters: req.payload.launchParameters,
                                         masteryScore: req.payload.masteryScore,
-                                        moveOn: req.payload.moveOn
+                                        moveOn: req.payload.moveOn,
+                                        alternateEntitlementKey: req.payload.alternateEntitlementKey,
+                                        returnUrl: `${baseUrl}/api/v1/sessions/__sessionId__/return-url`
                                     }
                                 }
                             );

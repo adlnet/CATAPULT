@@ -20,6 +20,7 @@ const fs = require("fs"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
+    Joi = require("joi"),
     libxml = require("libxmljs"),
     StreamZip = require("node-stream-zip"),
     iri = require("iri"),
@@ -571,7 +572,27 @@ module.exports = {
                     method: "POST",
                     path: "/course/{id}/launch-url/{auIndex}",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        validate: {
+                            payload: Joi.object({
+                                actor: Joi.object({
+                                    account: Joi.object({
+                                        name: Joi.string().required(),
+                                        homePage: Joi.string().required()
+                                    }).required(),
+                                    objectType: Joi.any().allow("Agent").optional(),
+                                    name: Joi.string().optional()
+                                }).required(),
+                                reg: Joi.string().optional(),
+                                contextTemplateAdditions: Joi.object().optional(),
+                                launchMode: Joi.any().allow("Normal", "Browse", "Review").optional(),
+                                launchParameters: Joi.string().optional(),
+                                masteryScore: Joi.number().positive().optional(),
+                                moveOn: Joi.any().allow("Passed", "Completed", "CompletedAndPassed", "CompletedOrPassed", "NotApplicable").optional(),
+                                alternateEntitlementKey: Joi.string().optional(),
+                                returnUrl: Joi.string().optional().description("LMS URL that learner should be sent to when the AU exits"),
+                            }).required().label("Request-LaunchUrl")
+                        }
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
@@ -666,17 +687,6 @@ module.exports = {
                             }
                         }
 
-                        let contextTemplateAdditions = req.payload.contextTemplateAdditions.trim();
-
-                        if (contextTemplateAdditions !== "") {
-                            try {
-                                contextTemplateAdditions = JSON.parse(contextTemplateAdditions);
-                            }
-                            catch (ex) {
-                                throw Boom.internal(new Error(`Context template additions is not valid JSON: ${ex}`));
-                            }
-                        }
-
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
                             launchMethod = courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe",
@@ -701,8 +711,8 @@ module.exports = {
                                 }
                             };
 
-                        if (contextTemplateAdditions !== "") {
-                            Hoek.merge(contextTemplate, contextTemplateAdditions, {nullOverride: false});
+                        if (req.payload.contextTemplateAdditions) {
+                            Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, {nullOverride: false});
                         }
 
                         let contentUrl;

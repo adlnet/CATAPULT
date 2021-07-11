@@ -165,8 +165,8 @@
                                         <b-form-group label="Alternate entitlement key">
                                             <b-form-input v-model="aUconfigs[index].alternateEntitlementKey"></b-form-input>
                                         </b-form-group>
-                                        <b-form-group label="Context template additions">
-                                            <b-form-textarea v-model="aUconfigs[index].contextTemplateAdditions"></b-form-textarea>
+                                        <b-form-group label="Context template additions" :invalid-feedback="aUconfigs[index].contextTemplateAdditionsErr">
+                                            <b-form-textarea :state="aUconfigs[index].contextTemplateAdditionsState" v-model="aUconfigs[index].contextTemplateAdditionsText" @blur="contextTemplateAdditionsBlur(index)"></b-form-textarea>
                                         </b-form-group>
                                     </b-col>
                                 </b-row>
@@ -227,12 +227,14 @@
     import testStatus from "@/components/testStatus";
 
     const defaultAUConfig = {
-        launchMethod: null,
-        launchParameters: "",
-        masteryScore: null,
-        moveOn: null,
-        alternateEntitlementKey: "",
-        contextTemplateAdditions: ""
+        launchMethod: undefined,
+        launchParameters: undefined,
+        masteryScore: undefined,
+        moveOn: undefined,
+        alternateEntitlementKey: undefined,
+        contextTemplateAdditions: undefined,
+        contextTemplateAdditionsText: "",
+        contextTemplateAdditionsState: null
     };
 
     export default {
@@ -369,6 +371,22 @@
                 catch (ex) {
                     console.log(`Failed call to waive AU (${auIndex}): ${ex}`);
                 }
+            },
+
+            contextTemplateAdditionsBlur (index) {
+                this.aUconfigs[index].contextTemplateAdditionsState = null;
+
+                try {
+                    this.aUconfigs[index].contextTemplateAdditions = JSON.parse(this.aUconfigs[index].contextTemplateAdditionsText);
+                }
+                catch (ex) {
+                    this.aUconfigs[index].contextTemplateAdditionsState = false
+                    this.aUconfigs[index].contextTemplateAdditionsErr = `Invalid JSON: ${ex}`;
+
+                    return;
+                }
+
+                this.aUconfigs[index].contextTemplateAdditionsState = true;
             }
         }
     };

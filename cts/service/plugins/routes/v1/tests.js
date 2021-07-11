@@ -53,7 +53,20 @@ module.exports = {
                     method: "POST",
                     path: "/tests",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        validate: {
+                            payload: Joi.object({
+                                courseId: Joi.number().min(0).required(),
+                                actor: Joi.object({
+                                    account: Joi.object({
+                                        name: Joi.string().required(),
+                                        homePage: Joi.string().required()
+                                    }).required(),
+                                    objectType: Joi.any().allow("Agent").optional(),
+                                    name: Joi.string().optional()
+                                }).required()
+                            }).required().label("Request-PostTest")
+                        }
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db;

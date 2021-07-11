@@ -61,8 +61,9 @@ export default {
 
                 let body = await response.json();
 
-                commit("set", {property: "item", value: body});
+                commit("set", {property: "item", value: body.user});
                 commit("set", {property: "access", value: true});
+                commit("set", {property: "isBootstrapped", value: true});
             }
             catch (ex) {
                 console.log(ex);

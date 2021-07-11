@@ -163,27 +163,37 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const db = req.server.app.db;
+                        const db = req.server.app.db,
+                            responseBody = {};
+                        let responseStatus;
 
-                        if (! req.auth.isAuthenticated) {
+                        if (req.auth.isAuthenticated) {
+                            responseStatus = 200;
+
+                            let user;
+
+                            try {
+                                user = await db.first("*").from("users").queryContext({jsonCols: ["roles"]}).where({id: req.auth.credentials.id});
+                            }
+                            catch (ex) {
+                                throw Boom.internal(new Error(`Failed to retrieve user for id ${req.auth.credentials.id}: ${ex}`));
+                            }
+
+                            responseBody.isBootstrapped = true;
+                            responseBody.user = getClientSafeUser(user);
+                        }
+                        else {
+                            responseStatus = 401;
+
                             //
                             // check to make sure there is at least one user in the users table
                             //
                             const [query] = await db("users").count("id", {as: "count"});
 
-                            return h.response({isBootstrapped: query.count > 0}).code(401);
+                            responseBody.isBootstrapped = query.count > 0;
                         }
 
-                        let user;
-
-                        try {
-                            user = await db.first("*").from("users").queryContext({jsonCols: ["roles"]}).where({id: req.auth.credentials.id});
-                        }
-                        catch (ex) {
-                            throw Boom.internal(new Error(`Failed to retrieve user for id ${req.auth.credentials.id}: ${ex}`));
-                        }
-
-                        return getClientSafeUser(user);
+                        return h.response(responseBody).code(responseStatus);
                     }
                 },
 

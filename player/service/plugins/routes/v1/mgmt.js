@@ -69,10 +69,31 @@ module.exports = {
                             tenant.id = insertResult[0];
                         }
                         catch (ex) {
+                            // TODO: could check what message is returned and provide 409 when tenant already exists
                             throw Boom.internal(`Failed to insert tenant: ${ex}`);
                         }
 
                         return tenant;
+                    }
+                },
+                {
+                    method: "DELETE",
+                    path: "/tenant/{id}",
+                    options: {
+                        auth: "basic",
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        const tenantId = req.params.id;
+
+                        try {
+                            await req.server.app.db("tenants").where({id: tenantId}).delete();
+                        }
+                        catch (ex) {
+                            throw new Boom.internal(`Failed to delete tenant (${tenantId}): ${ex}`);
+                        }
+
+                        return null;
                     }
                 },
                 {

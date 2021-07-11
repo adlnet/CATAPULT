@@ -99,7 +99,7 @@ module.exports = {
                                 `${req.server.app.player.baseUrl}/api/v1/course/${queryResult.courses.player_id}/launch-url/${auIndex}`,
                                 {
                                     headers: {
-                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     },
                                     payload: {
                                         reg: queryResult.registrations.code,
@@ -122,7 +122,7 @@ module.exports = {
                         }
 
                         if (createResponse.statusCode !== 200) {
-                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponseBody.message} (${createResponseBody.srcError})`));
+                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponseBody.message}${createResponseBody.srcError ? " (" + createResponseBody.srcError + ")" : ""}`));
                         }
 
                         const playerAuLaunchUrl = createResponseBody.url,
@@ -326,7 +326,7 @@ module.exports = {
                                 `${req.server.app.player.baseUrl}/api/v1/session/${result.playerId}/abandon`,
                                 {
                                     headers: {
-                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     }
                                 }
                             );
@@ -337,7 +337,7 @@ module.exports = {
                         }
 
                         if (abandonResponse.statusCode !== 204) {
-                            throw Boom.internal(new Error(`Failed to abandon session in player (${abandonResponse.statusCode}): ${abandonResponseBody.message} (${abandonResponseBody.srcError})`));
+                            throw Boom.internal(new Error(`Failed to abandon session in player (${abandonResponse.statusCode}): ${abandonResponseBody.message}${abandonResponseBody.srcError ? " (" + abandonResponseBody.srcError + ")" : ""}`));
                         }
 
                         h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "sessions", summary: "Session abandoned"});

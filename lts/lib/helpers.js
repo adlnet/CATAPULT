@@ -21,6 +21,21 @@ const fs = require("fs"),
 let Helpers;
 
 module.exports = Helpers = {
+    setupLMS: async (tenantCode) => {
+        try {
+            await global.LMS.setup(tenantCode);
+        }
+        catch (ex) {
+            throw new Error(`Failed to setup LMS: ${ex}`);
+        }
+    },
+
+    teardownLMS: async () => {
+        if (global.LMS) {
+            await global.LMS.teardown();
+        }
+    },
+
     req: (id) => requirements[id],
     describeReq: (id) => {
         if (! id) {

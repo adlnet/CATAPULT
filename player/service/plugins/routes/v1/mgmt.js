@@ -15,6 +15,11 @@
 */
 "use strict";
 
+const Joi = require("joi"),
+    Boom = require("@hapi/boom"),
+    Jwt = require("@hapi/jwt"),
+    { v4: uuidv4 } = require("uuid");
+
 module.exports = {
     name: "catapult-player-api-routes-v1-mgmt",
     register: (server, options) => {
@@ -40,6 +45,79 @@ module.exports = {
                         tenantId: req.auth.credentials.tenantId,
                         description: "catapult-player-service"
                     })
+                },
+                {
+                    method: "POST",
+                    path: "/tenant",
+                    options: {
+                        auth: "basic",
+                        tags: ["api"],
+                        validate: {
+                            payload: Joi.object({
+                                code: Joi.string().required()
+                            }).required().label("Request-Tenant")
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const tenant = {
+                            code: req.payload.code
+                        };
+
+                        try {
+                            const insertResult = await req.server.app.db("tenants").insert(tenant);
+
+                            tenant.id = insertResult[0];
+                        }
+                        catch (ex) {
+                            throw Boom.internal(`Failed to insert tenant: ${ex}`);
+                        }
+
+                        return tenant;
+                    }
+                },
+                {
+                    method: "POST",
+                    path: "/auth",
+                    options: {
+                        auth: "basic",
+                        tags: ["api"],
+                        validate: {
+                            payload: Joi.object({
+                                tenantId: Joi.number().required(),
+                                audience: Joi.string().required()
+                            }).required().label("Request-Auth")
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const tenantId = req.payload.tenantId;
+
+                        let queryResult;
+
+                        try {
+                            queryResult = await req.server.app.db.first("id").from("tenants").where({id: tenantId});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(`Failed to select to confirm tenant: ${ex}`);
+                        }
+
+                        if (! queryResult) {
+                            throw Boom.notFound(`Unknown tenant: ${tenantId}`);
+                        }
+
+                        const token = Jwt.token.generate(
+                            {
+                                iss: req.server.app.jwt.iss,
+                                aud: `${req.server.app.jwt.audPrefix}${req.payload.audience}`,
+                                sub: tenantId,
+                                jti: uuidv4()
+                            },
+                            req.server.app.jwt.tokenSecret
+                        );
+
+                        return {
+                            token
+                        };
+                    }
                 }
             ]
         );

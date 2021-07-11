@@ -1,5 +1,5 @@
 <!--
-    Copyright 2020 Rustici Software
+    Copyright 2021 Rustici Software
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,10 +14,14 @@
     limitations under the License.
  -->
 <template>
-    <b-form @submit.prevent="doSignIn">
+    <b-form @submit.prevent="doBootstrap">
         <b-alert :show="error" variant="danger">
             {{ errMsg }}
         </b-alert>
+
+        <p>
+            There are no users currently in the service. This form will allow you to setup the first user account. Once the service is initialized it can't be done again without clearing all data and creating a new first user, this means you MUST keep track of the username and password set now.
+        </p>
 
         <b-form-group label="Username" label-for="username">
             <b-form-input id="username" v-model="username" />
@@ -32,11 +36,8 @@
                 </b-input-group-append>
             </b-input-group>
         </b-form-group>
-        <b-form-checkbox id="keepSignedIn" v-model="keepSignedIn">
-            Keep me signed in
-        </b-form-checkbox>
         <b-button :disabled="username === '' || password === ''" variant="primary" class="w-100 mt-3" type="submit">
-            Sign In
+            Initialize First User
         </b-button>
     </b-form>
 </template>
@@ -46,14 +47,13 @@
     import {BIconEye} from "bootstrap-vue";
 
     export default {
-        name: "signIn",
+        name: "initialize",
         components: {
             BIconEye
         },
         data: () => ({
             username: "",
             password: "",
-            keepSignedIn: false,
             passwordVisible: false
         }),
         computed: {
@@ -66,19 +66,18 @@
             )
         },
         methods: {
-            async doSignIn () {
+            async doBootstrap () {
                 try {
                     await this.$store.dispatch(
-                        "service/apiAccess/storeCredential",
+                        "service/apiAccess/bootstrap",
                         {
                             username: this.username,
-                            password: this.password,
-                            storeCookie: this.keepSignedIn
+                            password: this.password
                         }
                     );
                 }
                 catch (ex) {
-                    console.log(`Failed call to init credential: ${ex}`);
+                    console.log(`Failed call to initialize: ${ex}`);
                 }
             },
             togglePasswordVisibility () {

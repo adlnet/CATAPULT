@@ -16,17 +16,30 @@
 const Helpers = require("../lib/helpers"),
     afterAllOutput = [];
 
-afterEach(
-    () => {
-        return Helpers.cleanup();
+beforeAll(
+    async () => {
+        try {
+            await Helpers.setupLMS("runtime");
+        }
+        catch (ex) {
+            throw new Error(`Failed to setup LMS: ${ex}`);
+        }
     }
 );
 
 afterAll(
-    () => {
+    async () => {
+        await Helpers.teardownLMS();
+
         if (afterAllOutput.length > 0) {
             console.log(afterAllOutput.join("\n"));
         }
+    }
+);
+
+afterEach(
+    () => {
+        return Helpers.cleanup();
     }
 );
 

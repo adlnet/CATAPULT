@@ -24,7 +24,9 @@ const Hapi = require("@hapi/hapi"),
     Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
     {
-        PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398"
+        PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398",
+        PLAYER_KEY,
+        PLAYER_SECRET
     } = process.env;
 
 const provision = async () => {
@@ -65,7 +67,9 @@ const provision = async () => {
 
     server.app = {
         player: {
-            baseUrl: PLAYER_BASE_URL
+            baseUrl: PLAYER_BASE_URL,
+            key: PLAYER_KEY,
+            secret: PLAYER_SECRET
         },
         db
     };
@@ -74,7 +78,9 @@ const provision = async () => {
         "onPreResponse",
         (req, h) => {
             if (req.response.isBoom) {
-                req.response.output.payload.srcError = req.response.message;
+                if (req.response.output.statusCode === 500) {
+                    req.response.output.payload.srcError = req.response.message;
+                }
             }
 
             return h.continue;
@@ -108,17 +114,8 @@ const provision = async () => {
             id: user.id,
             tenantId: user.tenantId,
             username: user.username,
-            playerKey: user.playerKey,
-            playerSecret: user.playerSecret,
             roles: user.roles
-        }),
-        {
-            generateKey: (user) => user.id.toString(),
-            cache: {
-                expiresIn: 60000,
-                generateTimeout: 1000
-            }
-        }
+        })
     );
     server.method(
         "basicAuthValidate",
@@ -166,10 +163,22 @@ const provision = async () => {
         }
     );
     server.method(
-        "playerAuthHeader",
-        (req) => `Basic ${Buffer.from(`${req.auth.credentials.playerKey}:${req.auth.credentials.playerSecret}`).toString("base64")}`,
+        "playerBearerAuthHeader",
+        async (req) => {
+            const user = await req.server.app.db.first("player_api_token").from("users").where({id: req.auth.credentials.id});
+
+            if (! user) {
+                throw Boom.unauthorized(`Unrecognized user: ${req.auth.credentials.id}`);
+            }
+
+            return `Bearer ${user.playerApiToken}`;
+        }
+    );
+    server.method(
+        "playerBasicAuthHeader",
+        (req) => `Basic ${Buffer.from(`${req.server.app.player.key}:${req.server.app.player.secret}`).toString("base64")}`,
         {
-            generateKey: (req) => req.auth.credentials.playerKey,
+            generateKey: (req) => `${req.server.app.player.key}-${req.server.app.player.secret}`,
             cache: {
                 expiresIn: 60000,
                 generateTimeout: 1000

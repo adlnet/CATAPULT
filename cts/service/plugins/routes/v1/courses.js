@@ -36,7 +36,7 @@ module.exports = {
                         },
                         pre: [
                             async (req, h) => {
-                                req.headers.authorization = await req.server.methods.playerAuthHeader(req);
+                                req.headers.authorization = await req.server.methods.playerBearerAuthHeader(req);
 
                                 return null;
                             }
@@ -54,9 +54,6 @@ module.exports = {
 
                             onResponse: async (err, res, req, h, settings) => {
                                 if (err !== null) {
-                                    // clean up the original response
-                                    res.destroy();
-
                                     throw Boom.internal(new Error(`Failed proxied import request: ${err}`));
                                 }
 
@@ -139,7 +136,7 @@ module.exports = {
                         tags: ["api"],
                         pre: [
                             async (req, h) => {
-                                req.headers.authorization = await req.server.methods.playerAuthHeader(req);
+                                req.headers.authorization = await req.server.methods.playerBearerAuthHeader(req);
 
                                 return null;
                             }

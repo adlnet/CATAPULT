@@ -13,47 +13,41 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const execute = async () => {
-    if (! process.env.CATAPULT_LMS) {
-        throw new Error("empty CATAPULT_LMS variable");
-    }
+require("expect-puppeteer");
 
-    const lms = global.LMS = require(process.env.CATAPULT_LMS);
+if (! process.env.CATAPULT_LMS) {
+    throw new Error("empty CATAPULT_LMS variable");
+}
 
-    await lms.init();
+try {
+    global.LMS = require(process.env.CATAPULT_LMS);
+}
+catch (ex) {
+    throw new Error(`Failed to load LMS script: ${ex}`);
+}
 
-    expect.extend(
-        {
-            toContainObject (received, argument) {
-                const pass = this.equals(
-                    received,
-                    expect.arrayContaining([
-                        expect.objectContaining(argument)
-                    ])
-                );
+expect.extend(
+    {
+        toContainObject (received, argument) {
+            const pass = this.equals(
+                received,
+                expect.arrayContaining([
+                    expect.objectContaining(argument)
+                ])
+            );
 
-                if (pass) {
-                    return {
-                        message: () => (`expected ${this.utils.printReceived(received)} not to contain object ${this.utils.printExpected(argument)}`),
-                        pass: true
-                    };
-                }
-                else {
-                    return {
-                        message: () => (`expected ${this.utils.printReceived(received)} to contain object ${this.utils.printExpected(argument)}`),
-                        pass: false
-                    };
-                }
+            if (pass) {
+                return {
+                    message: () => (`expected ${this.utils.printReceived(received)} not to contain object ${this.utils.printExpected(argument)}`),
+                    pass: true
+                };
             }
-        }
-    );
-};
-
-execute().then(
-    (ex) => {
-        if (ex) {
-            console.error(`Failed to execute setup: ${ex}`);
-            process.exit(1);
+            else {
+                return {
+                    message: () => (`expected ${this.utils.printReceived(received)} to contain object ${this.utils.printExpected(argument)}`),
+                    pass: false
+                };
+            }
         }
     }
 );

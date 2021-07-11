@@ -25,19 +25,5 @@ exports.up = async (knex) => {
             table.string("code").notNullable().unique();
         }
     );
-
-    await knex(tableName).insert(
-        {
-            id: 1,
-            code: "default"
-        }
-    );
-    await knex(tableName).insert(
-        {
-            id: 2,
-            code: "lms_test"
-        }
-    );
 };
-
 exports.down = (knex) => knex.schema.dropTable(tableName);

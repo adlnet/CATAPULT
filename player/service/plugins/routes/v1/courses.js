@@ -449,7 +449,7 @@ module.exports = {
                         try {
                             await db.transaction(
                                 async (txn) => {
-                                    courseId = await txn("courses").insert(
+                                    const insertResult = await txn("courses").insert(
                                         {
                                             tenantId,
                                             lmsId,
@@ -463,6 +463,8 @@ module.exports = {
                                             })
                                         }
                                     );
+
+                                    courseId = insertResult[0];
 
                                     await txn("courses_aus").insert(
                                         aus.map(
@@ -677,8 +679,8 @@ module.exports = {
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
+                            launchMethod = courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe",
                             launchMode = req.payload.launchMode || (regCourseAu.is_satisfied ? "Review" : "Normal"),
-                            launchMethod = req.payload.launchMethod ? req.payload.launchMethod : (courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe"),
                             launchParameters = req.payload.launchParameters || courseAu.metadata.launchParameters,
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
@@ -831,7 +833,6 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to store launched statement: ${launchedStResponse.statusCode}`));
                         }
 
-                        let sessionInsertResult;
                         const session = {
                             tenantId,
                             registrationsCoursesAusId: regCourseAu.id,
@@ -850,7 +851,7 @@ module.exports = {
                         };
 
                         try {
-                            sessionInsertResult = await db.insert(session).into("sessions");
+                            const sessionInsertResult = await db.insert(session).into("sessions");
 
                             session.id = sessionInsertResult[0];
                         }

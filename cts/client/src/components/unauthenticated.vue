@@ -22,22 +22,41 @@
             <p class="about text-center">
                 cmi5 conformance test suite
             </p>
-            <h2 class="my-3">
-                Please sign in.
-            </h2>
-            <sign-in />
+            <template v-if="isBootstrapped">
+                <h2 class="my-3">
+                    Please sign in.
+                </h2>
+                <sign-in />
+            </template>
+            <template v-else>
+                <h2 class="my-3">
+                    Initialize Service Access
+                </h2>
+                <bootstrap />
+            </template>
         </b-card>
     </b-col>
 </template>
 
 <script>
+    import Vuex from "vuex";
     import signIn from "@/components/unauthenticated/signIn";
+    import bootstrap from "@/components/unauthenticated/bootstrap";
 
     export default {
         name: "unauthenticated",
         components: {
-            signIn
-        }
+            signIn,
+            bootstrap
+        },
+        computed: {
+            ...Vuex.mapState(
+                "service/apiAccess",
+                {
+                    isBootstrapped: (state) => state.isBootstrapped
+                }
+            )
+        },
     };
 </script>
 

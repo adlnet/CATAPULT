@@ -11,6 +11,9 @@ For example:
 HOST_PORT=63399
 PLAYER_HOST_PORT=63398
 PLAYER_CONTENT_URL=http://localhost:63398/content
+PLAYER_KEY=cts
+PLAYER_SECRET="an API access secret"
+PLAYER_TOKEN_SECRET="some random string"
 LRS_ENDPOINT="http://host.docker.internal:8081/20.1.x/lrs/default/"
 LRS_USERNAME="dev-tools-xapi"
 LRS_PASSWORD="dev-tools-xapi-password"

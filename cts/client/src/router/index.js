@@ -30,66 +30,67 @@ import requirementsList from "@/components/authenticated/requirements/list";
 
 Vue.use(VueRouter);
 
-const router = new VueRouter(
-    {
-        routes: [
-            {
-                path: "/course-new",
-                component: courseNew,
-                children: [
-                    {
-                        path: "upload",
-                        component: courseNewUpload
-                    },
-                    {
-                        path: "xml-editor",
-                        component: courseNewXmlEditor
-                    }
-                ]
-            },
-            {
-                path: "/course/:id",
-                component: courseDetail,
-                props: true,
-                children: [
-                    {
-                        path: "structure",
-                        component: courseDetailStructure,
-                        props: true
-                    },
-                    {
-                        path: "",
-                        component: courseDetailTestList,
-                        props: true
-                    }
-                ]
-            },
-            {
-                path: "/test-new/:courseId",
-                component: testNew,
-                props: true
-            },
-            {
-                path: "/test/:id",
-                component: testDetail,
-                props: true
-            },
-            {
-                path: "/session/:id",
-                component: sessionDetail,
-                props: true
-            },
-            {
-                path: "/requirements",
-                component: requirementsList,
-            },
-            {
-                path: "/:initPage?",
-                component: courseList,
-                props: true
-            }
-        ]
-    }
-);
+const idPropToNumber = ({params}) => ({id: Number.parseInt(params.id, 10)}),
+    router = new VueRouter(
+        {
+            routes: [
+                {
+                    path: "/course-new",
+                    component: courseNew,
+                    children: [
+                        {
+                            path: "upload",
+                            component: courseNewUpload
+                        },
+                        {
+                            path: "xml-editor",
+                            component: courseNewXmlEditor
+                        }
+                    ]
+                },
+                {
+                    path: "/course/:id",
+                    component: courseDetail,
+                    props: idPropToNumber,
+                    children: [
+                        {
+                            path: "structure",
+                            component: courseDetailStructure,
+                            props: idPropToNumber
+                        },
+                        {
+                            path: "",
+                            component: courseDetailTestList,
+                            props: idPropToNumber
+                        }
+                    ]
+                },
+                {
+                    path: "/test-new/:courseId",
+                    component: testNew,
+                    props: ({params}) => ({courseId: Number.parseInt(params.courseId, 10)})
+                },
+                {
+                    path: "/test/:id",
+                    component: testDetail,
+                    props: idPropToNumber
+                },
+                {
+                    path: "/session/:id",
+                    component: sessionDetail,
+                    props: idPropToNumber
+                },
+                {
+                    path: "/requirements",
+                    component: requirementsList,
+                },
+                {
+                    path: "/:initPage?",
+                    component: courseList,
+                    props: true
+                }
+            ]
+        }
+    );
 
 export default router;

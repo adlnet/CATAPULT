@@ -128,9 +128,10 @@ module.exports = Registration = {
                                     children: course.structure.course.children.map(mapMoveOnChildren)
                                 }
                             })
-                        };
+                        },
+                        regResult = await txn("registrations").insert(registration);
 
-                    registrationId = registration.id = await txn("registrations").insert(registration);
+                    registrationId = registration.id = regResult[0];
 
                     await txn("registrations_courses_aus").insert(
                         courseAUs.map(

@@ -17,8 +17,21 @@ const Helpers = require("../lib/helpers"),
     {InvalidPackageError} = require("../lib/errors"),
     afterAllOutput = [];
 
+beforeAll(
+    async () => {
+        try {
+            await Helpers.setupLMS("package");
+        }
+        catch (ex) {
+            throw new Error(`Failed to setup LMS: ${ex}`);
+        }
+    }
+);
+
 afterAll(
-    () => {
+    async () => {
+        await Helpers.teardownLMS();
+
         if (afterAllOutput.length > 0) {
             console.log(afterAllOutput.join("\n"));
         }

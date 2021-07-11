@@ -18,18 +18,20 @@ const Wreck = require("@hapi/wreck"),
     _cleanup = {
         courses: []
     };
-let playerKey,
-    playerSecret,
+let _playerApi,
+    playerTenantId,
+    playerToken,
     playerApi,
     lrsEndpoint,
     lrsKey,
     lrsSecret;
 
 module.exports = {
-    init: async () => {
-        playerKey = process.env.CATAPULT_PLAYER_KEY;
-        playerSecret = process.env.CATAPULT_PLAYER_SECRET;
-        playerApi = Wreck.defaults(
+    setup: async (testName) => {
+        const playerKey = process.env.CATAPULT_PLAYER_KEY,
+            playerSecret = process.env.CATAPULT_PLAYER_SECRET;
+
+        _playerApi = Wreck.defaults(
             {
                 baseUrl: process.env.CATAPULT_PLAYER_API_URL,
                 headers: {
@@ -38,9 +40,70 @@ module.exports = {
                 json: true
             }
         );
+
+        try {
+            const tenantResponse = await _playerApi.post(
+                "tenant",
+                {
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    payload: JSON.stringify({
+                        code: `lmsTest-${testName}`
+                    })
+                }
+            );
+
+            playerTenantId = tenantResponse.payload.id;
+        }
+        catch (ex) {
+            throw new Error(`Failed to create player tenant: ${ex}`);
+        }
+
+        try {
+            const tokenResponse = await _playerApi.post(
+                "auth",
+                {
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    payload: JSON.stringify({
+                        tenantId: playerTenantId,
+                        audience: "lms-test"
+                    })
+                }
+            );
+
+            playerToken = tokenResponse.payload.token;
+        }
+        catch (ex) {
+            throw new Error(`Failed to retrieve player token: ${ex}`);
+        }
+
+        playerApi = Wreck.defaults(
+            {
+                baseUrl: process.env.CATAPULT_PLAYER_API_URL,
+                headers: {
+                    Authorization: `Bearer ${playerToken}`
+                },
+                json: true
+            }
+        );
+
         lrsEndpoint = process.env.LRS_ENDPOINT;
         lrsKey = process.env.LRS_KEY;
         lrsSecret = process.env.LRS_SECRET;
+    },
+
+    teardown: async () => {
+        if (playerTenantId) {
+            try {
+                await _playerApi.request("DELETE", `tenant/${playerTenantId}`);
+            }
+            catch (ex) {
+                console.log("lms.catapult-player:teardown", ex);
+            }
+        }
     },
 
     getLrsEndpoint: () => lrsEndpoint,
@@ -90,15 +153,14 @@ module.exports = {
                     payload: {
                         actor,
                         reg: registration,
-                        launchMode,
-                        contextTemplateAdditions: ""
+                        launchMode
                     }
                 }
             );
         }
         catch (ex) {
             if (ex.isBoom) {
-                const err = ex.data.payload ? `${ex.data.payload.message} (${ex.data.payload.srcError}` : ex.data;
+                const err = ex.data.payload ? `${ex.data.payload.message}${ex.data.payload.srcError ? " (" + ex.data.payload.srcError + ")" : ""}` : ex.data;
 
                 throw new Error(`Failed get launch URL request: ${err}`);
             }

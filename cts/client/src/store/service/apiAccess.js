@@ -14,6 +14,7 @@
     limitations under the License.
 */
 const initialState = () => ({
+    isBootstrapped: null,
     loading: false,
     error: false,
     errMsg: "",
@@ -36,8 +37,6 @@ export default {
     },
     actions: {
         initCredential: async ({commit, rootGetters}) => {
-            console.log("service:apiAccess:initCredential");
-
             try {
                 const response = await rootGetters["service/makeApiRequest"](
                     "login",
@@ -48,6 +47,12 @@ export default {
 
                 if (! response.ok) {
                     if (response.status === 401) {
+                        let body = await response.json();
+
+                        if (typeof body.isBootstrapped !== "undefined") {
+                            commit("set", {property: "isBootstrapped", value: body.isBootstrapped});
+                        }
+
                         return;
                     }
 
@@ -65,8 +70,6 @@ export default {
         },
 
         storeCredential: async ({commit, rootGetters}, {username, password, storeCookie = false}) => {
-            console.log("service:apiAccess:initCredential");
-
             commit("set", {property: "error", value: false});
             commit("set", {property: "errMsg", value: ""});
             commit("set", {property: "loading", value: true});
@@ -141,6 +144,51 @@ export default {
             }
 
             commit("resetState", null, {root: true});
+        },
+
+        bootstrap: async ({commit, rootGetters}, {username, password}) => {
+            commit("set", {property: "error", value: false});
+            commit("set", {property: "errMsg", value: ""});
+            commit("set", {property: "loading", value: true});
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    "bootstrap",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            firstUser: {
+                                username,
+                                password
+                            }
+                        })
+                    }
+                );
+
+                if (! response.ok) {
+                    if (response.status === 409) {
+                        throw "Service has already been initialized. Verify potential security issue.";
+                    }
+
+                    throw new Error(`Request failed: ${response.status}`);
+                }
+
+                //
+                // successful response means the service is now setup, mark it
+                // as initialized which should then force them to login
+                //
+                commit("set", {property: "isBootstrapped", value: true});
+            }
+            catch (ex) {
+                commit("set", {property: "error", value: true});
+                commit("set", {property: "errMsg", value: ex});
+            }
+            finally {
+                commit("set", {property: "loading", value: false});
+            }
         }
     }
 };

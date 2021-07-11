@@ -80,7 +80,7 @@ module.exports = {
                                 `${req.server.app.player.baseUrl}/api/v1/registration`,
                                 {
                                     headers: {
-                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     },
                                     payload: {
                                         courseId: course.playerId,
@@ -283,7 +283,7 @@ module.exports = {
                                 `${req.server.app.player.baseUrl}/api/v1/registration/${result.playerId}/waive-au/${auIndex}`,
                                 {
                                     headers: {
-                                        Authorization: await req.server.methods.playerAuthHeader(req)
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     },
                                     payload: {
                                         reason: req.payload.reason

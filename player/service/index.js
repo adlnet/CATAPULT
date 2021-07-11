@@ -20,13 +20,17 @@ const Hapi = require("@hapi/hapi"),
     Inert = require("@hapi/inert"),
     Vision = require("@hapi/vision"),
     AuthBasic = require("@hapi/basic"),
+    AuthJwt = require("@hapi/jwt"),
     Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
     {
         LRS_ENDPOINT,
         LRS_USERNAME,
         LRS_PASSWORD,
-        CONTENT_URL
+        CONTENT_URL,
+        TOKEN_SECRET,
+        API_KEY,
+        API_SECRET
     } = process.env;
 
 const provision = async () => {
@@ -70,7 +74,12 @@ const provision = async () => {
             username: LRS_USERNAME,
             password: LRS_PASSWORD
         },
-        db
+        db,
+        jwt: {
+            tokenSecret: TOKEN_SECRET,
+            iss: "urn:catapult:player",
+            audPrefix: "urn:catapult:"
+        }
     };
 
     server.ext(
@@ -81,7 +90,9 @@ const provision = async () => {
                     req.response.output.payload.violatedReqId = req.response.data.violatedReqId;
                 }
 
-                req.response.output.payload.srcError = req.response.message;
+                if (req.response.output.statusCode === 500) {
+                    req.response.output.payload.srcError = req.response.message;
+                }
             }
 
             return h.continue;
@@ -90,6 +101,7 @@ const provision = async () => {
 
     await server.register(H2o2);
     await server.register(Inert);
+    await server.register(AuthJwt);
     await server.register(AuthBasic);
 
     await server.register(
@@ -108,25 +120,20 @@ const provision = async () => {
         ]
     );
 
+    //
+    // this is only used to authenticate the route that is used
+    // to create tenants and get API access tokens
+    //
     server.method(
         "basicAuthValidate",
         async (req, key, secret) => {
-            const credential = await req.server.app.db.first("*").from("credentials").where({key});
-
-            if (! credential) {
-                return {isValid: false, credentials: null};
-            }
-
-            if (! await Bcrypt.compare(secret, credential.secret)) {
+            if (key !== API_KEY || secret !== API_SECRET) {
                 return {isValid: false, credentials: null};
             }
 
             return {
                 isValid: true,
-                credentials: {
-                    id: credential.id,
-                    tenantId: credential.tenantId
-                }
+                credentials: {}
             };
         },
         {
@@ -160,6 +167,26 @@ const provision = async () => {
     );
 
     server.auth.strategy(
+        "jwt",
+        "jwt",
+        {
+            keys: server.app.jwt.tokenSecret,
+            verify: {
+                aud: new RegExp(`^${server.app.jwt.audPrefix}.+$`),
+                iss: server.app.jwt.iss,
+                sub: false
+            },
+            validate: async (artifacts, req) => {
+                return {
+                    isValid: true,
+                    credentials: {
+                        tenantId: artifacts.decoded.payload.sub
+                    }
+                };
+            }
+        }
+    );
+    server.auth.strategy(
         "basic",
         "basic",
         {
@@ -177,7 +204,7 @@ const provision = async () => {
 
     server.auth.default(
         {
-            strategies: ["basic"]
+            strategies: ["jwt"]
         }
     );
     await server.register(

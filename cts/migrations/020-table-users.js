@@ -13,8 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-const bcrypt = require("bcrypt"),
-    tableName = "users";
+const tableName = "users";
 
 exports.up = async (knex) => {
     await knex.schema.createTable(
@@ -26,24 +25,8 @@ exports.up = async (knex) => {
             table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
             table.string("username").notNullable().unique();
             table.string("password").notNullable();
-            table.string("player_key").notNullable();
-            table.string("player_secret").notNullable();
+            table.text("player_api_token");
             table.json("roles").notNullable();
-        }
-    );
-
-    await knex(tableName).insert(
-        {
-            id: 1,
-            tenant_id: 1,
-            username: "root",
-            password: await bcrypt.hash("catapult!", 8),
-            player_key: "root",
-            player_secret: "player!",
-            roles: JSON.stringify([
-                "user",
-                "admin"
-            ])
         }
     );
 };

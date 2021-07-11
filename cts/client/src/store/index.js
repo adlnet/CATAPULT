@@ -31,10 +31,16 @@ export default new Vuex.Store(
             resetState (state) {
                 Object.assign(state.alerts, state.alerts.initialState());
 
-                Object.assign(state.service.apiAccess, state.service.apiAccess.initialState());
                 Object.assign(state.service.sessions, state.service.sessions.initialState());
                 Object.assign(state.service.tests, state.service.tests.initialState());
                 Object.assign(state.service.courses, state.service.courses.initialState());
+
+                // logout shouldn't clear isBootstrapped
+                const apiAccess = state.service.apiAccess.initialState();
+
+                apiAccess.isBootstrapped = state.service.apiAccess.isBootstrapped;
+
+                Object.assign(state.service.apiAccess, apiAccess);
             }
         }
     }

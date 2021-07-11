@@ -23,13 +23,7 @@ exports.up = async (knex) => {
             table.timestamp("created_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP"));
             table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
             table.string("code").notNullable().unique();
-        }
-    );
-
-    await knex(tableName).insert(
-        {
-            id: 1,
-            code: "default"
+            table.integer("player_tenant_id").notNullable();
         }
     );
 };

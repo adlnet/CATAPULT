@@ -16,18 +16,36 @@
 <template>
     <li>
         <div :class="{'font-weight-bold': isSelected}">
-            <span v-if="item.type === 'block'" @click="toggleOpen" class="mr-2">[{{ isOpen ? '-' : '+' }}]</span>
-            <span @click="toggleSelection">{{ item.title[0].text }} ({{ item.type }})</span>
+            <b-row>
+                <b-col>
+                    <span v-if="item.type === 'block'" @click="toggleOpen" class="mr-2">
+                        <b-icon :icon="isOpen ? 'dash-square' : 'plus-square'"/>
+                    </span>
+                    <span @click="toggleSelection">{{ item.title[0].text }}</span>
+                </b-col>
+                <b-col cols="auto" class="node-type" @click="toggleSelection">
+                    {{ item.type.toUpperCase() }}
+                </b-col>
+            </b-row>
         </div>
-        <ul style="list-style: none;" v-if="(item.type === 'block' && isOpen === true) || item.type === 'course'">
+        <ul style="list-style: none; padding-left: 25px;" v-if="(item.type === 'block' && isOpen === true) || item.type === 'course'">
             <course-detail-structure-node v-for="(child, index) in item.children" :key="index" :item="child" @node-select="childNodeSelect"></course-detail-structure-node>
         </ul>
     </li>
 </template>
 
 <script>
+    import {BIcon, BIconPlusSquare, BIconDashSquare} from "bootstrap-vue";
+
     export default {
         name: "CourseDetailStructureNode",
+        components: {
+            BIcon,
+            /* eslint-disable vue/no-unused-components */
+            BIconPlusSquare,
+            BIconDashSquare
+            /* eslint-enable vue/no-unused-components */
+        },
         props: {
             item: {
                 type: Object,
@@ -66,5 +84,8 @@
 </script>
 
 <style lang="scss" scoped>
+    .node-type {
+        font-size: smaller;
+        color: $gray-600;
+    }
 </style>
-

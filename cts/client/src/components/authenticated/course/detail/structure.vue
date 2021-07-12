@@ -15,12 +15,12 @@
  -->
 <template>
     <b-row>
-        <b-col>
+        <b-col cols="5">
             <ul style="list-style: none;">
                 <structure-node key="course" :item="structure.course" @node-select="nodeSelect"></structure-node>
             </ul>
         </b-col>
-        <b-col>
+        <b-col cols="7">
             <template v-if="selectedNode">
                 <b-card>
                     <template #header>
@@ -29,46 +29,46 @@
                                 <h4 style="margin-bottom: 0px;">{{ selectedNode.item.title[0].text }}</h4>
                             </b-col>
                             <b-col cols="auto" class="text-right" style="text-transform: capitalize;">
-                                {{ selectedNode.item.type }}
+                                {{ selectedNode.item.type === "au" ? "AU" : selectedNode.item.type }}
                             </b-col>
                         </b-row>
                     </template>
 
                     <div>
                         <h5>Properties</h5>
-                        <b-table-simple small borderless striped>
+                        <b-table-simple small borderless striped class="detail-structure-node">
                             <b-tbody>
                                 <b-tr>
-                                    <b-td class="text-nowrap">Publisher ID: </b-td>
+                                    <b-td class="property-label">Publisher ID: </b-td>
                                     <b-td>{{ selectedNode.item.id }}</b-td>
                                 </b-tr>
                                 <b-tr>
-                                    <b-td class="text-nowrap">LMS ID: </b-td>
+                                    <b-td class="property-label">LMS ID: </b-td>
                                     <b-td>{{ selectedNode.item.lmsId }}</b-td>
                                 </b-tr>
                                 <template v-if="selectedNode.item.type === 'au'">
                                     <b-tr>
-                                        <b-td>URL: </b-td>
+                                        <b-td class="property-label">URL: </b-td>
                                         <b-td>{{ selectedNode.item.url }}</b-td>
                                     </b-tr>
                                     <b-tr>
-                                        <b-td>launchMethod: </b-td>
+                                        <b-td class="property-label">launchMethod: </b-td>
                                         <b-td>{{ selectedNode.item.launchMethod }}</b-td>
                                     </b-tr>
                                     <b-tr>
-                                        <b-td>moveOn: </b-td>
+                                        <b-td class="property-label">moveOn: </b-td>
                                         <b-td>{{ selectedNode.item.moveOn }}</b-td>
                                     </b-tr>
                                     <b-tr>
-                                        <b-td>activityType: </b-td>
+                                        <b-td class="property-label">activityType: </b-td>
                                         <b-td>{{ selectedNode.item.activityType }}</b-td>
                                     </b-tr>
                                     <b-tr>
-                                        <b-td>masteryScore: </b-td>
+                                        <b-td class="property-label">masteryScore: </b-td>
                                         <b-td>{{ selectedNode.item.masteryScore }}</b-td>
                                     </b-tr>
                                     <b-tr>
-                                        <b-td>launchParameters: </b-td>
+                                        <b-td class="property-label">launchParameters: </b-td>
                                         <b-td>{{ selectedNode.item.launchParameters }}</b-td>
                                     </b-tr>
                                 </template>
@@ -79,14 +79,14 @@
                     <div class="mt-3">
                         <h5>Title</h5>
                         <span v-for="(title) in selectedNode.item.title" :key="title.lang">
-                            {{ title.lang }}: {{ title.text }}<br>
+                            <span class="lang-label">{{ title.lang }}:</span> {{ title.text }}<br>
                         </span>
                     </div>
 
                     <div class="mt-3">
                         <h5>Description</h5>
                         <span v-for="(desc) in selectedNode.item.description" :key="desc.lang">
-                            {{ desc.lang }}: {{ desc.text }}<br>
+                            <span class="lang-label">{{ desc.lang }}:</span> {{ desc.text }}<br>
                         </span>
                     </div>
                 </b-card>
@@ -142,4 +142,15 @@
 </script>
 
 <style lang="scss" scoped>
+    .detail-structure-node {
+        td {
+            word-break: break-all
+        }
+    }
+    .property-label {
+        white-space: nowrap;
+    }
+    .lang-label {
+        color: $gray-600;
+    }
 </style>

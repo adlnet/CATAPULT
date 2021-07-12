@@ -69,9 +69,6 @@
                                         </b-form-group>
                                     </b-form>
                                 </b-tab>
-                                <b-tab title="Launch Settings">
-                                    Launch Settings
-                                </b-tab>
                             </b-tabs>
                         </b-card>
 

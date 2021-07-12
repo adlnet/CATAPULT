@@ -15,7 +15,7 @@
  -->
 <template>
     <b-row class="flex-fill">
-        <b-col cols="8" class="d-flex flex-column">
+        <b-col class="d-flex flex-column">
             <b-form-group
                 id="courseNew-xmlEditor"
                 label="Enter course structure XML string to validate and import."
@@ -25,16 +25,10 @@
                 </b-form-textarea>
             </b-form-group>
             <div class="text-center mb-3">
-                <b-button variant="primary" class="mr-1">
-                    Validate
-                </b-button>
                 <b-button variant="primary" :disabled="structure === ''" @click="doImport">
                     Import
                 </b-button>
             </div>
-        </b-col>
-        <b-col cols="4">
-            Validation information can go here.
         </b-col>
     </b-row>
 </template>

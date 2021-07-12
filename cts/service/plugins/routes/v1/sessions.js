@@ -18,6 +18,7 @@
 const stream = require("stream"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
     sessions = {},
@@ -412,16 +413,10 @@ module.exports = {
                     }
                 },
 
-                //
-                // proxy the LRS based on the session identifier so that the service
-                // knows what session to log information for
-                //
+                // OPTIONS requests don't provide an authorization header, so set this up
+                // as a separate route without auth
                 {
                     method: [
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
                         "OPTIONS"
                     ],
                     path: "/sessions/{id}/lrs/{resource*}",
@@ -433,32 +428,7 @@ module.exports = {
                         // this just needs to pass them through, enabling CORS for this route means they get
                         // overwritten by the Hapi handling
                         //
-                        cors: false,
-
-                        //
-                        // set up a pre-request handler to handle capturing meta information about the xAPI
-                        // requests before proxying the request to the underlying LRS (which is proxied from
-                        // the player)
-                        //
-                        pre: [
-                            async (req, h) => {
-                                const db = req.server.app.db;
-                                let session;
-
-                                try {
-                                    session = await db.first("*").from("sessions").where({id: req.params.id});
-                                }
-                                catch (ex) {
-                                    throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
-                                }
-
-                                if (! session) {
-                                    throw Boom.notFound(`session: ${req.params.id}`);
-                                }
-
-                                return null;
-                            }
-                        ]
+                        cors: false
                     },
                     handler: {
                         proxy: {
@@ -472,120 +442,164 @@ module.exports = {
                             //
                             mapUri: (req) => ({
                                 uri: `${req.server.app.player.baseUrl}/lrs/${req.params.resource}${req.url.search}`
-                            }),
+                            })
+                        }
+                    }
+                },
 
+                //
+                // proxy the LRS based on the session identifier so that the service
+                // knows what session to log information for
+                //
+                {
+                    method: [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE"
+                    ],
+                    path: "/sessions/{id}/lrs/{resource*}",
+                    options: {
+                        auth: false,
+                        cors: false
+                    },
+                    //
+                    // not using h2o2 to proxy these resources because there needs to be validation
+                    // of the incoming payload which means it needs to be loaded into memory and parsed,
+                    // etc. which h2o2 won't do with proxied requests because of the performance overhead
+                    // so this code is nearly the same as what the handler for h2o2 does, but with fewer
+                    // settings that weren't being used anyways
+                    //
+                    handler: async (req, h) => {
+                        const db = req.server.app.db;
+                        let session;
+
+                        try {
+                            session = await db.first("*").from("sessions").where({id: req.params.id});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
+                        }
+
+                        if (! session) {
+                            throw Boom.notFound(`session: ${req.params.id}`);
+                        }
+
+                        let response;
+
+                        try {
                             //
-                            // hook into the response provided back from the LRS to capture details such as
-                            // the status code, error messages, etc.
+                            // map the requested resource (i.e. "statements" or "activities/state") from the
+                            // provided LRS endpoint to the resource at the underlying LRS endpoint, while
+                            // maintaining any query string parameters
                             //
-                            onResponse: async (err, res, req, h, settings) => {
-                                if (err !== null) {
-                                    throw new Error(`LRS request failed: ${err}`);
+                            const uri = `${req.server.app.player.baseUrl}/lrs/${req.params.resource}${req.url.search}`,
+                                protocol = uri.split(":", 1)[0],
+                                options = {
+                                    headers: Hoek.clone(req.headers),
+                                    payload: req.payload
+                                };
+
+                            delete options.headers.host;
+                            delete options.headers["content-length"];
+
+                            if (req.info.remotePort) {
+                                options.headers["x-forwarded-for"] = (options.headers["x-forwarded-for"] ? options.headers["x-forwarded-for"] + "," : "") + req.info.remoteAddress;
+                                options.headers["x-forwarded-port"] = options.headers["x-forwarded-port"] || req.info.remotePort;
+                                options.headers["x-forwarded-proto"] = options.headers["x-forwarded-proto"] || req.server.info.protocol;
+                                options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
+                            }
+
+                            const res = await Wreck.request(req.method, uri, options),
+                                payload = await Wreck.read(res);
+                            let responsePayload = payload;
+
+                            if (req.method === "get" && req.params.resource === "activities/state") {
+                                if (req.query.stateId === "LMS.LaunchData") {
+                                    const parsedPayload = JSON.parse(payload.toString());
+
+                                    parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
+
+                                    // altering the body means the content length would be off,
+                                    // we could just adjust it based on the size difference
+                                    delete res.headers["content-length"];
+
+                                    responsePayload = parsedPayload;
                                 }
+                            }
 
-                                let session;
-                                const db = req.server.app.db;
+                            response = h.response(responsePayload).passThrough(true);
 
-                                try {
-                                    session = await db.first("*").from("sessions").where({id: req.params.id});
+                            response.code(res.statusCode);
+                            response.message(res.statusMessage);
+
+                            for (const [k, v] of Object.entries(res.headers)) {
+                                if (k.toLowerCase() !== "transfer-encoding") {
+                                    response.header(k, v);
                                 }
-                                catch (ex) {
-                                    throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
-                                }
+                            }
 
-                                if (! session) {
-                                    throw Boom.notFound(`session: ${req.params.id}`);
-                                }
+                            // clean up the original response
+                            res.destroy();
+                        }
+                        catch (ex) {
+                            throw ex;
+                        }
 
-                                let payload;
-                                if (res.statusCode !== 204) {
-                                    payload = await Wreck.read(res);
-                                }
-
-                                let responsePayload = payload;
-
-                                if (res.statusCode !== 204 && res.statusCode !== 200) {
-                                    console.log("lrs h2o2.onResponse - error response", payload.toString());
-                                }
-                                else {
-                                    if (req.method === "get" && req.params.resource === "activities/state") {
-                                        if (req.query.stateId === "LMS.LaunchData") {
-                                            const parsedPayload = JSON.parse(payload.toString());
-
-                                            parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
-
-                                            // altering the body means the content length would be off,
-                                            // we could just adjust it based on the size difference
-                                            delete res.headers["content-length"];
-
-                                            responsePayload = parsedPayload;
+                        if (req.method === "get") {
+                            if (req.params.resource === "activities/state") {
+                                if (req.query.stateId === "LMS.LaunchData") {
+                                    h.sessionEvent(
+                                        req.params.id,
+                                        session.tenantId,
+                                        db,
+                                        {
+                                            kind: "lrs",
+                                            method: req.method,
+                                            resource: req.params.resource,
+                                            summary: "LMS Launch Data retrieved",
+                                            summaryDetail: [
+                                                response.source.contextTemplate !== null ? "contextTemplate confirmed" : "contextTemplate not present",
+                                                response.source.launchMode !== null ? "launchMode confirmed" : "launchMode not present",
+                                                response.source.launchMethod !== null ? "launchMethod confirmed" : "launchMethod not present",
+                                                response.source.launchParameters !== null ? "launchParameters confirmed" : "launchParameters not present",
+                                                response.source.entitlementKey !== null ? "entitlementKey confirmed" : "entitlementKey not present",
+                                                response.source.moveOn !== null ? "moveOn confirmed" : "moveOn not present",
+                                                response.source.returnUrl !== null ? "returnUrl confirmed" : "returnUrl not present"
+                                            ]
                                         }
-                                    }
+                                    )
                                 }
-
-                                const response = h.response(responsePayload);
-
-                                response.code(res.statusCode);
-                                response.message(res.statusMessage);
-
-                                for (const [k, v] of Object.entries(res.headers)) {
-                                    if (k.toLowerCase() !== "transfer-encoding") {
-                                        response.header(k, v);
-                                    }
+                            }
+                            else if (req.params.resource === "activities") {
+                                if (req.query.activityId !== null) {
+                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
                                 }
-
-                                // clean up the original response
-                                res.destroy();
-
-                                if (req.method === "get") {
-                                    if (req.params.resource === "activities/state") {
-                                        if (req.query.stateId === "LMS.LaunchData") {
-                                            h.sessionEvent(
-                                                req.params.id,
-                                                session.tenantId,
-                                                db,
-                                                {
-                                                    kind: "lrs",
-                                                    method: req.method,
-                                                    resource: req.params.resource,
-                                                    summary: "LMS Launch Data retrieved",
-                                                    summaryDetail: [
-                                                        response.source.contextTemplate !== null ? "contextTemplate confirmed" : "contextTemplate not present",
-                                                        response.source.launchMode !== null ? "launchMode confirmed" : "launchMode not present",
-                                                        response.source.launchMethod !== null ? "launchMethod confirmed" : "launchMethod not present",
-                                                        response.source.launchParameters !== null ? "launchParameters confirmed" : "launchParameters not present",
-                                                        response.source.entitlementKey !== null ? "entitlementKey confirmed" : "entitlementKey not present",
-                                                        response.source.moveOn !== null ? "moveOn confirmed" : "moveOn not present",
-                                                        response.source.returnUrl !== null ? "returnUrl confirmed" : "returnUrl not present"
-                                                    ]
-                                                }
-                                            )
-                                        }
-                                    }
-                                    else if (req.params.resource === "activities") {
-                                        if (req.query.activityId !== null) {
-                                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
-                                        }
-                                    }
-                                    else if (req.params.resource === "agents/profile") {
-                                        if (req.query.profileId === "cmi5LearnerPreferences") {
-                                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
-                                        }
-                                    }
-                                    else {
-                                        h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
-                                    }
+                            }
+                            else if (req.params.resource === "agents/profile") {
+                                if (req.query.profileId === "cmi5LearnerPreferences") {
+                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
                                 }
-
-                                else if (req.method === "put" || req.method === "post") {
-                                    if (req.params.resource === "statements") {
-                                        h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Statement recorded"});
-                                    }
-                                }
-
-                                return response;
+                            }
+                            else {
+                                h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
                             }
                         }
+                        else if (req.method === "put" || req.method === "post") {
+                            if (req.params.resource === "statements") {
+                                let statements = req.payload;
+
+                                if (! Array.isArray(statements)) {
+                                    statements = [statements];
+                                }
+
+                                for (const st of statements) {
+                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement recorded: ${st.verb.id}`});
+                                }
+                            }
+                        }
+
+                        return response;
                     }
                 }
             ]

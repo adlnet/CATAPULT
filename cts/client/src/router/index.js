@@ -16,6 +16,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 
+import notFound from "@/components/notFound";
 import courseList from "@/components/authenticated/course/list";
 import courseDetail from "@/components/authenticated/course/detail";
 import courseNew from "@/components/authenticated/course/new";
@@ -88,6 +89,13 @@ const idPropToNumber = ({params}) => ({id: Number.parseInt(params.id, 10)}),
                     path: "/:initPage?",
                     component: courseList,
                     props: true
+                },
+                {
+                    path: "*",
+                    component: notFound,
+                    props: (route) => ({
+                        path: route.params.pathMatch
+                    })
                 }
             ]
         }

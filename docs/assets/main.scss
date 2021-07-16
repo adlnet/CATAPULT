@@ -1,0 +1,16 @@
+---
+# Overrides for some style rules in the minima theme that have WCAG 2.0 issues.
+---
+
+$brand-color:      #345d96;
+$grey-color:       #71767a;
+
+@import "minima";
+
+a {
+    text-decoration: underline;
+}
+
+figure > img {
+    border: 1px solid #c6cace;
+}

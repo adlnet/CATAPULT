@@ -75,11 +75,6 @@
                         <h4 class="mt-3">Assignable Units</h4>
                         <template v-if="courseModel.item.metadata && courseModel.item.metadata.aus">
                             <b-card v-for="(au, index) in courseModel.item.metadata.aus" :key="index" class="mb-3">
-                                <b-row v-if="au.parents && au.parents.length > 0">
-                                    <b-col>
-                                        <span class="block-path">({{ ["Root"].concat(au.parents.map((e) => e.title[0].text)).join(" &raquo; ") }})</span>
-                                    </b-col>
-                                </b-row>
                                 <b-row>
                                     <b-col>
                                         <h4>{{ au.title[0].text }}</h4>
@@ -88,13 +83,9 @@
                                         <test-status :status="model.item.metadata.aus[index].result" />
                                     </b-col>
                                 </b-row>
-                                <b-row>
+                                <b-row v-if="au.parents && au.parents.length > 0" style="margin-bottom: 1em;">
                                     <b-col>
-                                        <p>
-                                            LMS ID: {{ au.lmsId }}
-                                            <br>
-                                            Publisher ID: {{ au.id }}
-                                        </p>
+                                        <span class="block-path">({{ ["Root"].concat(au.parents.map((e) => e.title[0].text)).join(" &raquo; ") }})</span>
                                     </b-col>
                                 </b-row>
                                 <b-row>

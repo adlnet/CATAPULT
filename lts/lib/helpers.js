@@ -17,7 +17,7 @@
 
 const fs = require("fs"),
     Wreck = require("@hapi/wreck"),
-    requirements = require("../../cts/client/src/requirements.json");
+    requirements = require("@cmi5/requirements");
 let Helpers;
 
 module.exports = Helpers = {

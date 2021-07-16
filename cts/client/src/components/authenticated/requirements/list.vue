@@ -57,7 +57,7 @@
 </template>
 
 <script>
-    import requirements from "@/requirements.json";
+    import requirements from "@cmi5/requirements";
 
     export default {
         name: "requirementsList",

@@ -134,7 +134,7 @@ const saveLearnerPrefs = async (
         //
         // send statement prior to getting auth token, with value
         //
-        cmi5.setAuth("Basic Y2F0YXB1bHQ6bG1zVGVzdA==");
+        cmi5.setAuth("Basic Y2F0YXB1bHQ6ZmlyZSBzb21lIFJ1c3RpY2kgU29mdHdhcmUgcm9ja3Mh");
         if (! await Helpers.sendStatement(cmi5, preInitializedSt, "8.1.2.0-2 (d)")) {
             return;
         }
@@ -158,7 +158,7 @@ const saveLearnerPrefs = async (
         //
         // send statement before loading learner prefs
         //
-        if (! await Helpers.sendStatement(cmi5, cmi5.initializedStatement(), "11.0.0.0-3 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, cmi5.initializedStatement(), "11.0.0.0-3 (d2)")) {
             return;
         }
 
@@ -316,9 +316,9 @@ const saveLearnerPrefs = async (
 
         //
         // send statement before initialized
-        // Also validates 7.1.1.0-1 (d)
+        // Also validates 7.1.1.0-1 (d2)
         //
-        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "9.3.0.0-4 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "9.3.0.0-4 (d2)")) {
             return;
         }
 
@@ -607,7 +607,7 @@ const saveLearnerPrefs = async (
             },
             {
                 // passed verb with score below masteryScore
-                reqId: "9.3.4.0-2 (d)",
+                reqId: "9.3.4.0-2 (d2)",
                 type: "passed",
                 alter: (st) => {
                     st.result.score = {
@@ -760,7 +760,7 @@ const saveLearnerPrefs = async (
         // send statement after terminated
         // Also validates: 9.3.0.0-2 (d)
         //
-        if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.0.0-5 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.0.0-5 (d2)")) {
             return;
         }
 

@@ -9,6 +9,7 @@
   "author": "Rustici Software <support@rusticisoftware.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@cmi5/requirements": "^1.0.0",
     "@hapi/basic": "^6.0.0",
     "@hapi/boom": "^9.1.1",
     "@hapi/cookie": "^11.0.2",

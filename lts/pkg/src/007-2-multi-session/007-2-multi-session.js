@@ -36,7 +36,7 @@ const execute = async () => {
         //
         // first run
         //
-        if (! await Helpers.sendStatement(cmi5, cmi5.passedStatement(), "9.3.0.0-7 (d)", {shouldSucceed: true})) {
+        if (! await Helpers.sendStatement(cmi5, cmi5.passedStatement(), "9.3.0.0-7 (d1)", {shouldSucceed: true})) {
             return;
         }
 
@@ -52,7 +52,7 @@ const execute = async () => {
         //
         // subsequent run
         //
-        if (! await Helpers.sendStatement(cmi5, cmi5.passedStatement(), "9.3.0.0-7 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, cmi5.passedStatement(), "9.3.0.0-7 (d2)")) {
             return;
         }
         if (! await Helpers.sendStatement(cmi5, cmi5.failedStatement(), "9.3.0.0-8 (d)")) {

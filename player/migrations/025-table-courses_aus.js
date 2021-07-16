@@ -25,7 +25,7 @@ exports.up = (knex) => knex.schema.createTable(
 
         table.integer("course_id").unsigned().notNullable().references("id").inTable("courses").onUpdate("CASCADE").onDelete("CASCADE");
 
-        table.string("au_index").notNullable();
+        table.integer("au_index").unsigned().notNullable();
         table.string("lms_id").notNullable().unique();
 
         //

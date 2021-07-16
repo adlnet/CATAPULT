@@ -25,7 +25,6 @@ exports.up = (knex) => knex.schema.createTable(
         table.integer("player_id").unsigned().notNullable().unique();
         table.integer("course_id").unsigned().notNullable().references("id").inTable("courses").onUpdate("CASCADE").onDelete("CASCADE");
         table.string("code").notNullable().unique();
-        table.enu("result", ["pending", "conformant", "non-conformant"]).notNullable().default("pending");
 
         table.json("metadata").notNullable();
     }

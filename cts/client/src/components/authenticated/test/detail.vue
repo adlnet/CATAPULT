@@ -85,7 +85,7 @@
                                         <h4>{{ au.title[0].text }}</h4>
                                     </b-col>
                                     <b-col cols="auto" class="text-right">
-                                        <test-status status="pending" />
+                                        <test-status :status="model.item.metadata.aus[index].result" />
                                     </b-col>
                                 </b-row>
                                 <b-row>
@@ -184,31 +184,36 @@
                                         <h4 style="margin-bottom: 0px;">Test Report</h4>
                                     </b-col>
                                     <b-col cols="auto" class="text-right">
-                                        <b-button size="sm" variant="primary" v-on:click="download">Download</b-button>
+                                        <b-button size="sm" variant="primary" @click="download">Download</b-button>
                                     </b-col>
                                 </b-row>
                             </template>
                             <h5>Conformance Status</h5>
-                            <template v-if="sessionsLogs">
-                                <ul v-for="(sessionId) in Object.keys(sessionsLogs)" :key="sessionId">
-                                    Session {{ sessionId }}
-                                    <ul v-for="(sessionLog) in sessionsLogs[sessionId]" :key="sessionLog.id">
-                                        {{ sessionLog.metadata.summary }}
-                                        <ul v-for="(sessionDetailLog, index) in sessionLog.metadata.summaryDetail" :key="index">
-                                            {{ sessionDetailLog }}
-                                        </ul>
-                                    </ul>
-                                </ul>
-                            </template>
+                            <ul v-if="courseModel.loaded" style="list-style: none; padding-left: 0px;">
+                                <structure-node key="course" :item="courseModel.item.metadata.structure.course" :courseResult="model.item.metadata.result" :auList="model.item.metadata.aus"></structure-node>
+                            </ul>
                             <h5>Registration Log</h5>
-                            <template v-if="registrationsLogs">
-                                <ul v-for="(registrationId) in Object.keys(registrationsLogs)" :key="registrationId">
-                                    Registration {{ registrationId }}
-                                    <ul v-for="(registrationLog) in registrationsLogs[registrationId]" :key="registrationLog.id">
-                                        {{ registrationLog.metadata.summary }}
-                                    </ul>
-                                </ul>
-                            </template>
+                            <ul v-if="logCache.items.length > 0">
+                                <li v-for="(log) in logCache.items" :key="log.id" class="registration-log">
+                                    <template v-if="log.metadata.resource === 'sessions:create'">
+                                        <b-link :to="`/session/${log.metadata.sessionId}`">
+                                            AU Launched: {{ courseModel.item.metadata.aus[log.metadata.auIndex].title[0].text }}
+                                        </b-link>
+                                    </template>
+                                    <template v-else-if="log.metadata.resource === 'registration:waive-au'">
+                                        AU Waived: {{ courseModel.item.metadata.aus[log.metadata.auIndex].title[0].text }} ({{ log.metadata.reason }})
+                                    </template>
+                                    <template v-else>
+                                        {{ log.metadata.summary }}
+                                    </template>
+                                </li>
+                            </ul>
+                            <p v-else-if="logCache.loading">
+                                Loading...
+                            </p>
+                            <p v-else-if="logCache.err">
+                                Error: {{ logCache.errMsg }}
+                            </p>
                         </b-card>
                     </b-col>
                 </b-row>
@@ -222,6 +227,7 @@
     import Vuex from "vuex";
     import alerts from "@/components/alerts";
     import testStatus from "@/components/testStatus";
+    import structureNode from "./detail/structure/node";
 
     const defaultAUConfig = {
         launchMethod: undefined,
@@ -238,14 +244,13 @@
         name: "TestDetail",
         components: {
             alerts,
-            testStatus
+            testStatus,
+            structureNode
         },
         data: () => ({
             aUconfigs: {},
             audioPreference: null,
-            languagePreference: null,
-            sessionsLogs: [],
-            registrationsLogs: []
+            languagePreference: null
         }),
         props: {
             id: {
@@ -265,14 +270,15 @@
                 }
 
                 return result;
+            },
+            logCache () {
+                const cacheKey = this.$store.getters["service/tests/logs/cacheKey"]({id: this.id})
+
+                return this.$store.getters["service/tests/logs/cache"]({cacheKey});
             }
         },
-        async mounted () {
-            await this.logsLoadById({id: this.id, force: true});
-            const result = this.$store.getters["service/tests/logsById"]({id: this.id});
-
-            this.sessionsLogs = result.items.sessionsLogs;
-            this.registrationsLogs = result.items.registrationsLogs;
+        mounted () {
+            this.loadLogs({props: {id: this.id}, force: true});
         },
         created () {
             this.$store.dispatch("service/tests/loadById", {id: this.id});
@@ -281,14 +287,19 @@
             ...Vuex.mapActions(
                 "service/tests",
                 [
-                    "waiveAU",
-                    "logsLoadById"
+                    "waiveAU"
                 ]
+            ),
+            ...Vuex.mapActions(
+                "service/tests/logs",
+                {
+                    loadLogs: "load"
+                }
             ),
             ...Vuex.mapActions(
                 "service/sessions",
                 {
-                    "createSession": "create"
+                    createSession: "create"
                 }
             ),
 
@@ -314,17 +325,18 @@
             },
 
             download () {
+                /* eslint-disable vue/script-indent */
                 const fileContents = {
-                          testId: this.id,
-                          dateCreated: new Date().toJSON(),
-                          sessions: this.sessionsLogs,
-                          registrations: this.registrationsLogs
-                      },
-
-                      element = document.createElement("a");
+                        id: this.id,
+                        code: this.model.item.code,
+                        dateCreated: new Date().toJSON(),
+                        logs: this.logCache.items
+                    },
+                    element = document.createElement("a");
+                /* eslint-enable vue/script-indent */
 
                 element.setAttribute("href", "data:text/plain;charset=utf-8," + JSON.stringify(fileContents, null, 2)); // eslint-disable-line no-magic-numbers
-                element.setAttribute("download", "results.json");
+                element.setAttribute("download", `catapult-cts-${this.model.item.code}.json`);
 
                 element.style.display = "none";
                 document.body.appendChild(element);
@@ -364,6 +376,8 @@
                             reason
                         }
                     );
+
+                    this.loadLogs({props: {id: this.id}, force: true});
                 }
                 catch (ex) {
                     console.log(`Failed call to waive AU (${auIndex}): ${ex}`);
@@ -393,5 +407,10 @@
     .block-path {
         font-weight: bold;
         font-size: smaller;
+    }
+    .registration-log {
+        li {
+            margin-bottom: 0;
+        }
     }
 </style>

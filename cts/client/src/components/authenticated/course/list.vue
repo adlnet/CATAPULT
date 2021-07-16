@@ -109,7 +109,9 @@
                 </template>
                 <template #cell(lastTested)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">
-                        {{ data.value | moment("from", "now") }}
+                        <b-link :to="`/test/${data.item.testId}`">
+                            {{ data.value | moment("from", "now") }}
+                        </b-link>
                     </span>
                     <span v-else>
                         Never

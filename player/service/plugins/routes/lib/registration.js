@@ -181,12 +181,43 @@ module.exports = Registration = {
     },
 
     load: async ({tenantId, registrationId}, {db}) => {
-        return db.first("*").queryContext({jsonCols: ["actor", "metadata"]}).from("registrations").where(
-            {
-                tenantId,
-                id: registrationId
-            }
-        );
+        let registration;
+
+        try {
+            registration = await db.first("*").queryContext({jsonCols: ["actor", "metadata"]}).from("registrations").where(
+                {
+                    tenantId,
+                    id: registrationId
+                }
+            );
+        }
+        catch (ex) {
+            throw new Error(`Failed to load registration: ${ex}`);
+        }
+
+        try {
+            registration.aus = await db
+                .select(
+                    "has_been_attempted",
+                    "duration_normal",
+                    "duration_browse",
+                    "duration_review",
+                    "is_passed",
+                    "is_completed",
+                    "is_waived",
+                    "waived_reason",
+                    "is_satisfied",
+                    "metadata"
+                )
+                .from("registrations_courses_aus")
+                .where({tenantId, registrationId})
+                .queryContext({jsonCols: ["metadata"]});
+        }
+        catch (ex) {
+            throw new Error(`Failed to load registration AUs: ${ex}`);
+        }
+
+        return registration;
     },
 
     loadAuForChange: async (txn, registrationId, auIndex, tenantId) => {
@@ -221,12 +252,12 @@ module.exports = Registration = {
                 .options({nestTables: true})
         }
         catch (ex) {
-            txn.rollback();
+            await txn.rollback();
             throw new Error(`Failed to select registration course AU, registration and course AU for update: ${ex}`);
         }
 
         if (! queryResult) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.notFound(`registration: ${registrationId}`);
         }
 

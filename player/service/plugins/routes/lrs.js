@@ -18,6 +18,7 @@
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
+    Iso8601Duration = require("iso8601-duration"),
     Registration = require("./lib/registration"),
     Session = require("./lib/session"),
     CMI5_DEFINED_ID = "https://w3id.org/xapi/cmi5/context/categories/cmi5",
@@ -50,19 +51,19 @@ const Boom = require("@hapi/boom"),
                     for (let i = 0; i < expected[prop][k].length; i += 1) {
                         if (typeof provided[prop][k][i] === "undefined" || provided[prop][k][i].id !== expected[prop][k][i].id) {
                             // also covers 9.6.2.0-1
-                            throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} ${k} ${i} value differs)`));
+                            throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: '${prop}' '${k}' '${i}' value differs)`));
                         }
                     }
                 }
             }
             else {
                 if (typeof provided[prop] === "undefined") {
-                    throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} missing)`));
+                    throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: '${prop}' missing)`));
                 }
 
                 for (const [k, v] of Object.entries(expected[prop])) {
                     if (typeof provided[prop][k] === "undefined" || ! Hoek.deepEqual(provided[prop][k], expected[prop][k])) {
-                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: ${prop} value differs)`));
+                        throw Boom.unauthorized(new Error(`10.2.1.0-6 - The AU MUST use the contextTemplate as a template for the "context" property in all xAPI statements it sends to the LMS. (context does not match template: '${prop}' '${k}' value differs)`));
                     }
                 }
             }
@@ -277,6 +278,12 @@ const Boom = require("@hapi/boom"),
                                     throw Boom.unauthorized(new Error(`9.5.4.1-4 - The AU MUST include the "duration" property in "Failed" statements. (${st.id})`));
                                 }
                             }
+                            else {
+                                if (verbId === VERB_TERMINATED_ID) {
+                                    result.durationMode = session.launch_mode;
+                                    result.duration = st.result.duration;
+                                }
+                            }
                         }
 
                         switch (verbId) {
@@ -451,10 +458,17 @@ const Boom = require("@hapi/boom"),
                         case VERB_INITIALIZED_ID:
                             sessionUpdates.is_initialized = true;
                             sessionUpdates.initialized_at = txn.fn.now();
+
+                            if (! regCourseAu.has_been_attempted && session.launch_mode === "Normal") {
+                                registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                                registrationCourseAuUpdates.has_been_attempted = true;
+                            }
+
                             break;
 
                         case VERB_TERMINATED_ID:
                             sessionUpdates.is_terminated = true;
+
                             break;
 
                         case VERB_COMPLETED_ID:
@@ -499,6 +513,15 @@ const Boom = require("@hapi/boom"),
                             sessionUpdates.is_failed = true;
                             break;
                     }
+                }
+
+                if (beforeResult.durationMode) {
+                    const durationCol = `duration_${beforeResult.durationMode.toLowerCase()}`;
+
+                    sessionUpdates[durationCol] = Iso8601Duration.toSeconds(Iso8601Duration.parse(beforeResult.duration));
+
+                    registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                    registrationCourseAuUpdates[durationCol] = (regCourseAu[durationCol] || 0) + sessionUpdates[durationCol];
                 }
 
                 if (registrationCourseAuUpdates) {
@@ -707,10 +730,10 @@ module.exports = {
 
                         await afterLRSRequest(req, res, txn, beforeResult, session, regCourseAu, registration);
 
-                        txn.commit();
+                        await txn.commit();
                     }
                     catch (ex) {
-                        txn.rollback();
+                        await txn.rollback();
                         throw ex;
                     }
 

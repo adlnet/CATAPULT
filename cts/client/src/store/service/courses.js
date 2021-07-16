@@ -67,9 +67,9 @@ export default {
                     state.detailCache,
                     id,
                     wrapItem(
-                        {
+                        populateItem({
                             id
-                        },
+                        }),
                         {
                             loaded: false
                         }
@@ -240,7 +240,7 @@ export default {
 
                 responseBody = populateItem(responseBody);
 
-                state.detailCache[responseBody.id] = wrapItem(responseBody, {loaded: true});
+                Vue.set(state.detailCache, responseBody.id, wrapItem(responseBody, {loaded: true}));
                 getters.cache({cacheKey: getters.cacheKey()}).items.unshift(responseBody);
 
                 state.cacheContainer

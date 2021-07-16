@@ -16,16 +16,16 @@
 <template>
     <div>
         <b-badge pill :variant="mapping.variant" class="mr-1">
-            <b-icon :icon="mapping.icon" scale="1.75" style="margin: 2px;"/>
+            <b-icon :icon="mapping.icon" scale="1.75" style="margin: 2px;" :aria-label="mapping.label"/>
         </b-badge>
-        <span :class="mapping.spanClass">
+        <span v-if="label" :class="mapping.spanClass">
             {{ mapping.label }}
         </span>
     </div>
 </template>
 
 <script>
-    import {BIcon, BIconCheck, BIconQuestion, BIconX} from "bootstrap-vue";
+    import {BIcon, BIconCheck, BIconDash, BIconQuestion, BIconX} from "bootstrap-vue";
 
     const mappings = {
         "conformant": {
@@ -34,7 +34,7 @@
             variant: "success",
             spanClass: "text-success"
         },
-        "nonconformant": {
+        "non-conformant": {
             label: "Non-conformant",
             icon: "x",
             variant: "danger",
@@ -43,6 +43,12 @@
         "pending": {
             label: "Result Pending",
             icon: "question",
+            variant: "dark",
+            spanClass: ""
+        },
+        "not-started": {
+            label: "Not Started",
+            icon: "dash",
             variant: "dark",
             spanClass: ""
         }
@@ -54,6 +60,7 @@
             BIcon,
             /* eslint-disable vue/no-unused-components */
             BIconCheck,
+            BIconDash,
             BIconQuestion,
             BIconX
             /* eslint-enable vue/no-unused-components */
@@ -62,6 +69,11 @@
             status: {
                 type: String,
                 required: true
+            },
+            label: {
+                type: Boolean,
+                required: false,
+                default: true
             }
         },
         computed: {

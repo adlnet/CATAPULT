@@ -17,9 +17,56 @@
 
 const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
-    registrations = {},
-    { v4: uuidv4 } = require("uuid");
+    { v4: uuidv4 } = require("uuid"),
+    getClientSafeReg = (registration, playerResponseBody) => {
+        const result = Hoek.clone(registration);
+
+        delete result.playerId;
+
+        result.metadata.actor = playerResponseBody.actor;
+        result.metadata.isSatisfied = playerResponseBody.isSatisfied;
+        result.metadata.aus = playerResponseBody.aus;
+        result.metadata.moveOn = playerResponseBody.metadata.moveOn;
+
+        let pending = 0,
+            notStarted = 0,
+            conformant = 0,
+            nonConformant = 0;
+
+        result.metadata.aus.forEach(
+            (au) => {
+                if (au.hasBeenAttempted && au.isSatisfied && ! au.isWaived) {
+                    au.result = "conformant";
+                    conformant += 1;
+                }
+                else if (au.hasBeenAttempted) {
+                    au.result = "pending";
+                    pending += 1;
+                }
+                else {
+                    au.result = "not-started";
+                    notStarted += 1;
+                }
+            }
+        );
+
+        if (! pending && ! notStarted && ! nonConformant) {
+            result.metadata.result = "conformant";
+        }
+        else if (nonConformant) {
+            result.metadata.result = "non-conformant";
+        }
+        else if (pending || conformant) {
+            result.metadata.result = "pending";
+        }
+        else {
+            result.metadata.result = "not-started";
+        }
+
+        return result;
+    };
 
 module.exports = {
     name: "catapult-cts-api-routes-v1-tests",
@@ -28,21 +75,24 @@ module.exports = {
             "toolkit",
             "registrationEvent",
             async (registrationId, tenantId, db, rawData) => {
-                if (rawData.kind !== "control") {
+                try {
                     await db.insert(
                         {
                             tenantId,
                             registrationId,
-                            metadata: JSON.stringify(rawData)
+                            metadata: JSON.stringify({
+                                version: 1,
+                                ...rawData
+                            })
                         }
                     ).into("registrations_logs");
                 }
-
-                if (registrations[registrationId]) {
-                    registrations[registrationId].write(JSON.stringify(rawData) + "\n");
+                catch (ex) {
+                    console.log(`Failed to write to registrations_logs (${registrationId}): ${ex}`);
                 }
             }
         );
+
         server.route(
             [
                 //
@@ -69,12 +119,13 @@ module.exports = {
                         }
                     },
                     handler: async (req, h) => {
-                        const db = req.server.app.db;
+                        const db = req.server.app.db,
+                            tenantId = req.auth.credentials.tenantId;
 
                         let course;
 
                         try {
-                            course = await db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.payload.courseId});
+                            course = await db.first("*").from("courses").queryContext({jsonCols: ["metadata"]}).where({tenantId, id: req.payload.courseId});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to retrieve course for id ${req.payload.courseId}: ${ex}`));
@@ -108,36 +159,56 @@ module.exports = {
                         }
 
                         if (createResponse.statusCode !== 200) {
-                            throw Boom.internal(new Error(`Failed to create player registration (${createResponse.statusCode}): ${createResponseBody.message} (${createResponseBody.srcError})`));
+                            throw Boom.internal(new Error(`Failed to create player registration (${createResponse.statusCode}): ${createResponseBody.message}${createResponseBody.srcError ? " (" + createResponseBody.srcError + ")" : ""}`));
                         }
 
-                        createResponseBody.actor = JSON.parse(createResponseBody.actor);
 
-                        let insertResult;
+                        const txn = await db.transaction();
+                        let registrationId;
+
                         try {
-                            insertResult = await db.insert(
+                            const insertResult = await txn.insert(
                                 {
-                                    tenant_id: req.auth.credentials.tenantId,
-                                    player_id: createResponseBody.id,
+                                    tenantId,
+                                    playerId: createResponseBody.id,
                                     code: createResponseBody.code,
-                                    course_id: req.payload.courseId,
+                                    courseId: req.payload.courseId,
                                     metadata: JSON.stringify({
-                                        actor: createResponseBody.actor
+                                        version: 1,
+
+                                        // storing these locally because they are used to build
+                                        // the list of tests
+                                        actor: createResponseBody.actor,
+                                        result: "not-started"
                                     })
                                 }
                             ).into("registrations");
+
+                            registrationId = insertResult[0];
                         }
                         catch (ex) {
+                            await txn.rollback();
                             throw Boom.internal(new Error(`Failed to insert into registrations: ${ex}`));
                         }
 
-                        const result = db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: insertResult});
+                        await h.registrationEvent(
+                            registrationId,
+                            tenantId,
+                            txn,
+                            {
+                                kind: "api",
+                                resource: "registration:create",
+                                registrationId,
+                                registrationCode: createResponseBody.code,
+                                summary: `Registration Created`
+                            }
+                        );
 
-                        h.registrationEvent(insertResult, req.auth.credentials.tenantId, db, {kind: "spec", resource: "create", playerResponseStatusCode: result.statusCode, summary: "Registration Created"});
+                        const result = await txn.first("*").from("registrations").where({id: registrationId, tenantId}).queryContext({jsonCols: ["metadata"]});
 
-                        delete result.playerId;
+                        await txn.commit();
 
-                        return result;
+                        return getClientSafeReg(result, createResponseBody);
                     }
                 },
 
@@ -148,70 +219,56 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("registrations").queryContext({jsonCols: ["metadata"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
+                        const db = req.server.app.db,
+                            id = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            registrationFromSelect = await db.first("*").from("registrations").where({id, tenantId}).queryContext({jsonCols: ["metadata"]});
 
-                        if (! result) {
+                        if (! registrationFromSelect) {
                             return Boom.notFound();
                         }
 
-                        return result;
-                    }
-                },
+                        let response,
+                            responseBody;
 
-                {
-                    method: "DELETE",
-                    path: "/tests/{id}",
-                    options: {
-                        tags: ["api"]
-                    },
-                    handler: {
-                        proxy: {
-                            passThrough: true,
-                            xforward: true,
-
-                            mapUri: async (req) => {
-                                const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
-
-                                return {
-                                    uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`
-                                };
-                            },
-
-                            onResponse: async (err, res, req, h, settings) => {
-                                if (err !== null) {
-                                    // clean up the original response
-                                    res.destroy();
-
-                                    throw new Error(err);
+                        try {
+                            response = await Wreck.request(
+                                "GET",
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${registrationFromSelect.playerId}`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
+                                    }
                                 }
+                            );
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to get registration details: ${ex}`));
+                        }
 
-                                if (res.statusCode !== 204) {
-                                    // clean up the original response
-                                    res.destroy();
+                        if (response.statusCode !== 200) {
+                            throw Boom.internal(new Error(`Failed to get player registration details (${response.statusCode}): ${responseBody.message}${responseBody.srcError ? " (" + responseBody.srcError + ")" : ""}`));
+                        }
 
-                                    throw new Error(res.statusCode);
-                                }
+                        const currentCachedResult = registrationFromSelect.metadata.result,
+                            registration = getClientSafeReg(registrationFromSelect, responseBody);
 
-                                // TODO: failures beyond this point leave an orphaned course in the cts
-                                //       with no upstream course in the player
-                                //       just become a warning in the log?
-
-                                const db = req.server.app.db;
-
-                                // clean up the original response
-                                res.destroy();
-
-                                let deleteResult;
-                                try {
-                                    deleteResult = await db("courses").where("id", req.params.id).delete();
-                                }
-                                catch (ex) {
-                                    throw new Error(ex);
-                                }
-
-                                return null;
+                        //
+                        // check to see if the test result determined from the newly updated player
+                        // response is different than the one currently cached in the metadata, if it
+                        // it then update it
+                        //
+                        if (registration.metadata.result !== registrationFromSelect.metadata.result) {
+                            try {
+                                await db("registrations").update({metadata: JSON.stringify(registration.metadata)}).where({id, tenantId});
+                            }
+                            catch (ex) {
+                                throw Boom.internal(new Error(`Failed to update registration metadata: ${ex}`));
                             }
                         }
+
+                        return registration;
                     }
                 },
 
@@ -222,43 +279,24 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-
                         const tenantId = req.auth.credentials.tenantId,
-                            db = req.server.app.db,
-                            sessionsLogs = {},
-                            registrationsLogs = {},
+                            db = req.server.app.db;
 
-                            sessionsLogsResult = await db.select("sessions_logs.id", "sessions_logs.created_at", "sessions_logs.updated_at", "sessions_logs.tenant_id", "sessions_logs.session_id", "sessions_logs.metadata")
-                                .from("sessions_logs")
-                                .queryContext({jsonCols: ["metadata"]})
-                                .leftJoin("sessions", function () {
-                                    this.on("sessions_logs.session_id", "=", "sessions.id") // eslint-disable-line no-invalid-this, semi
-                                    this.andOn("sessions_logs.tenant_id", "=", "sessions.tenant_id") // eslint-disable-line no-invalid-this, semi
-                                })
-                                .where({"sessions.registration_id": req.params.id}, tenantId),
+                        let registrationLogs;
 
-                            registrationsLogsResult = await db.select("registrations_logs.id", "registrations_logs.created_at", "registrations_logs.updated_at", "registrations_logs.tenant_id", "registrations_logs.registration_id", "registrations_logs.metadata")
+                        try {
+                            registrationLogs = await db
+                                .select("*")
                                 .from("registrations_logs")
                                 .queryContext({jsonCols: ["metadata"]})
-                                .where({registration_id: req.params.id}, tenantId);
-
-                        sessionsLogsResult.forEach((log) => {
-                            if (sessionsLogs[log.sessionId] === undefined) { // eslint-disable-line no-undefined
-                                sessionsLogs[log.sessionId] = [];
-                            }
-                            sessionsLogs[log.sessionId].push(log);
+                                .where({tenantId, registrationId: req.params.id})
+                                .orderBy("created_at");
                         }
-                        );
-
-                        registrationsLogsResult.forEach((log) => {
-                            if (registrationsLogs[log.registrationId] === undefined) { // eslint-disable-line no-undefined
-                                registrationsLogs[log.registrationId] = [];
-                            }
-                            registrationsLogs[log.registrationId].push(log);
+                        catch (ex) {
+                            throw Boom.internal(`Failed to select registration logs: ${ex}`);
                         }
-                        );
 
-                        return {sessionsLogs, registrationsLogs};
+                        return registrationLogs;
                     }
                 },
 
@@ -281,6 +319,7 @@ module.exports = {
                             registrationId = req.params.id,
                             auIndex = req.params.auIndex,
                             tenantId = req.auth.credentials.tenantId,
+                            reason = req.payload.reason,
                             result = await db.first("*").from("registrations").where({tenantId, id: registrationId});
 
                         if (! result) {
@@ -299,7 +338,7 @@ module.exports = {
                                         Authorization: await req.server.methods.playerBearerAuthHeader(req)
                                     },
                                     payload: {
-                                        reason: req.payload.reason
+                                        reason
                                     }
                                 }
                             );
@@ -310,10 +349,10 @@ module.exports = {
                         }
 
                         if (waiveResponse.statusCode !== 204) {
-                            throw Boom.internal(new Error(`Failed to waive AU in player registration (${waiveResponse.statusCode}): ${waiveResponseBody.message} (${waiveResponseBody.srcError})`));
+                            throw Boom.internal(new Error(`Failed to waive AU in player registration (${waiveResponse.statusCode}): ${waiveResponseBody.message}${waiveResponseBody.srcError ? " (" + waiveResponseBody.srcError + ")" : ""}`));
                         }
 
-                        h.registrationEvent(registrationId, tenantId, db, {kind: "spec", resource: "waive-au+AU", summary: `Waived (${auIndex})`});
+                        await h.registrationEvent(registrationId, tenantId, db, {kind: "spec", auIndex, reason, resource: "registration:waive-au", summary: `Waived (${auIndex})`});
 
                         return null;
                     }

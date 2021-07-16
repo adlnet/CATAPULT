@@ -44,11 +44,18 @@
                 </template>
                 <b-row class="flex-fill">
                     <b-col cols="8" class="d-flex flex-column">
-                        <template v-if="model.item.launchUrl">
-                            <iframe v-if="model.item.launchMethod === 'iframe'" :src="model.item.launchUrl" class="flex-fill"></iframe>
-                            <p v-else-if="model.item.launchMethod === 'newWindow'">
-                                AU has been launched in a new window.
-                            </p>
+                        <template v-if="launchUrl">
+                            <iframe v-if="model.item.launchMethod === 'iframe'" :src="launchUrl" class="flex-fill"></iframe>
+                            <template v-else-if="model.item.launchMethod === 'newWindow'">
+                                <p v-if="openWindowFailure">
+                                    AU launch URL was not able to open in a new window. Is there a popup blocker preventing the launch?
+                                    <br>
+                                    <b-button :href="launchUrl" target="_default">Try Again</b-button>
+                                </p>
+                                <p v-else>
+                                    AU has been launched in a new window.
+                                </p>
+                            </template>
                             <p v-else>
                                 Unrecognized launch method: {{ model.item.launchMethod }}
                             </p>
@@ -60,8 +67,8 @@
                     <b-col cols="4" class="d-flex flex-column">
                         <h5>Event Log</h5>
                         <ul>
-                            <li v-for="(event, index) in events" :key="index">
-                                {{ event.summary }}
+                            <li v-for="(event, index) in logs.items" :key="index">
+                                {{ event.metadata.summary }}
                             </li>
                         </ul>
                     </b-col>
@@ -78,11 +85,8 @@
 </template>
 
 <script>
-    /* globals TextDecoderStream, TransformStream */
     import Vuex from "vuex";
     import alerts from "@/components/alerts";
-
-    let stream;
 
     export default {
         name: "SessionDetail",
@@ -96,93 +100,67 @@
             }
         },
         data: () => ({
-            listening: false,
-            events: []
+            launchUrl: null,
+            openWindowFailure: false
         }),
         computed: {
             model () {
                 return this.$store.getters["service/sessions/byId"]({id: this.id});
             },
             testModel () {
-                const result = this.$store.getters["service/tests/byId"]({id: this.model.item.registrationId});
+                let result;
 
-                if (! result.loaded) {
-                    this.$store.dispatch("service/tests/loadById", {id: this.model.item.registrationId});
+                if (this.model.item.registrationId) {
+                    result = this.$store.getters["service/tests/byId"]({id: this.model.item.registrationId});
+
+                    if (! result.loaded) {
+                        this.$store.dispatch("service/tests/loadById", {id: this.model.item.registrationId});
+                    }
                 }
 
                 return result;
             },
             courseModel () {
-                const result = this.$store.getters["service/courses/byId"]({id: this.testModel.item.courseId});
+                let result;
 
-                if (! result.loaded) {
-                    this.$store.dispatch("service/courses/loadById", {id: this.testModel.item.courseId});
+                if (this.testModel && this.testModel.item.courseId) {
+                    result = this.$store.getters["service/courses/byId"]({id: this.testModel.item.courseId});
+
+                    if (! result.loaded) {
+                        this.$store.dispatch("service/courses/loadById", {id: this.testModel.item.courseId});
+                    }
                 }
 
                 return result;
+            },
+            listening () {
+                return this.logs.listener !== null;
+            },
+            logs () {
+                const cacheKey = this.$store.getters["service/sessions/logs/cacheKey"]({id: this.id});
+
+                return this.$store.getters["service/sessions/logs/cache"]({cacheKey});
             }
         },
         async created () {
             await this.$store.dispatch("service/sessions/loadById", {id: this.id});
 
-            if (this.model.item.launchUrl && this.model.item.launchMethod === "newWindow") {
-                window.open(this.model.item.launchUrl);
+            if (this.model.item.launchUrl) {
+                this.launchUrl = this.model.item.launchUrl;
+                delete this.model.item.launchUrl;
+
+                if (this.model.item.launchMethod === "newWindow") {
+                    const result = window.open(this.launchUrl);
+
+                    if (result === null) {
+                        this.openWindowFailure = true;
+                    }
+                }
+
+                this.startLogListener({id: this.id});
             }
-
-            const response = await this.$store.getters["service/makeApiRequest"](`sessions/${this.id}/events`);
-
-            stream = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(
-                //
-                // this stream takes the text stream as input, splits the text on \n
-                // and then JSON parses the lines, providing each chunk of JSON to
-                // the next handler in the chain
-                //
-                new TransformStream(
-                    {
-                        start (controller) {
-                            controller.buf = "";
-                            controller.pos = 0;
-                        },
-                        transform (chunk, controller) {
-                            controller.buf += chunk;
-
-                            while (controller.pos < controller.buf.length) {
-                                if (controller.buf[controller.pos] === "\n") {
-                                    const line = controller.buf.substring(0, controller.pos);
-
-                                    controller.enqueue(JSON.parse(line));
-
-                                    controller.buf = controller.buf.substring(controller.pos + 1);
-                                    controller.pos = 0;
-                                }
-                                else {
-                                    ++controller.pos;
-                                }
-                            }
-                        }
-                    }
-                )
-            );
-
-            const reader = stream.getReader();
-
-            this.listening = true;
-
-            while (true) { // eslint-disable-line no-constant-condition
-                try {
-                    const {done, value} = await reader.read();
-
-                    this.events.unshift(value);
-
-                    if (done) {
-                        this.listening = false;
-                        break;
-                    }
-                }
-                catch (ex) {
-                    this.listening = false;
-                    break;
-                }
+            else {
+                this.loadLogs({props: {id: this.id}});
             }
         },
         methods: {
@@ -192,7 +170,18 @@
                     "abandon"
                 ]
             ),
+            ...Vuex.mapActions(
+                "service/sessions/logs",
+                {
+                    loadLogs: "load",
+                    startLogListener: "startListener",
+                    stopLogListener: "stopListener"
+                }
+            ),
             doCloseAU () {
+                this.$store.dispatch("service/tests/loadById", {id: this.model.item.registrationId, force: true});
+
+                this.stopLogListener({id: this.id});
                 this.$router.push(`/test/${this.model.item.registrationId}`);
             },
             async doAbandon () {

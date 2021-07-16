@@ -14,6 +14,7 @@
     limitations under the License.
 */
 import Vue from "vue";
+import logs from "./sessions/logs";
 
 const initialState = () => ({
         detailCache: {}
@@ -26,11 +27,18 @@ const initialState = () => ({
         errMsg: null
     }),
     populateItem = (item) => {
+        item._listen = false;
+        item._listener = null;
+        item._events = [];
+
         return item;
     };
 
 export default {
     namespaced: true,
+    modules: {
+        logs
+    },
     state: {
         initialState,
         ...initialState()
@@ -42,9 +50,9 @@ export default {
                     state.detailCache,
                     id,
                     wrapItem(
-                        {
+                        populateItem({
                             id
-                        },
+                        }),
                         {
                             loaded: false
                         }
@@ -131,7 +139,11 @@ export default {
                 }
                 responseBody = populateItem(responseBody);
 
-                state.detailCache[responseBody.id] = wrapItem(responseBody, {loaded: true});
+                if (launchCfg.launchMethod) {
+                    responseBody.launchMethod = launchCfg.launchMethod;
+                }
+
+                Vue.set(state.detailCache, responseBody.id, wrapItem(responseBody, {loaded: true}));
 
                 return responseBody.id;
             }

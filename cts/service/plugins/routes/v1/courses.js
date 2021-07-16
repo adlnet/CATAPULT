@@ -107,9 +107,48 @@ module.exports = {
                     options: {
                         tags: ["api"]
                     },
-                    handler: async (req, h) => ({
-                        items: await req.server.app.db.select("*").queryContext({jsonCols: ["metadata"]}).from("courses").where({tenantId: req.auth.credentials.tenantId})
-                    })
+                    handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            items = await db
+                                .select(
+                                    "*"
+                                )
+                                .from("courses")
+                                .leftJoin(
+                                    db
+                                        .select("course_id", db.max("created_at").as("tested_at"))
+                                        .from("registrations")
+                                        .where({"registrations.tenant_id": req.auth.credentials.tenantId})
+                                        .groupBy("course_id")
+                                        .as("most_recent_test"),
+                                    "most_recent_test.course_id",
+                                    "courses.id"
+                                )
+                                .leftJoin(
+                                    "registrations",
+                                    function () {
+                                        this.on("registrations.course_id", "most_recent_test.course_id");
+                                        this.andOn("registrations.created_at", "most_recent_test.tested_at")
+                                    }
+                                )
+                                .where({"courses.tenant_id": req.auth.credentials.tenantId})
+                                .orderBy("courses.created_at", "desc")
+                                .options({nestTables: true})
+                                .queryContext({jsonCols: ["courses.metadata", "registrations.metadata"]});
+
+                        return {
+                            items: items.map(
+                                (row) => ({
+                                    id: row.courses.id,
+                                    createdAt: row.courses.created_at,
+                                    metadata: row.courses.metadata,
+                                    lastTested: row.mostRecentTest.tested_at,
+                                    testResult: row.registrations.metadata.result,
+                                    testId: row.registrations.id
+                                })
+                            )
+                        };
+                    }
                 },
 
                 {

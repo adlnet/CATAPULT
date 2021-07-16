@@ -54,12 +54,12 @@ module.exports = Session = {
                 .options({nestTables: true})
         }
         catch (ex) {
-            txn.rollback();
+            await txn.rollback();
             throw new Error(`Failed to select session, registration course AU, registration and course AU for update: ${ex}`);
         }
 
         if (! queryResult) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.notFound(`session: ${sessionId}`);
         }
 
@@ -91,7 +91,7 @@ module.exports = Session = {
             } = await Session.loadForChange(txn, sessionId, tenantId));
         }
         catch (ex) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.internal(ex);
         }
 
@@ -102,7 +102,7 @@ module.exports = Session = {
             // abandon it, but in the case that a terminated happens in that time
             // then there is no reason to abandon the session so just return
             //
-            txn.rollback();
+            await txn.rollback();
 
             return;
         }
@@ -112,7 +112,7 @@ module.exports = Session = {
             // isn't really a reason to error, better to just return and it is
             // expected that more than one abandoned would not be recorded
             //
-            txn.rollback();
+            await txn.rollback();
 
             return;
         }
@@ -169,12 +169,12 @@ module.exports = Session = {
             stResponseBody = await Wreck.read(stResponse, {json: true});
         }
         catch (ex) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.internal(new Error(`Failed request to store abandoned statement: ${ex}`));
         }
 
         if (stResponse.statusCode !== 200) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.internal(new Error(`Failed to store abandoned statement (${stResponse.statusCode}): ${stResponseBody}`));
         }
 
@@ -182,10 +182,10 @@ module.exports = Session = {
             await txn("sessions").update({is_abandoned: true}).where({id: session.id, tenantId});
         }
         catch (ex) {
-            txn.rollback();
+            await txn.rollback();
             throw Boom.internal(`Failed to update session: ${ex}`);
         }
 
-        txn.commit();
+        await txn.commit();
     }
 };

@@ -14,10 +14,10 @@
     limitations under the License.
 */
 import Vue from "vue";
+import logs from "./tests/logs";
 
 const initialState = () => ({
         detailCache: {},
-        logsCache: {},
         cacheContainer: {},
         defaultKeyProperties: {}
     }),
@@ -34,6 +34,9 @@ const initialState = () => ({
 
 export default {
     namespaced: true,
+    modules: {
+        logs
+    },
     state: {
         initialState,
         ...initialState()
@@ -76,9 +79,9 @@ export default {
                     state.detailCache,
                     id,
                     wrapItem(
-                        {
+                        populateItem({
                             id
-                        },
+                        }),
                         {
                             loaded: false
                         }
@@ -87,24 +90,6 @@ export default {
             }
 
             return state.detailCache[id];
-        },
-        logsById: (state) => ({id}) => {
-            if (! state.logsCache[id]) {
-                Vue.set(
-                    state.logsCache,
-                    id,
-                    wrapItem(
-                        {
-                            id
-                        },
-                        {
-                            loaded: false
-                        }
-                    )
-                );
-            }
-
-            return state.logsCache[id];
         }
     },
     actions: {
@@ -134,11 +119,11 @@ export default {
             try {
                 const response = await rootGetters["service/makeApiRequest"](`tests/${id}`);
 
-                if (! response.ok) {
-                    throw new Error(`Request failed: ${response.status}`);
-                }
-
                 let body = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${body.message} (${response.status})${body.srcError ? " (" + body.srcError + ")" : ""}`);
+                }
 
                 body = populateItem(body);
 
@@ -213,38 +198,6 @@ export default {
             cache[busyKey] = false;
         },
 
-        logsLoadById: async ({getters, rootGetters}, {id, force = false}) => {
-            const fromCache = getters.logsById({id});
-
-            if (fromCache.loaded && ! force) {
-                return;
-            }
-
-            fromCache.loading = true;
-
-            try {
-                const response = await rootGetters["service/makeApiRequest"](`tests/${id}/logs`);
-
-                if (! response.ok) {
-                    throw new Error(`Request failed: ${response.status}`);
-                }
-
-                let body = await response.json();
-
-                body = populateItem(body);
-
-                fromCache.items = body;
-                fromCache.loaded = true;
-            }
-            catch (ex) {
-                fromCache.error = true;
-                fromCache.errMsg = `Failed to load from id: ${ex}`;
-            }
-            finally {
-                fromCache.loading = false;
-            }
-        },
-
         create: async ({dispatch, state, getters, rootGetters}, {courseId, actor}) => {
             const kind = "testNew";
 
@@ -270,7 +223,7 @@ export default {
                 }
                 responseBody = populateItem(responseBody);
 
-                state.detailCache[responseBody.id] = wrapItem(responseBody, {loaded: true});
+                Vue.set(state.detailCache, responseBody.id, wrapItem(responseBody, {loaded: true}));
 
                 const courseCache = getters.cache({cacheKey: getters.cacheKey({courseId})});
 
@@ -301,6 +254,7 @@ export default {
                 );
 
                 if (response.status === 204) {
+                    dispatch("logs/load", {props: {id}, force: true});
                     return;
                 }
 

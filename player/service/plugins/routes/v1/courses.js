@@ -272,21 +272,16 @@ const fs = require("fs"),
 
         return result;
     },
-    flattenAUs = (list) => {
-        const result = [];
-
-        for (const child of list) {
+    flattenAUs = (tree, list) => {
+        for (const child of tree) {
             if (child.type === "au") {
-                result.push(child);
+                child.auIndex = list.length;
+                list.push(child);
             }
             else if (child.type === "block") {
-                result.push(
-                    ...flattenAUs(child.children)
-                );
+                flattenAUs(child.children, list)
             }
         }
-
-        return result;
     },
     getCourseDir = (tenantId, courseId) => `${__dirname}/../../../var/content/${tenantId}/${courseId}`;
 
@@ -392,11 +387,11 @@ module.exports = {
                             throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, {violatedReqId: "13.2.0.0-1"});
                         }
 
-                        let structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false),
-                            aus;
+                        let structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false);
+                        const aus = [];
 
                         try {
-                            aus = flattenAUs(structure.course.children);
+                            flattenAUs(structure.course.children, aus);
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to flatten AUs: ${ex}`);
@@ -459,6 +454,8 @@ module.exports = {
                                                 aus
                                             }),
                                             structure: JSON.stringify({
+                                                // this is "1.0.0" to match the spec version rather than being 1
+                                                // like the metadata version above
                                                 version: "1.0.0",
                                                 ...structure
                                             })
@@ -689,7 +686,7 @@ module.exports = {
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
-                            launchMethod = courseAu.metadata.launchMethod === "OwnWindow" ? "newWindow" : "iframe",
+                            launchMethod = courseAu.metadata.launchMethod || "AnyWindow",
                             launchMode = req.payload.launchMode || (regCourseAu.is_satisfied ? "Review" : "Normal"),
                             launchParameters = req.payload.launchParameters || courseAu.metadata.launchParameters,
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,

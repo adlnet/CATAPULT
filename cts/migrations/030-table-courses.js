@@ -23,8 +23,6 @@ exports.up = (knex) => knex.schema.createTable(
         table.timestamp("updated_at").notNullable().defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
         table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onUpdate("CASCADE").onDelete("RESTRICT");
         table.integer("player_id").unsigned().notNullable().unique();
-        table.datetime("last_tested");
-
         table.json("metadata").notNullable();
     }
 );

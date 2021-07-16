@@ -38,18 +38,29 @@ module.exports = {
             "toolkit",
             "sessionEvent",
             async (sessionId, tenantId, db, rawData) => {
-                if (rawData.kind !== "control") {
-                    await db.insert(
-                        {
-                            tenantId,
-                            sessionId,
-                            metadata: JSON.stringify(rawData)
-                        }
-                    ).into("sessions_logs");
+                const metadata = {
+                        version: 1,
+                        ...rawData
+                    },
+                    log = {
+                        tenantId,
+                        sessionId,
+                        metadata: JSON.stringify(metadata)
+                    };
+
+                try {
+                    const insertResult = await db.insert(log).into("sessions_logs");
+
+                    log.id = insertResult[0];
+                }
+                catch (ex) {
+                    console.log(`Failed to write to sessions_logs(${sessionId}): ${ex}`);
                 }
 
+                log.metadata = metadata;
+
                 if (sessions[sessionId]) {
-                    sessions[sessionId].write(JSON.stringify(rawData) + "\n");
+                    sessions[sessionId].write(JSON.stringify(log) + "\n");
                 }
             }
         );
@@ -137,7 +148,7 @@ module.exports = {
                         }
 
                         if (createResponse.statusCode !== 200) {
-                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL (${createResponse.statusCode}): ${createResponseBody.message}${createResponseBody.srcError ? " (" + createResponseBody.srcError + ")" : ""}`));
+                            throw Boom.internal(new Error(`Failed to retrieve AU launch URL from player (${createResponse.statusCode}): ${createResponseBody.message}${createResponseBody.srcError ? " (" + createResponseBody.srcError + ")" : ""}`));
                         }
 
                         const playerAuLaunchUrl = createResponseBody.url,
@@ -147,11 +158,12 @@ module.exports = {
                         let sessionId;
 
                         try {
-                            sessionId = await db.insert(
+                            const sessionInsert = await db.insert(
                                 {
                                     tenant_id: tenantId,
                                     player_id: createResponseBody.id,
                                     registration_id: testId,
+                                    au_index: auIndex,
                                     player_au_launch_url: playerAuLaunchUrl,
                                     player_endpoint: playerEndpoint,
                                     player_fetch: playerFetch,
@@ -163,12 +175,17 @@ module.exports = {
                                     )
                                 }
                             ).into("sessions");
+
+                            sessionId = sessionInsert[0];
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to insert into sessions: ${ex}`));
                         }
 
-                        h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "sessions", summary: "AU " + queryResult.courses.metadata.aus[auIndex].title[0].text + " launch session initiated"});
+                        const auTitle = queryResult.courses.metadata.aus[auIndex].title[0].text;
+
+                        await h.registrationEvent(testId, tenantId, db, {kind: "api", resource: "sessions:create", sessionId, auIndex, summary: `Launched AU: ${auTitle}`});
+                        await h.sessionEvent(sessionId, tenantId, db, {kind: "api", resource: "create", summary: `AU ${auTitle} session initiated`});
 
                         //
                         // swap endpoint, fetch for proxied versions
@@ -180,7 +197,7 @@ module.exports = {
                         const result = await db.first("*").from("sessions").queryContext({jsonCols: ["metadata"]}).where({tenantId, id: sessionId});
 
                         result.launchUrl = ctsLaunchUrl;
-                        result.launchMethod = createResponseBody.launchMethod;
+                        result.launchMethod = createResponseBody.launchMethod === "OwnWindow" ? "newWindow" : "iframe";
 
                         return getClientSafeSession(result);
                     }
@@ -204,58 +221,6 @@ module.exports = {
                 },
 
                 {
-                    method: "DELETE",
-                    path: "/sessions/{id}",
-                    options: {
-                        tags: ["api"]
-                    },
-                    handler: {
-                        proxy: {
-                            passThrough: true,
-                            xforward: true,
-
-                            mapUri: async (req) => {
-                                const result = await req.server.app.db.first("playerId").from("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
-
-                                return {
-                                    uri: `${req.server.app.player.baseUrl}/api/v1/course/${result.playerId}`
-                                };
-                            },
-
-                            onResponse: async (err, res, req, h, settings) => {
-                                if (err !== null) {
-                                    // clean up the original response
-                                    res.destroy();
-
-                                    throw new Error(err);
-                                }
-
-                                if (res.statusCode !== 204) {
-                                    // clean up the original response
-                                    res.destroy();
-
-                                    throw new Error(res.statusCode);
-                                }
-                                const db = req.server.app.db;
-
-                                // clean up the original response
-                                res.destroy();
-
-                                let deleteResult;
-                                try {
-                                    deleteResult = await db("courses").where({tenantId: req.auth.credentials.tenantId, id: req.params.id}).delete();
-                                }
-                                catch (ex) {
-                                    throw new Error(ex);
-                                }
-
-                                return null;
-                            }
-                        }
-                    }
-                },
-
-                {
                     method: "GET",
                     path: "/sessions/{id}/return-url",
                     options: {
@@ -270,7 +235,7 @@ module.exports = {
                             return Boom.notFound();
                         }
 
-                        h.sessionEvent(req.params.id, tenantId, db, {kind: "spec", resource: "return-url", summary: "Return URL loaded"});
+                        await h.sessionEvent(req.params.id, tenantId, db, {kind: "spec", resource: "return-url", summary: "Return URL loaded"});
 
                         return "<html><body>Session has ended, use &quot;Close&quot; button to return to test details page.</body></html>";
                     }
@@ -278,9 +243,14 @@ module.exports = {
 
                 {
                     method: "GET",
-                    path: "/sessions/{id}/events",
+                    path: "/sessions/{id}/logs",
                     options: {
-                        tags: ["api"]
+                        tags: ["api"],
+                        validate: {
+                            query: Joi.object({
+                                listen: Joi.any().optional().description("Switches the response to be a stream that will provide additional logs as they are created")
+                            }).optional().label("RequestParams-SessionLogs")
+                        }
                     },
                     handler: async (req, h) => {
                         const tenantId = req.auth.credentials.tenantId,
@@ -291,23 +261,24 @@ module.exports = {
                             return Boom.notFound();
                         }
 
-                        const logs = await db.select("*").from("sessions_logs").where({tenantId, sessionId: result.id}).orderBy("created_at"),
-                            channel = new stream.PassThrough,
+                        const logs = await db.select("*").queryContext({jsonCols: ["metadata"]}).from("sessions_logs").where({tenantId, sessionId: result.id}).orderBy("created_at", "desc");
+
+                        if (! req.query.listen) {
+                            return logs;
+                        }
+
+                        const channel = new stream.PassThrough,
                             response = h.response(channel);
 
                         sessions[req.params.id] = channel;
 
-                        h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "events", summary: "Event stream started"});
-
                         for (const log of logs) {
-                            channel.write(log.metadata + "\n");
+                            channel.write(JSON.stringify(log) + "\n");
                         }
 
                         req.raw.req.on(
                             "close",
                             () => {
-
-                                h.sessionEvent(req.params.id, tenantId, db, {kind: "control", resource: "events", summary: "Event stream closed"});
                                 delete sessions[req.params.id];
                             }
                         );
@@ -355,7 +326,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to abandon session in player (${abandonResponse.statusCode}): ${abandonResponseBody.message}${abandonResponseBody.srcError ? " (" + abandonResponseBody.srcError + ")" : ""}`));
                         }
 
-                        h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "sessions", summary: "Session abandoned"});
+                        await h.sessionEvent(sessionId, tenantId, db, {kind: "spec", resource: "abandon", summary: "Session abandoned"});
 
                         return null;
                     }
@@ -398,7 +369,8 @@ module.exports = {
                             catch (ex) {
                                 throw Boom.internal(new Error(`Failed to request fetch url from player: ${ex}`));
                             }
-                            h.sessionEvent(req.params.id, session.tenantId, db, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode, summary: "Fetch URL used"});
+
+                            await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "spec", resource: "fetch", playerResponseStatusCode: fetchResponse.statusCode, summary: "Fetch URL used"});
 
                             return h.response(fetchResponseBody).code(fetchResponse.statusCode);
                         }
@@ -485,7 +457,9 @@ module.exports = {
                             throw Boom.notFound(`session: ${req.params.id}`);
                         }
 
-                        let response;
+                        let proxyResponse,
+                            rawProxyResponsePayload,
+                            response;
 
                         try {
                             //
@@ -510,19 +484,22 @@ module.exports = {
                                 options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
                             }
 
-                            const res = await Wreck.request(req.method, uri, options),
-                                payload = await Wreck.read(res);
-                            let responsePayload = payload;
+                            proxyResponse = await Wreck.request(req.method, uri, options);
+                            rawProxyResponsePayload = await Wreck.read(proxyResponse);
+
+                            let responsePayload = rawProxyResponsePayload;
 
                             if (req.method === "get" && req.params.resource === "activities/state") {
                                 if (req.query.stateId === "LMS.LaunchData") {
-                                    const parsedPayload = JSON.parse(payload.toString());
+                                    const parsedPayload = JSON.parse(rawProxyResponsePayload.toString());
 
-                                    parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
+                                    if (typeof parsedPayload.returnURL !== "undefined") {
+                                        parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
+                                    }
 
                                     // altering the body means the content length would be off,
                                     // we could just adjust it based on the size difference
-                                    delete res.headers["content-length"];
+                                    delete proxyResponse.headers["content-length"];
 
                                     responsePayload = parsedPayload;
                                 }
@@ -530,26 +507,42 @@ module.exports = {
 
                             response = h.response(responsePayload).passThrough(true);
 
-                            response.code(res.statusCode);
-                            response.message(res.statusMessage);
+                            response.code(proxyResponse.statusCode);
+                            response.message(proxyResponse.statusMessage);
 
-                            for (const [k, v] of Object.entries(res.headers)) {
+                            for (const [k, v] of Object.entries(proxyResponse.headers)) {
                                 if (k.toLowerCase() !== "transfer-encoding") {
                                     response.header(k, v);
                                 }
                             }
 
                             // clean up the original response
-                            res.destroy();
+                            proxyResponse.destroy();
                         }
                         catch (ex) {
                             throw ex;
                         }
 
+                        if (proxyResponse.statusCode !== 200 && proxyResponse.statusCode !== 204) {
+                            const proxyResponsePayloadAsString = rawProxyResponsePayload.toString();
+
+                            let proxyResponsePayload;
+
+                            try {
+                                proxyResponsePayload = JSON.parse(proxyResponsePayloadAsString);
+
+                                if (typeof proxyResponsePayload.violatedReqId !== "undefined") {
+                                }
+                            }
+                            catch (ex) {
+                                console.log(`Failed JSON parse of LRS response error: ${ex}`);
+                            }
+                        }
+
                         if (req.method === "get") {
                             if (req.params.resource === "activities/state") {
                                 if (req.query.stateId === "LMS.LaunchData") {
-                                    h.sessionEvent(
+                                    await h.sessionEvent(
                                         req.params.id,
                                         session.tenantId,
                                         db,
@@ -573,28 +566,33 @@ module.exports = {
                             }
                             else if (req.params.resource === "activities") {
                                 if (req.query.activityId !== null) {
-                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
+                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
                                 }
                             }
                             else if (req.params.resource === "agents/profile") {
                                 if (req.query.profileId === "cmi5LearnerPreferences") {
-                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
+                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
                                 }
                             }
                             else {
-                                h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
+                                await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
                             }
                         }
                         else if (req.method === "put" || req.method === "post") {
                             if (req.params.resource === "statements") {
-                                let statements = req.payload;
+                                if (proxyResponse.statusCode === 200 || proxyResponse.statusCode === 204) {
+                                    let statements = req.payload;
 
-                                if (! Array.isArray(statements)) {
-                                    statements = [statements];
+                                    if (! Array.isArray(statements)) {
+                                        statements = [statements];
+                                    }
+
+                                    for (const st of statements) {
+                                        await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement recorded: ${st.verb.id}`});
+                                    }
                                 }
-
-                                for (const st of statements) {
-                                    h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement recorded: ${st.verb.id}`});
+                                else {
+                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement(s) rejected: ${proxyResponse.statusCode}`});
                                 }
                             }
                         }

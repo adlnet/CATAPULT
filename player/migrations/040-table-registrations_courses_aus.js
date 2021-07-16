@@ -26,6 +26,10 @@ exports.up = (knex) => knex.schema.createTable(
         table.integer("course_au_id").unsigned().notNullable().references("id").inTable("courses_aus").onUpdate("CASCADE").onDelete("CASCADE");
         table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
 
+        table.boolean("has_been_attempted").notNullable().default(false);
+        table.integer("duration_normal").unsigned();
+        table.integer("duration_browse").unsigned();
+        table.integer("duration_review").unsigned();
         table.boolean("is_passed").notNullable().default(false);
         table.boolean("is_completed").notNullable().default(false);
         table.boolean("is_waived").notNullable().default(false);

@@ -35,9 +35,10 @@ module.exports = {
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
+                            tenantId = req.auth.credentials.tenantId,
                             registrationId = await Registration.create(
                                 {
-                                    tenantId: req.auth.credentials.tenantId,
+                                    tenantId,
                                     courseId: req.payload.courseId,
                                     actor: req.payload.actor
                                 },
@@ -47,7 +48,7 @@ module.exports = {
                                 }
                             );
 
-                        return db.first("*").from("registrations").where("id", registrationId);
+                        return Registration.load({tenantId, registrationId}, {db});
                     }
                 },
 
@@ -118,12 +119,12 @@ module.exports = {
                             } = await Registration.loadAuForChange(txn, registrationId, auIndex, tenantId));
                         }
                         catch (ex) {
-                            txn.rollback();
+                            await txn.rollback();
                             throw Boom.internal(ex);
                         }
 
                         if (regCourseAu.is_satisfied) {
-                            txn.rollback();
+                            await txn.rollback();
                             throw Boom.conflict(new Error("AU is already satsified in registration"));
                         }
 
@@ -181,12 +182,12 @@ module.exports = {
                             stResponseBody = await Wreck.read(stResponse, {json: true});
                         }
                         catch (ex) {
-                            txn.rollback();
+                            await txn.rollback();
                             throw Boom.internal(new Error(`Failed request to store waived statement: ${ex}`));
                         }
 
                         if (stResponse.statusCode !== 200) {
-                            txn.rollback();
+                            await txn.rollback();
                             throw Boom.internal(new Error(`Failed to store waived statement (${stResponse.statusCode}): ${stResponseBody}`));
                         }
 
@@ -200,7 +201,7 @@ module.exports = {
                             ).where({id: regCourseAu.id, tenantId});
                         }
                         catch (ex) {
-                            txn.rollback();
+                            await txn.rollback();
                             throw Boom.internal(`Failed to update registrations_courses_aus: ${ex}`);
                         }
 
@@ -225,7 +226,7 @@ module.exports = {
                             throw new Error(`Failed to update registration metadata: ${ex}`);
                         }
 
-                        txn.commit();
+                        await txn.commit();
 
                         return null;
                     }

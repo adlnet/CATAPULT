@@ -1,0 +1,20 @@
+{
+  "name": "@cmi5/requirements",
+  "version": "1.0.0",
+  "description": "JSON list of cmi5 specification requirements.",
+  "main": "requirements.json",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adlnet/CATAPULT.git"
+  },
+  "keywords": [
+    "cmi5",
+    "xapi"
+  ],
+  "author": "Brian J. Miller <brian.miller@rusticisoftware.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/adlnet/CATAPULT/issues"
+  },
+  "homepage": "https://github.com/adlnet/CATAPULT#readme"
+}

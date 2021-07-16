@@ -1,0 +1,926 @@
+{
+    "3.0.0.0-1": {
+        "txt": "IRI’s in this spec MUST be fully qualified and not IRI References."
+    },
+    "3.0.0.0-1 (d)": {
+        "txt": "The LMS must reject course structure data that contains non-fully qualified IRIs or IRI references in any data element using an IRI value space."
+    },
+    "4.1.0.0-1": {
+        "txt": "An Assignable Unit MUST conform to all requirements as specified in the xAPI specification."
+    },
+    "4.2.0.0-1": {
+        "txt": "The LMS MUST conform to all LRS requirements as specified in the xAPI specification."
+    },
+    "4.2.0.0-1 (d)": {
+        "txt": "The endpoint provided by the LMS passes the ADL LRS conformance test suite."
+    },
+    "4.2.0.0-2": {
+        "txt": "The LMS MUST have an account which is able to retrieve all Resource data (from the Statement API, etc, including attachments and extensions) about another distinct user across multiple sessions for that user."
+    },
+    "4.4.0.0-1": {
+        "txt": "A course MUST be bundled with course structure data that conform to all requirements listed in Section 13 and Section 14."
+    },
+    "4.4.0.0-1 (d)": {
+        "txt": "The LMS must reject courses that do not conform to requirements listed in Section 13 or Section 14."
+    },
+    "4.4.0.0-2": {
+        "txt": "Course structure data MUST NOT implement any features or functionality (optional or mandatory) described in this specification in a non-conforming manner."
+    },
+    "4.4.0.0-2 (d)": {
+        "txt": "The LMS must reject course structure data that does not conform to the specification."
+    },
+    "6.0.0.0-1": {
+        "txt": "The LMS MUST implement an LRS as defined in the xAPI specification."
+    },
+    "6.0.0.0-1 (d)": {
+        "txt": "The endpoint provided by the LMS passes the ADL LRS conformance test suite."
+    },
+    "6.0.0.0-2": {
+        "txt": "The LMS MUST implement additional \"State API\" requirements to initialize the AU state as defined in Section 10."
+    },
+    "6.0.0.0-3": {
+        "txt": "The LMS MUST implement the runtime launch interface as defined in Section 8.0."
+    },
+    "6.0.0.0-4": {
+        "txt": "The LMS MUST implement additional xAPI \"Statement API\" requirements as defined in Section 9."
+    },
+    "6.0.0.0-5": {
+        "txt": "The LMS MUST implement additional xAPI \"Agent Profile API\" requirements as defined in Section 11."
+    },
+    "6.0.0.0-6": {
+        "txt": "The LMS MUST implement course handling as defined in Section 6.1."
+    },
+    "6.1.0.0-1": {
+        "txt": "The LMS MUST implement the import of the Course Structure defined in Section 13 and the Course Package defined in Section 14."
+    },
+    "6.1.0.0-2": {
+        "txt": "The LMS MUST support course structures containing more than 1000 AUs."
+    },
+    "6.1.0.0-3": {
+        "txt": "The LMS MUST support course structures conforming to the XSD schema defined in Section 13.2."
+    },
+    "6.2.0.0-1": {
+        "txt": "The LMS MUST implement the State API Requirements as defined in Section 10."
+    },
+    "6.3.0.0-1": {
+        "txt": "The LMS MUST NOT provide permissions/credentials which allow the AU to issue voiding Statements."
+    },
+    "6.3.0.0-2": {
+        "txt": "The LMS MUST Void statements that are NOT rejected AND conflict with the \"Statement API\" requirements as defined in Section 9."
+    },
+    "7.0.0.0-1": {
+        "txt": "An AU MUST implement the runtime launch interface as defined in Section 8."
+    },
+    "7.0.0.0-2": {
+        "txt": "An AU MUST implement runtime communication as defined in the xAPI Specification."
+    },
+    "7.0.0.0-3": {
+        "txt": "An AU MUST implement State API requirements in this specification as defined in Section 10."
+    },
+    "7.0.0.0-4": {
+        "txt": "An AU MUST implement Profile API requirements in this specification as defined in Section 11."
+    },
+    "7.0.0.0-5": {
+        "txt": "An AU MUST implement Statement API requirements as defined in Section 7.1."
+    },
+    "7.1.1.0-1": {
+        "txt": "The AU MUST issue a statement to the LRS after being launched, initialized, and ready for learner interaction using the Initialized verb as described in Section 9.3.2."
+    },
+    "7.1.1.0-1 (d1)": {
+        "txt": "The LMS must track that the AU has issued an \"Initialized\" statement."
+    },
+    "7.1.1.0-1 (d2)": {
+        "txt": "The LMS must reject attempts by the AU to store statements or void stored statements received before the \"Initialized\" statement."
+    },
+    "7.1.2.0-1": {
+        "txt": "The AU MUST issue a Terminated statement to the LRS as described in Section 9.3.8 as the last statement in a session."
+    },
+    "7.1.2.0-1 (d1)": {
+        "txt": "The LMS must track that the AU has issued a \"Terminated\" statement."
+    },
+    "7.1.2.0-1 (d2)": {
+        "txt": "The LMS must reject attempts by the AU to store statements received after the \"Terminated\" statement."
+    },
+    "7.1.3.0-1": {
+        "txt": "\"cmi5 allowed\" statements posted by the AU MUST occur between cmi5 statements using the \"Initialized\" verb and the \"Terminated\" verb."
+    },
+    "7.1.3.0-1 (d1)": {
+        "txt": "The LMS must reject attempts by the AU to store statements or void stored statements received before the \"Initialized\" statement."
+    },
+    "7.1.3.0-1 (d2)": {
+        "txt": "The LMS must reject attempts by the AU to store statements or void stored statements received after the \"Terminated\" statement."
+    },
+    "8.1.0.0-1": {
+        "txt": "The AU MUST be launched by the LMS using one of the following methods [OwnWindow or AnyWindow], depending on the launchMethod in the Course Structure."
+    },
+    "8.1.0.0-2": {
+        "txt": "When the launchMethod is \"OwnWindow\", the LMS MUST use one of the following - Spawning a new browser window for the AU or Re-directing the existing browser window to the AU."
+    },
+    "8.1.0.0-3": {
+        "txt": "When the launchMethod is \"AnyWindow\", the LMS MUST choose the window context of the AU."
+    },
+    "8.1.0.0-4": {
+        "txt": "Regardless of the launchMethod the AU MUST be launched by the LMS with a URL having query string launch parameters as defined in Section 8.1."
+    },
+    "8.1.0.0-5": {
+        "txt": "The launch parameters MUST be name/value pairs in a query string appended to the URL that launches the AU."
+    },
+    "8.1.0.0-6": {
+        "txt": "If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below."
+    },
+    "8.1.0.0-6 (d)": {
+        "txt": "The LMS must inspect all AU URLs in the course structure data for query string parameters that conflict with \"endpoint\", \"fetch\", \"actor\", \"registration\", or \"activityId\" and reject import of course structure data with conflicts."
+    },
+    "8.1.0.0-7": {
+        "txt": "The AU MUST have the ability to process the query string launch parameters in any order."
+    },
+    "8.1.0.0-8": {
+        "txt": "Each value for the associated names MUST be URL-encoded."
+    },
+    "8.1.1.0-1": {
+        "txt": "The LMS MUST place the \"endpoint\" in the query string."
+    },
+    "8.1.1.0-2": {
+        "txt": "The AU MUST get the \"endpoint\" value from the query string."
+    },
+    "8.1.1.0-3": {
+        "txt": "The AU MUST use the \"endpoint\" value as the Base Endpoint for xAPI requests."
+    },
+    "8.1.2.0-1": {
+        "txt": "The LMS MUST place the \"fetch\" in the Launch URL."
+    },
+    "8.1.2.0-2": {
+        "txt": "The authorization token returned by the \"fetch\" URL MUST be limited to the duration of a specific user session."
+    },
+    "8.1.2.0-2 (d)": {
+        "txt": "The LMS must reject xAPI requests that use an authorization token prior to it being fetched, or after a session has been terminated or abandoned."
+    },
+    "8.1.2.0-3": {
+        "txt": "The AU MUST get the \"fetch\" value from the query string."
+    },
+    "8.1.2.0-4": {
+        "txt": "The AU MUST make an HTTP POST to the \"fetch\" URL to retrieve the authorization token as defined in section 8.2."
+    },
+    "8.1.2.0-5": {
+        "txt": "The AU MUST place the authorization token in the Authorization headers of all HTTP requests made to the endpoint using the xAPI."
+    },
+    "8.1.2.0-5 (d)": {
+        "txt": "The LMS must reject HTTP requests made to the endpoint that do not contain the authorization token in the Authorization headers."
+    },
+    "8.1.3.0-1": {
+        "txt": "The LMS MUST populate the \"actor\" parameter in the query string based on the authenticated learner's identity conforming to Section 9.2."
+    },
+    "8.1.3.0-2": {
+        "txt": "The AU MUST get the \"actor\" value from the query string."
+    },
+    "8.1.3.0-3": {
+        "txt": "The AU MUST use the \"actor\" value in xAPI requests that require an \"actor\" property or that require an \"agent\" parameter."
+    },
+    "8.1.3.0-3 (d)": {
+        "txt": "The LMS must reject xAPI requests that require an \"actor\" or \"agent\" that do not include the \"actor\" value as provided to the AU."
+    },
+    "8.1.4.0-1": {
+        "txt": "The LMS MUST place the value for \"registration\" in the query string based on the authenticated learner's corresponding enrollment for the Course that the AU being launched is a member of."
+    },
+    "8.1.4.0-2": {
+        "txt": "The AU MUST get the \"registration\" value from the query string."
+    },
+    "8.1.4.0-3": {
+        "txt": "The AU MUST use the \"registration\" value in xAPI requests that require a \"registration\"."
+    },
+    "8.1.4.0-3 (d)": {
+        "txt": "The LMS must reject xAPI request that require a \"registration\" that do not include the \"registration\" value as provided to the AU."
+    },
+    "8.1.5.0-1": {
+        "txt": "The LMS MUST generate a unique activityId for the AU."
+    },
+    "8.1.5.0-2": {
+        "txt": "The LMS MUST place its [activityId] value in the query string."
+    },
+    "8.1.5.0-3": {
+        "txt": "The activityId generated MUST NOT match the AU's id (publisher id) from the course structure."
+    },
+    "8.1.5.0-4": {
+        "txt": "The LMS MUST use the same generated activityId on all subsequent launches (for the same AU) within the same registration."
+    },
+    "8.1.5.0-5": {
+        "txt": "The AU MUST get the \"activityId\" value from the query string."
+    },
+    "8.1.5.0-6": {
+        "txt": "The AU MUST use the \"activityId\" value as the id property of the Object in all \"cmi5 defined\" statements."
+    },
+    "8.1.5.0-6 (d)": {
+        "txt": "The LMS must reject \"cmi5 defined\" statements from the AU that do not include the \"activityId\" as the \"id\" of the \"object\"."
+    },
+    "8.2.1.0-1": {
+        "txt": "The LMS MUST include the \"fetch\" name/value pair in the launch URL."
+    },
+    "8.2.1.0-2": {
+        "txt": "The AU MUST make an HTTP POST to the \"fetch\" URL to retrieve an authorization token."
+    },
+    "8.2.1.0-2 (d)": {
+        "txt": "The LMS must handle POST requests to the URL provided in the \"fetch\" parameter."
+    },
+    "8.2.1.0-3": {
+        "txt": "The \"fetch\" URL MUST return a JSON structure using a Content-Type of \"application/json\"."
+    },
+    "8.2.1.0-4": {
+        "txt": "The structure MUST be an object with the property \"auth-token\" in the first successful response."
+    },
+    "8.2.1.0-5": {
+        "txt": "The AU MUST place the \"auth-token\" in the HTTP header, as defined in RFC 1945 - 11.1 Basic Authentication Scheme, in all subsequent xAPI communications with the LMS."
+    },
+    "8.2.1.0-5 (d)": {
+        "txt": ""
+    },
+    "8.2.1.0-6": {
+        "txt": "The authorization token returned by the \"fetch\" URL MUST be limited to the duration of the session."
+    },
+    "8.2.1.0-6 (d)": {
+        "txt": ""
+    },
+    "8.2.2.0-1": {
+        "txt": "The LMS MUST place the value for \"auth-token\" in a JSON structure, as shown in Section 8.2.1, in its response to a \"fetch\" URL request."
+    },
+    "8.2.2.0-2": {
+        "txt": "The response MUST have a Content-Type of \"application/json\"."
+    },
+    "8.2.2.0-3": {
+        "txt": "The HTTP status code MUST be \"200\" for a valid request (including one that generates an error as described in section 8.2.3)."
+    },
+    "8.2.2.0-4": {
+        "txt": "The AU MUST get the \"auth-token\" value using an HTTP POST to the \"fetch\" URL."
+    },
+    "8.2.2.0-5": {
+        "txt": "The AU MUST place the authorization token in the Authorization headers of all HTTP requests made to the endpoint using the xAPI."
+    },
+    "8.2.3.0-1": {
+        "txt": "The \"fetch\" URL is a \"one-time use\" URL and MUST NOT return an \"auth-token\" more than once."
+    },
+    "8.2.3.0-1 (d)": {
+        "txt": "The LMS must track that the \"fetch\" URL has been requested."
+    },
+    "8.2.3.2-1": {
+        "txt": "The following error-code values are allowed [in fetch response values]."
+    },
+    "9.1.0.0-1": {
+        "txt": "The AU MUST assign a statement id property in UUID format (as defined in the xAPI specification) for all statements it issues."
+    },
+    "9.1.0.0-1 (d)": {
+        "txt": "The LMS must reject statements received that do not contain a statement id."
+    },
+    "9.2.0.0-1": {
+        "txt": "The Actor property MUST be defined by the LMS."
+    },
+    "9.2.0.0-2": {
+        "txt": "The Actor property for all \"cmi5 defined\" statements MUST be of objectType \"Agent\"."
+    },
+    "9.2.0.0-3": {
+        "txt": "The Actor property MUST contain an \"account\" IFI as defined in the xAPI specification."
+    },
+    "9.3.0.0-1": {
+        "txt": "AUs MUST use the below verbs that are indicated as mandatory in other sections of this specification."
+    },
+    "9.3.0.0-2": {
+        "txt": "Verbs MUST NOT be duplicated (in cmi5 defined statements)."
+    },
+    "9.3.0.0-2 (d)": {
+        "txt": "The LMS must track which \"cmi5 defined\" statement verbs have been used in a session."
+    },
+    "9.3.0.0-2 (d)": {
+        "txt": "The LMS must reject \"cmi5 defined\" statements that use verbs already used in a session."
+    },
+    "9.3.0.0-3": {
+        "txt": "More than one of the set of {\"Passed\",\"Failed\"} verbs MUST NOT be used (in cmi5 defined statements)."
+    },
+    "9.3.0.0-3 (d)": {
+        "txt": "The LMS must reject \"passed\" or \"failed\" statements received after the first \"passed\" or \"failed\" statement."
+    },
+    "9.3.0.0-4": {
+        "txt": "The \"Initialized\" verb MUST be the first statement (cmi5 allowed or defined)."
+    },
+    "9.3.0.0-4 (d1)": {
+        "txt": "The LMS must track when the \"initialized\" statement has been received for a session."
+    },
+    "9.3.0.0-4 (d2)": {
+        "txt": "The LMS must reject statement requests received before the \"initialized\" statement."
+    },
+    "9.3.0.0-5": {
+        "txt": "The \"Terminated\" verb MUST be the last statement (cmi5 allowed or defined)."
+    },
+    "9.3.0.0-5 (d1)": {
+        "txt": "The LMS must track when the \"terminated\" statement has been received for a session."
+    },
+    "9.3.0.0-5 (d2)": {
+        "txt": "The LMS must reject statement requests received after the \"terminated\" statement."
+    },
+    "9.3.0.0-6": {
+        "txt": "Exactly zero or one \"Completed\" cmi5 defined statement MUST be used per registration."
+    },
+    "9.3.0.0-6 (d1)": {
+        "txt": "The LMS must track when a \"completed\" statement has been received for a registration."
+    },
+    "9.3.0.0-6 (d2)": {
+        "txt": "The LMS must reject \"completed\" statements received for a registration after a \"completed\" statement has already been received."
+    },
+    "9.3.0.0-7": {
+        "txt": "Exactly zero or one \"Passed\" cmi5 defined statement MUST be used per registration."
+    },
+    "9.3.0.0-7 (d1)": {
+        "txt": "The LMS must track when a \"passed\" statement has been received for a registration."
+    },
+    "9.3.0.0-7 (d2)": {
+        "txt": "The LMS must reject \"passed\" statements received for a registration after a \"passed\" statement has already been received."
+    },
+    "9.3.0.0-8": {
+        "txt": "A \"Failed\" statement MUST NOT follow a \"Passed\" statement (in cmi5 defined statements) per registration."
+    },
+    "9.3.0.0-8 (d)": {
+        "txt": "The LMS must reject \"failed\" statements received for a registration after a \"passed\" statement has been received."
+    },
+    "9.3.0.0-9": {
+        "txt": "The LMS MUST record and provide reporting for all statements regardless of the verbs used in statements sent by AUs."
+    },
+    "9.3.0.0-10": {
+        "txt": "LMS MUST NOT issue more than one abandoned statement for a session."
+    },
+    "9.3.0.0-10 (d)": {
+        "txt": "The LMS must track that an \"abandoned\" statement has been recorded for a session."
+    },
+    "9.3.0.0-11": {
+        "txt": "LMS MUST NOT issue more than one waived statement per session and MUST not issue more than one waived statement per registration per AU."
+    },
+    "9.3.0.0-11 (d1)": {
+        "txt": "The LMS must track that a \"waived\" statement has been recorded for a session."
+    },
+    "9.3.0.0-11 (d1)": {
+        "txt": "The LMS must track that a \"waived\" statement has been recorded for an AU for a registration."
+    },
+    "9.3.1.0-1": {
+        "txt": "The LMS MUST use this verb, \"Launched\", in a statement recorded in the LRS before launching an AU."
+    },
+    "9.3.1.0-2": {
+        "txt": "The LMS MUST NOT issue multiple statements with \"Launched\" for the same AU within a given AU session."
+    },
+    "9.3.1.0-2 (d)": {
+        "txt": "The LMS must track that a \"launched\" statement has been recorded for each AU launch session."
+    },
+    "9.3.2.0-1": {
+        "txt": "The \"Initialized\" statement MUST follow, within a reasonable period of time, the \"Launched\" statement created by the LMS."
+    },
+    "9.3.2.0-1 (d)": {
+        "txt": ""
+    },
+    "9.3.2.0-2": {
+        "txt": "The AU MUST use \"Initialized\" in the first statement (of any kind) in the AU session."
+    },
+    "9.3.2.0-3": {
+        "txt": "The AU MUST NOT issue multiple statements with \"Initialized\" for the same AU within a given AU session."
+    },
+    "9.3.2.0-3 (d)": {
+        "txt": "The LMS must reject \"initialized\" statements received from an AU in a session when an \"initialized\" statement has already been received."
+    },
+    "9.3.3.0-1": {
+        "txt": "The AU MUST send a statement containing the \"Completed\" verb when the learner has experienced all relevant material in an AU."
+    },
+    "9.3.3.0-2": {
+        "txt": "The AU MUST NOT issue multiple statements with \"Completed\" for the same AU within a given course registration for a given learner."
+    },
+    "9.3.3.0-3": {
+        "txt": "The LMS MUST use \"Completed\" statements based on the \"moveOn\" criteria for the AU as provided in the LMS Launch Data."
+    },
+    "9.3.4.0-1": {
+        "txt": "The AU MUST send a statement containing the \"Passed\" verb when the learner has attempted and passed the AU."
+    },
+    "9.3.4.0-2": {
+        "txt": "If the \"Passed\" statement contains a (scaled) score, the (scaled) score MUST be equal to or greater than the \"masteryScore\" indicated in the LMS Launch Data."
+    },
+    "9.3.4.0-2 (d1)": {
+        "txt": "The LMS must track what masteryScore was provided for a given launch session."
+    },
+    "9.3.4.0-2 (d2)": {
+        "txt": "The LMS must reject \"passed\" statements that include a score that is less than the \"masteryScore\" associated with the session."
+    },
+    "9.3.4.0-3": {
+        "txt": "The AU MUST NOT issue multiple statements with \"Passed\" for the same AU within a given course registration for a given learner."
+    },
+    "9.3.4.0-4": {
+        "txt": "The LMS MUST use \"Passed\" statements based on the \"moveOn\" criteria for the AU as provided in the LMS Launch Data."
+    },
+    "9.3.5.0-1": {
+        "txt": "The AU MUST send a statement containing the \"Failed\" verb when the learner has attempted and failed the AU."
+    },
+    "9.3.5.0-2": {
+        "txt": "If the \"Failed\" statement contains a (scaled) score, the (scaled) score MUST be less than the \"masteryScore\" indicated in the LMS Launch Data."
+    },
+    "9.3.5.0-2 (d)": {
+        "txt": "The LMS must reject \"failed\" statements that include a score that is more than or equal to the \"masteryScore\" associated with the session."
+    },
+    "9.3.6.0-1": {
+        "txt": "The LMS MUST record an \"Abandoned\" statement on behalf of the AU indicating an abnormal session termination."
+    },
+    "9.3.6.0-2": {
+        "txt": "The LMS MUST NOT allow any statements to be recorded for a session after recording an \"Abandoned\" statement."
+    },
+    "9.3.6.0-2 (d1)": {
+        "txt": "The LMS must track when the \"abandoned\" statement has been received for a session."
+    },
+    "9.3.6.0-2 (d2)": {
+        "txt": "The LMS must reject statement requests received after the \"abandoned\" statement."
+    },
+    "9.3.7.0-1": {
+        "txt": "The LMS MUST use this verb, \"Waived\", in a statement recorded in the LRS when it determines that the AU may be waived."
+    },
+    "9.3.7.0-2": {
+        "txt": "A statement containing a \"Waived\" verb MUST include a \"reason\" in the extension property of the Statement Result."
+    },
+    "9.3.7.0-2 (d)": {
+        "txt": "The LMS must include a \"reason\" in the extension property of the result for cmi5 defined statements that it stores using the \"waived\" verb."
+    },
+    "9.3.7.0-3": {
+        "txt": "The LMS MUST generate a unique session id for the statement containing a \"Waived\" verb and MUST NOT issue any other statements (except for statements with the \"Satisfied\" verb) using that session id."
+    },
+    "9.3.7.0-4": {
+        "txt": "The LMS MUST NOT issue multiple statements with \"Waived\" for the same AU within a course registration."
+    },
+    "9.3.7.0-4 (d)": {
+        "txt": "The LMS must track that an AU has been \"waived\" in a given registration."
+    },
+    "9.3.8.0-1": {
+        "txt": "The AU MUST send a statement containing the \"Terminated\" verb."
+    },
+    "9.3.8.0-2": {
+        "txt": "This statement, \"Terminated\", MUST be the last statement (of any kind) sent by the AU in a session."
+    },
+    "9.3.8.0-3": {
+        "txt": "The LMS MUST use the \"Terminated\" statement to determine that the AU session has ended."
+    },
+    "9.3.8.0-4": {
+        "txt": "Upon receiving a \"Terminated\" statement, the LMS MUST wait a specified period of time (defined by the LMS implementation) after which it MUST reject statements (of any kind) for the AU session."
+    },
+    "9.3.9.0-1": {
+        "txt": "The LMS MUST use the \"Satisfied\" statement when the learner has met the moveOn criteria of all AU's in a block."
+    },
+    "9.3.9.0-2": {
+        "txt": "In this statement, \"Satisfied\", the LMS MUST use the LMS generated block id as the Object id and use \"https://w3id.org/xapi/cmi5/activitytype/block\" as the value of the \"type\" property in the Object's Definition."
+    },
+    "9.3.9.0-3": {
+        "txt": "The LMS MUST generate a unique block id for the Satisfied Statement."
+    },
+    "9.3.9.0-4": {
+        "txt": "The generated Block id MUST NOT match the publisher’s ID from the course structure."
+    },
+    "9.3.9.0-5": {
+        "txt": "The LMS MUST also use the \"Satisfied\" statement when the learner has met the moveOn criteria for all AU's in a course."
+    },
+    "9.3.9.0-6": {
+        "txt": "In this statement, \"Satisfied\" the LMS MUST use the LMS generated course id as the Object id and use \"https://w3id.org/xapi/cmi5/activitytype/course\" as the value of the \"type\" property in the Object's Definition."
+    },
+    "9.3.9.0-7": {
+        "txt": "The LMS MUST generate a unique course id for the Satisfied Statement."
+    },
+    "9.3.9.0-8": {
+        "txt": "The generated course id MUST NOT match the publisher’s ID from the course structure."
+    },
+    "9.3.9.0-9": {
+        "txt": "For all \"Satisfied\" statements triggered as a result of an AU launch session, the LMS MUST use the session id from the AU launch in the statements."
+    },
+    "9.4.0.0-1": {
+        "txt": "An Object MUST be present, as specified in this section, in all \"cmi5 defined\" statements."
+    },
+    "9.4.0.0-1 (d)": {
+        "txt": "The LMS must reject \"cmi5 defined\" statements from the AU that do not contain the correct \"object\" value."
+    },
+    "9.4.0.0-2": {
+        "txt": "When the Object is the AU, the value of the Object's \"id\" property for a given AU MUST match the activityId defined in the launch URL."
+    },
+    "9.5.1.0-1": {
+        "txt": "If a score is reported by an AU, the verb MUST be consistent with \"masteryScore\" (if defined for the AU in the LMS Launch Data)."
+    },
+    "9.5.1.0-2": {
+        "txt": "cmi5 defined statements, other than \"Passed\" or \"Failed\", MUST NOT include the \"score\" property."
+    },
+    "9.5.1.0-2 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that have a \"score\" property and that do not have the \"passed\" or \"failed\" verb."
+    },
+    "9.5.1.0-3": {
+        "txt": "The AU MUST provide the \"min\" and \"max\" values for \"score\" when the \"raw\" value is provided."
+    },
+    "9.5.1.0-3 (d1)": {
+        "txt": "The LMS must reject statements that include a \"score.raw\" value but that do not include \"score.min\"."
+    },
+    "9.5.1.0-3 (d2)": {
+        "txt": "The LMS must reject statements that include a \"score.raw\" value but that do not include \"score.max\"."
+    },
+    "9.5.2.0-1": {
+        "txt": "The \"success\" property of the result MUST be set to true for the following cmi5 defined statements [\"Passed\", \"Waived\"]."
+    },
+    "9.5.2.0-1 (d1)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"passed\" verb but do not have \"result.success\" set to `true`."
+    },
+    "9.5.2.0-1 (d2)": {
+        "txt": "The LMS must set \"result.success\" to `true` for cmi5 defined statements that it stores using the \"waived\" verb."
+    },
+    "9.5.2.0-2": {
+        "txt": "The \"success\" property of the result MUST be set to false for the following cmi5 defined statements [\"Failed\"]."
+    },
+    "9.5.2.0-2 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"failed\" verb but do not have \"result.success\" set to `false`."
+    },
+    "9.5.2.0-3": {
+        "txt": "cmi5 defined statements, other than \"Passed\", \"Waived\" or \"Failed\", MUST NOT include the \"success\" property."
+    },
+    "9.5.2.0-3 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" property but do not use \"passed\", \"waived\", or \"failed\" as the verb."
+    },
+    "9.5.3.0-1": {
+        "txt": "The \"completion\" property of the result MUST be set to true for the following cmi5 defined statements [\"Completed\", \"Waived\"]."
+    },
+    "9.5.3.0-1 (d1)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"completed\" verb but do not have the \"result.completion\" property set to `true`."
+    },
+    "9.5.3.0-1 (d2)": {
+        "txt": "The LMS must set \"result.completion\" to `true` for cmi5 defined statements that it stores using the \"waived\" verb."
+    },
+    "9.5.3.0-2": {
+        "txt": "cmi5 defined statements, other than \"Completed\" or \"Waived\", MUST NOT include the \"completion\" property."
+    },
+    "9.5.3.0-2 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.completion\" property but do not use \"completed\" or \"waived\" as the verb."
+    },
+    "9.5.4.1-1": {
+        "txt": "The AU MUST include the \"duration\" property in \"Terminated\" statements."
+    },
+    "9.5.4.1-1 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"terminated\" verb but do not include the \"result.duration\" property."
+    },
+    "9.5.4.1-2": {
+        "txt": "The AU MUST include the \"duration\" property in \"Completed\" statements."
+    },
+    "9.5.4.1-2 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"completed\" verb but do not include the \"result.duration\" property."
+    },
+    "9.5.4.1-3": {
+        "txt": "The AU MUST include the \"duration\" property in \"Passed\" statements."
+    },
+    "9.5.4.1-3 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"passed\" verb but do not include the \"result.duration\" property."
+    },
+    "9.5.4.1-4": {
+        "txt": "The AU MUST include the \"duration\" property in \"Failed\" statements."
+    },
+    "9.5.4.1-4 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"failed\" verb but do not include the \"result.duration\" property."
+    },
+    "9.5.4.2-1": {
+        "txt": "The duration property MUST be included in \"Abandoned\" statements."
+    },
+    "9.5.4.2-2": {
+        "txt": "In the absence of such methods [LMS specific methods of determination], the duration property MUST be set as the total session time, calculated as the time between the \"Launched\" statement and the last statement (of any kind) issued by the AU."
+    },
+    "9.5.5.2-1": {
+        "txt": "The LMS MUST set this value [reason extension] in statements it makes with the verb \"Waived\"."
+    },
+    "9.6.0.0-1": {
+        "txt": "All cmi5 defined statements MUST contain a context that includes all properties as defined in this section [9.6]."
+    },
+    "9.6.0.0-1 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that don't include a context object or include a context object that is not conformant to section 9.6."
+    },
+    "9.6.1.0-1": {
+        "txt": "The value for the registration property used in the context object MUST be the value provided by the LMS."
+    },
+    "9.6.1.0-1 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that don't include the \"registration\" property or include a different value than that provided by the LMS."
+    },
+    "9.6.1.1-2": {
+        "txt": "The LMS MUST generate this value [\"registration\"] and pass it to the AU via the launch URL."
+    },
+    "9.6.1.1-3": {
+        "txt": "The LMS MUST evaluate MoveOn criteria in the course structure at the time of registration."
+    },
+    "9.6.2.0-1": {
+        "txt": "All cmi5 defined statements must include all properties and values defined in the the contextActivities of the context template."
+    },
+    "9.6.2.0-1 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that do not include all contextActivities values as provided by the context template."
+    },
+    "9.6.2.1-1": {
+        "txt": "An Activity object with an \"id\" of \"https://w3id.org/xapi/cmi5/context/categories/cmi5\" in the \"category\" context activities list MUST be used in cmi5 defined statements as described in section 7.1.3."
+    },
+    "9.6.2.2-1": {
+        "txt": "cmi5 defined statements with a Result object (Section 9.5) that include either \"success\" or \"completion\" properties MUST have an Activity object with an \"id\" of \"https://w3id.org/xapi/cmi5/context/categories/moveon\" in the \"category\" context activities list."
+    },
+    "9.6.2.2-1 (d1)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Completed]"
+    },
+    "9.6.2.2-1 (d2)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Passed]"
+    },
+    "9.6.2.2-1 (d3)": {
+        "txt": "The LMS must reject cmi5 defined statements that include the \"result.success\" or \"result.completion\" property that do not include the moveOn category activity in the \"context.contextActivities.category\" list. [Failed]"
+    },
+    "9.6.2.2-1 (d4)": {
+        "txt": "The LMS must have an Activity object with an \"id\" of \"https://w3id.org/xapi/cmi5/context/categories/moveon\" in the \"category\" context activities list for cmi5 defined statements that it stores using the \"waived\" verb."
+    },
+    "9.6.2.2-2": {
+        "txt": "Other statements [than those with a result.completion or result.success property] MUST NOT include this Activity [the moveOn Category Activity]."
+    },
+    "9.6.2.2-2 (d)": {
+        "txt": "The LMS must reject statements that include the moveOn category activity in a \"context.contextActivities\" list that are not cmi5 defined statements or that are cmi5 defined statements that do not contain either a \"result.completion\" or \"result.success\" property."
+    },
+    "9.6.2.3-1": {
+        "txt": "The LMS MUST include an Activity object with an \"id\" property whose value is the unaltered value of the AU's \"id\" attribute from the course structure in the \"grouping\" context activities list in the \"contextTemplate\" as described in the State API prior to launching an AU."
+    },
+    "9.6.2.3-2": {
+        "txt": "The LMS MUST include the publisher id Activity in the \"grouping\" context activities list for all \"cmi5 defined\" and \"cmi5 allowed\" statements it makes directly in the LRS."
+    },
+    "9.6.3.1-1": {
+        "txt": "The value for session ID MUST be generated by the LMS."
+    },
+    "9.6.3.1-2": {
+        "txt": "The LMS MUST record the session ID in the State API prior to launching an AU."
+    },
+    "9.6.3.1-3": {
+        "txt": "The LMS MUST provide the session ID in the context as an extension for all \"cmi5 defined\" and \"cmi5 allowed\" statements it makes directly in the LRS."
+    },
+    "9.6.3.1-4": {
+        "txt": "An AU MUST include the session ID provided by the LMS in the context as an extension for all \"cmi5 defined\" and \"cmi5 allowed\" statements it makes directly in the LRS."
+    },
+    "9.6.3.1-4 (d)": {
+        "txt": "The LMS must reject statements that it receives from the AU that do not include the session id in the session id context extension."
+    },
+    "9.6.3.2-1": {
+        "txt": "The LMS MUST add masteryScore to the context of a \"Launched\" statement when it is provided in the LMS launch data."
+    },
+    "9.6.3.2-2": {
+        "txt": "An AU MUST include the \"masteryScore\" value provided by the LMS in the context as an extension for \"passed\"/\"failed\" Statements it makes based on the \"masteryScore\"."
+    },
+    "9.6.3.2-2 (d)": {
+        "txt": "The LMS must reject statements it receives from the AU that do not include the masteryScore extension value in the context but include a score and the \"passed\" or \"failed\" verb."
+    },
+    "9.6.3.3-1": {
+        "txt": "The LMS MUST add launchMode to the context of a \"Launched\" statement."
+    },
+    "9.6.3.4-1": {
+        "txt": "The LMS MUST put a fully qualified URL equivalent to the one that the LMS used to launch the AU without the name/value pairs included as defined in section 8.1 in the context extensions of the \"Launched\" statement."
+    },
+    "9.6.3.6-1": {
+        "txt": "The LMS MUST add moveOn to the context of a \"Launched\" statement."
+    },
+    "9.6.3.7-1": {
+        "txt": "The LMS MUST add launchParameters to the context of a \"Launched\" statement when it is provided in the LMS launch data."
+    },
+    "9.7.0.0-1": {
+        "txt": "All statements MUST include a timestamp property per the xAPI specification to ensure statement ordering requirements are met."
+    },
+    "9.7.0.0-1 (d)": {
+        "txt": "The LMS must reject statements received from the AU that do not include the timestamp property."
+    },
+    "9.7.0.0-2": {
+        "txt": "All timestamps MUST be recorded in UTC time."
+    },
+    "9.7.0.0-2 (d)": {
+        "txt": "The LMS must reject statements received from the AU that include a timestamp property value that is not in UTC."
+    },
+    "10.1.0.0-1": {
+        "txt": "Prior to launching an AU, the LMS MUST create or update a document in the State API record in the LRS."
+    },
+    "10.1.0.0-2": {
+        "txt": "This [the LMS.LaunchData] MUST be a JSON document, as defined in Section 10.0."
+    },
+    "10.1.0.0-3": {
+        "txt": "This [activityId property] MUST match the activity id used by the LMS at AU launch time."
+    },
+    "10.1.0.0-4": {
+        "txt": "This [agent State API PUT Property] MUST match the actor property generated by the LMS at AU launch time."
+    },
+    "10.1.0.0-5": {
+        "txt": "This [registration State API PUT Property] MUST match the registration used by the LMS at AU launch time."
+    },
+    "10.2.1.0-1": {
+        "txt": "The LMS MUST include a \"contextTemplate\" object [in the State API document]."
+    },
+    "10.2.1.0-2": {
+        "txt": "[The contextTemplate object MUST include] The value for session id placed in an \"extensions\" property with the id as defined in Section 9.6.3.1."
+    },
+    "10.2.1.0-3": {
+        "txt": "[The contextTemplate object MUST include] The publisher id Activity as defined in Section 9.6.2.3 in the \"contextActivities.grouping\" list."
+    },
+    "10.2.1.0-4": {
+        "txt": "The AU MUST get the \"contextTemplate\" value from the \"LMS.LaunchData\" State document."
+    },
+    "10.2.1.0-5": {
+        "txt": "The AU MUST NOT modify or delete the \"LMS.LaunchData\" State document."
+    },
+    "10.2.1.0-5 (d)": {
+        "txt": "The LMS must reject non-GET requests from the AU for the \"LMS.LaunchData\" state profile document."
+    },
+    "10.2.1.0-6": {
+        "txt": "The AU MUST use the contextTemplate as a template for the \"context\" property in all xAPI statements it sends to the LMS."
+    },
+    "10.2.1.0-6 (d)": {
+        "txt": "The LMS must reject statements that do not have a \"context\" object based on the \"contextTemplate\" provided to the AU via the launch data State API document."
+    },
+    "10.2.1.0-7": {
+        "txt": "While the AU may include additional values in the Context object of such statements, it MUST NOT overwrite any values provided in the contextTemplate."
+    },
+    "10.2.1.0-7 (d)": {
+        "txt": "The LMS must reject statements that include a \"context\" object that has contextTemplate property values that have been overwritten."
+    },
+    "10.2.2.0-1": {
+        "txt": "Normal [launchMode] Indicates to the AU that satisfaction-related data MUST be recorded in the LMS using xAPI statements."
+    },
+    "10.2.2.0-1 (d)": {
+        "txt": "The LMS must track what launchMode was used for a given AU launch session."
+    },
+    "10.2.2.0-2": {
+        "txt": "Browse [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements."
+    },
+    "10.2.2.0-2 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that use the \"passed\", \"failed\", or \"completed\" verb received from the AU [during a session with a \"Browse\" launchMode]."
+    },
+    "10.2.2.0-3": {
+        "txt": "Review [launchMode] Indicates to the AU that satisfaction-related data MUST NOT be recorded in the LMS using xAPI statements."
+    },
+    "10.2.2.0-3 (d)": {
+        "txt": "The LMS must reject cmi5 defined statements that use the \"passed\", \"failed\", or \"completed\" verb received from the AU [during a session with a \"Review\" launchMode]."
+    },
+    "10.2.2.0-4": {
+        "txt": "The LMS MUST include a value for \"launchMode\" [in the State API document]."
+    },
+    "10.2.2.0-5": {
+        "txt": "The AU MUST conform to the following [statement requirements] based on the value of \"launchMode\"."
+    },
+    "10.2.2.0-5 (d)": {
+        "txt": "The LMS must reject statement requests that do not conform to the value of \"launchMode\"."
+    },
+    "10.2.2.0-6": {
+        "txt": "The AU MUST send \"Initialized\" and \"Terminated\" verb statements [for a Normal launchMode]."
+    },
+    "10.2.2.0-7": {
+        "txt": "The AU MUST send other cmi5 defined statements per the requirements defined in section 9.3 [for a Normal launchMode]."
+    },
+    "10.2.2.0-8": {
+        "txt": "The AU MUST send \"Initialized\" and \"Terminated\" verb statements [for a Browse launchMode]."
+    },
+    "10.2.2.0-9": {
+        "txt": "The AU MUST NOT send other cmi5 defined statements [for a Browse launchMode]."
+    },
+    "10.2.2.0-10": {
+        "txt": "The AU MUST send \"Initialized\" and \"Terminated\" verb statements [for a Review launchMode]."
+    },
+    "10.2.2.0-11": {
+        "txt": "The AU MUST NOT send other cmi5 defined statements [for a Review launchMode]."
+    },
+    "10.2.3.0-1": {
+        "txt": "The LMS MUST include the \"launchParameters\" in the State API document if the \"launchParameters\" were defined by the course designer in the Course Structure."
+    },
+    "10.2.4.0-1": {
+        "txt": "The LMS MUST include a \"masteryScore\" in the State API document if the \"masteryScore\" was defined by the course designer in the Course Structure."
+    },
+    "10.2.4.0-2": {
+        "txt": "If the AU issues \"Passed\" or \"Failed\" statements they MUST be based on the \"masteryScore\" if provided."
+    },
+    "10.2.5.0-1": {
+        "txt": "The LMS must provide a \"moveOn\" value in the state API document."
+    },
+    "10.2.6.0-1": {
+        "txt": "The AU MUST attempt to get the \"returnURL\" value from the \"LMS.LaunchData\" state document."
+    },
+    "10.2.6.0-1": {
+        "txt": "The AU MUST redirect the current browser window or frame to the \"returnURL\" when the AU is terminated if the \"returnURL\" is provided."
+    },
+    "10.2.7.0-1": {
+        "txt": "The LMS MUST add an \"entitlementKey\" object to the \"LMS.LaunchData\" state document if an \"entitlementKey\" is present in the Course Structure for the AU."
+    },
+    "10.2.7.1-1": {
+        "txt": "The LMS MUST obtain this [entitlementKey.courseStructure] from the Course Structure."
+    },
+    "10.2.7.2-1": {
+        "txt": "The LMS MUST obtain the value for the [entitlementKey] alternate property from a source as agreed upon with the AU."
+    },
+    "11.0.0.0-1": {
+        "txt": "The Agent used in xAPI Agent Profile requests MUST match the actor property generated by the LMS at AU launch time."
+    },
+    "11.0.0.0-1 (d)": {
+        "txt": "The LMS must reject xAPI Agent Profile requests that do not include the actor as provided by the LMS at AU launch time."
+    },
+    "11.0.0.0-2": {
+        "txt": "The AU MUST NOT treat the 403 response [to Learner Preferences change requests] as an error condition."
+    },
+    "11.0.0.0-3": {
+        "txt": "The AU MUST retrieve the Learner Preferences document from the Agent Profile on startup."
+    },
+    "11.0.0.0-3 (d1)": {
+        "txt": "The LMS must track that the AU has retrieved the learner preferences document."
+    },
+    "11.0.0.0-3 (d2)": {
+        "txt": "The LMS must reject initialized statement received before the learner preferences document has been retrieved."
+    },
+    "11.0.0.0-4": {
+        "txt": "When reading or writing to the Agent Profile, the document name MUST be \"cmi5LearnerPreferences\"."
+    },
+    "11.0.0.0-5": {
+        "txt": "The [Agent Profile] document content MUST be a JSON object with the \"languagePreference\" and \"audioPreference\" properties as described in Section 11.1 and 11.2."
+    },
+    "11.0.0.0-5 (d)": {
+        "txt": "The LMS must reject requests from the AU to set the Agent Profile document that are not JSON, or whose content is not an object, or whose content does not include the two named properties."
+    },
+    "11.1.0.0-1": {
+        "txt": "The languagePreference MUST be a comma-separated list of RFC 5646 Language Tags as indicated in the xAPI specification (Section 5.2)."
+    },
+    "11.1.0.0-1 (d)": {
+        "txt": "The LMS must reject requests from the AU to set the Agent Profile document if the languagePreference value is not a comma separated list of RFC 5646 language tags."
+    },
+    "11.1.0.0-2": {
+        "txt": "In the [languagePreference] list, languages MUST be specified in order of user preference."
+    },
+    "11.2.0.0-1": {
+        "txt": "The AU MUST turn the audio on or off at startup based on [the audioPreference property] value."
+    },
+    "13.1.0.0-1": {
+        "txt": "All leading/trailing whitespace MUST be removed by the LMS on import of the course structure for all of the data elements defined in this section."
+    },
+    "13.1.2.0-1": {
+        "txt": "This id, \"block\" element \"id\" attribute value, MUST be unique within the course structure."
+    },
+    "13.1.2.0-1 (d)": {
+        "txt": "The LMS must reject course structure data that has a block with an \"id\" value that is duplicated in the course structure."
+    },
+    "13.1.3.0-1": {
+        "txt": "This id, \"objective\" element \"id\" attribute value, MUST be unique within the course structure."
+    },
+    "13.1.3.0-1 (d)": {
+        "txt": "The LMS must reject course structure data that has an objective with an \"id\" value that is duplicated in the course structure."
+    },
+    "13.1.4.0-1": {
+        "txt": "This id, \"au\" element \"id\" attribute value, MUST be unique within the course structure."
+    },
+    "13.1.4.0-1 (d)": {
+        "txt": "The LMS must reject course structure data that has an AU with an \"id\" value that is duplicated in the course structure."
+    },
+    "13.1.4.0-2": {
+        "txt": "Regardless of the value of \"scheme\", the remaining portion of the URL [\"au\" element \"url\" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL)."
+    },
+    "13.1.4.0-2 (d)": {
+        "txt": "The LMS must reject course structure data that an AU with a \"url\" element attribute value that is not conformant with RFC1738."
+    },
+    "13.1.4.0-3": {
+        "txt": "If the url includes a query string, the values from that query string MUST be merged with the cmi5 parameters at launch time."
+    },
+    "13.1.5.0-1": {
+        "txt": "For that [course designers using their own namespaced elements] they MUST provide a XML Schema Definition."
+    },
+    "13.1.5.0-1 (d)": {
+        "txt": "The LMS must reject course structure data that does not provide an XML Schema Definition when custom namespaced elements are used."
+    },
+    "13.1.5.0-2": {
+        "txt": "These extensions [Vendor Specific Metadata] MUST keep the course structure XML valid."
+    },
+    "13.1.5.0-2 (d)": {
+        "txt": "The LMS must reject course structure XML containing vendor specific metadata that causes the XML to be invalid."
+    },
+    "13.2.0.0-1": {
+        "txt": "All course structures created for LMS import functionality and created by the LMS for export MUST conform to this [https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd] XSD and be named \"cmi5.xml\"."
+    },
+    "13.2.0.0-1 (d)": {
+        "txt": "The LMS must reject course structure XML that does not conform to the CourseStructure.xsd."
+    },
+    "14.0.0.0-1": {
+        "txt": "For the course import and export defined in Section 6.1, the LMS MUST support all of the following formats: Zip32, Zip64, course structure XML file."
+    },
+    "14.0.0.0-1 (d)": {
+        "txt": "The LMS must reject course packages that are neither Zip32, Zip64, nor an XML file."
+    },
+    "14.1.0.0-1": {
+        "txt": "The two ZIP file formats MUST follow the specification defined at https://www.pkware.com/support/zip-app-note."
+    },
+    "14.1.0.0-1 (d)": {
+        "txt": "The LMS must reject zip files that do not follow the zip file format specified at https://www.pkware.com/support/zip-app-note."
+    },
+    "14.1.0.0-2": {
+        "txt": "When the ZIP file is used to package a course, it MUST contain the course structure XML file at its root directory."
+    },
+    "14.1.0.0-2 (d)": {
+        "txt": "The LMS must reject zip file course packages that do not contain a cmi5.xml file in the root directory."
+    },
+    "14.1.0.0-3": {
+        "txt": "Any media included in a ZIP course package MUST use relative URL references in the Course Structure XML."
+    },
+    "14.1.0.0-3 (d)": {
+        "txt": "The LMS must reject zip course packages that do not use relative URL references in the course structure XML for media included in the package."
+    },
+    "14.1.0.0-4": {
+        "txt": "Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML."
+    },
+    "14.1.0.0-4 (d)": {
+        "txt": "The LMS must reject zip course packages that do not use fully qualified URLs for media not included in the package."
+    },
+    "14.2.0.0-1": {
+        "txt": "When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified."
+    },
+    "14.2.0.0-1 (d)": {
+        "txt": "The LMS must reject course structure XML files that include non-fully qualified URLs."
+    }
+}

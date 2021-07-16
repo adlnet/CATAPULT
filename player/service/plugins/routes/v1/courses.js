@@ -26,6 +26,7 @@ const fs = require("fs"),
     iri = require("iri"),
     { v4: uuidv4 } = require("uuid"),
     url = require("url"),
+    Helpers = require("../lib/helpers"),
     Registration = require("../lib/registration"),
     Session = require("../lib/session"),
     readFile = util.promisify(fs.readFile),
@@ -47,7 +48,7 @@ const fs = require("fs"),
             new iri.IRI(input).toAbsolute();
         }
         catch (ex) {
-            throw Boom.badRequest(`Invalid IRI: ${input}`, {violatedReqId: "3.0.0.0-1"});
+            throw Helpers.buildViolatedReqId("3.0.0.0-1", `Invalid IRI: ${input}`, "badRequest");
         }
 
         return true;
@@ -78,7 +79,7 @@ const fs = require("fs"),
         validateIRI(result.id);
 
         if (duplicateCheck.aus[result.id]) {
-            throw Boom.badRequest(`Invalid AU id (${result.id}: duplicate not allowed`, {violatedReqId: "13.1.4.0-1"});
+            throw Helpers.buildViolatedReqId("13.1.4.0-1", `Invalid AU id (${result.id}: duplicate not allowed`, "badRequest");
         }
 
         duplicateCheck.aus[result.id] = true;
@@ -136,7 +137,7 @@ const fs = require("fs"),
         validateIRI(result.id);
 
         if (duplicateCheck.blocks[result.id]) {
-            throw Boom.badRequest(`Invalid block id (${result.id}: duplicate not allowed`, {violatedReqId: "13.1.2.0-1"});
+            throw Helpers.buildViolatedReqId("13.1.2.0-1", `Invalid block id (${result.id}: duplicate not allowed`, "badRequest");
         }
 
         duplicateCheck.blocks[result.id] = true;
@@ -228,7 +229,7 @@ const fs = require("fs"),
                     validateIRI(id);
 
                     if (result.course.objectives[id]) {
-                        throw Boom.badRequest(`Invalid objective id (${id}: duplicate not allowed`, {violatedReqId: "13.1.3.0-1"});
+                        throw Helpers.buildViolatedReqId("13.1.3.0-1", `Invalid objective id (${id}: duplicate not allowed`, "badRequest");
                     }
 
                     result.course.objectives[id] = {
@@ -327,7 +328,7 @@ module.exports = {
                             zip;
 
                         if (contentType !== "application/zip" && contentType !== "text/xml") {
-                            throw Boom.badRequest(`14.0.0.0-1 - For the course import and export defined in Section 6.1, the LMS MUST support all of the following formats: Zip32, Zip64, course structure XML file.`, {violatedReqId: "14.0.0.0-1"});
+                            throw Helpers.buildViolatedReqId("14.0.0.0-1", `Unrecognized Content-Type: ${contentType}` , "badRequest");
                         }
 
                         if (contentType === "application/zip") {
@@ -335,7 +336,7 @@ module.exports = {
                                 zip = new StreamZip.async({file: req.payload.path});
                             }
                             catch (ex) {
-                                throw Boom.badRequest(`14.1.0.0-1 - The two ZIP file formats MUST follow the specification defined at https://www.pkware.com/support/zip-app-note. (${ex})`, {violatedReqId: "14.1.0.0-1"});
+                                throw Helpers.buildViolatedReqId("14.1.0.0-1", ex, "badRequest");
                             }
 
                             try {
@@ -343,10 +344,10 @@ module.exports = {
                             }
                             catch (ex) {
                                 if (ex.message === "Bad archive") {
-                                    throw Boom.badRequest(`14.1.0.0-1 - The two ZIP file formats MUST follow the specification defined at https://www.pkware.com/support/zip-app-note. (${ex})`, {violatedReqId: "14.1.0.0-1"});
+                                    throw Helpers.buildViolatedReqId("14.1.0.0-1", ex, "badRequest");
                                 }
 
-                                throw Boom.badRequest(`14.1.0.0-2 - When the ZIP file is used to package a course, it MUST contain the course structure XML file at its root directory. (${ex})`, {violatedReqId: "14.1.0.0-2"});
+                                throw Helpers.buildViolatedReqId("14.1.0.0-2", ex, "badRequest");
                             }
                         }
                         else {
@@ -371,7 +372,7 @@ module.exports = {
                             );
                         }
                         catch (ex) {
-                            throw Boom.badRequest(`Failed to parse XML data: ${ex}`, {violatedReqId: "13.2.0.0-1"});
+                            throw Helpers.buildViolatedReqId("13.2.0.0-1", `Failed to parse XML data: ${ex}`, "badRequest");
                         }
 
                         let validationResult;
@@ -384,7 +385,7 @@ module.exports = {
                         }
 
                         if (! validationResult) {
-                            throw Boom.badRequest(`Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, {violatedReqId: "13.2.0.0-1"});
+                            throw Helpers.buildViolatedReqId("13.2.0.0-1", `Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, "badRequest");
                         }
 
                         let structure = validateAndReduceStructure(courseStructureDocument, lmsId, zip ? true : false);
@@ -417,25 +418,25 @@ module.exports = {
                                 launchUrl = new URL(au.url, req.server.app.contentUrl);
                             }
                             catch (ex) {
-                                throw Boom.badRequest(`13.1.4.0-2 - Regardless of the value of "scheme", the remaining portion of the URL ["au" element "url" attribute] MUST conform to RFC1738 - Uniform Resource Locators (URL). '${au.url}': ${ex}`, {violatedReqId: "13.1.4.0-2"});
+                                throw Helpers.buildViolatedReqId("13.1.4.0-2", `'${au.url}': ${ex}`, "badRequest");
                             }
 
                             if (launchUrl.searchParams) {
                                 for (const k of ["endpoint", "fetch", "actor", "activityId", "registration"]) {
                                     if (launchUrl.searchParams.get(k) !== null) {
-                                        throw Boom.badRequest(`8.1.0.0-6 - If the AU's URL requires a query string for other purposes, then the names MUST NOT collide with named parameters defined below ["endpoint", "fetch", "actor", "activityId", "registration"]. (${k})`, {violatedReqId: "8.1.0.0-6"});
+                                        throw Helpers.buildViolatedReqId("8.1.0.0-6", k, "badRequest");
                                     }
                                 }
                             }
 
                             if (! isAbsolute(au.url)) {
                                 if (! zip) {
-                                    throw Boom.badRequest(`14.2.0.0-1 - When a course structure XML file is provided without a ZIP file package, all URL references MUST be fully qualified.`, {violatedReqId: "14.2.0.0-1"});
+                                    throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
                                 const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
                                 if (! zipEntry) {
-                                    throw Boom.badRequest(`14.1.0.0-4 - Any media not included in a ZIP course package MUST use fully qualified URL references in the Course Structure XML. (${launchUrl.pathname} not found in zip)`, {violatedReqId: "14.1.0.0-4"});
+                                    throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
                                 }
                             }
                         }

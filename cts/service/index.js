@@ -23,6 +23,7 @@ const Hapi = require("@hapi/hapi"),
     AuthCookie = require("@hapi/cookie"),
     Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
+    { AUTH_TTL_SECONDS } = require("./lib/consts"),
     {
         PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398",
         PLAYER_KEY,
@@ -110,12 +111,26 @@ const provision = async () => {
 
     server.method(
         "getCredentials",
-        (user) => ({
-            id: user.id,
-            tenantId: user.tenantId,
-            username: user.username,
-            roles: user.roles
-        })
+        (user) => {
+            const expiresAt = new Date();
+
+            expiresAt.setSeconds(expiresAt.getSeconds() + AUTH_TTL_SECONDS);
+
+            return {
+                id: user.id,
+                tenantId: user.tenantId,
+                username: user.username,
+                roles: user.roles,
+                expiresAt
+            };
+        },
+        {
+            generateKey: (user) => user.id.toString(),
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 1000
+            }
+        }
     );
     server.method(
         "basicAuthValidate",
@@ -204,7 +219,7 @@ const provision = async () => {
                 // switch to use via https
                 isSecure: false,
 
-                ttl: 8 * 60 * 60 * 1000
+                ttl: AUTH_TTL_SECONDS * 1000
             }
         }
     );

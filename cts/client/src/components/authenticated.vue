@@ -39,7 +39,22 @@
             navBar
         },
         data: () => ({
-        })
+            timer: ""
+        }),
+        created () {
+            this.timer = setInterval(this.expireLogin, 1000);
+        },
+        destroyed () {
+            clearInterval(this.timer);
+        },
+        methods: {
+            expireLogin () {
+                if (this.$store.state.service.apiAccess.expiresAt && this.$store.state.service.apiAccess.expiresAt < new Date().toISOString()) {
+                    this.$store.dispatch("alerts/add", {content: "Your session has expired, please sign in again"},{root: true});
+                    this.$store.dispatch("service/apiAccess/clearCredentialTimeout");
+                }
+            }
+        }
     };
 </script>
 

@@ -19,6 +19,7 @@ const Bcrypt = require("bcrypt"),
     Joi = require("joi"),
     Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
+    { AUTH_TTL_SECONDS } = require("../../../lib/consts"),
     getClientSafeUser = (user) => {
         delete user.password;
         delete user.playerApiToken;
@@ -181,6 +182,11 @@ module.exports = {
 
                             responseBody.isBootstrapped = true;
                             responseBody.user = getClientSafeUser(user);
+
+                            // Restore whatever the current cookie's expiration is at, for use in managing client side logged in state.
+                            if (req.state.sid) {
+                                responseBody.user.expiresAt = req.state.sid.expiresAt;
+                            }
                         }
                         else {
                             responseStatus = 401;
@@ -228,6 +234,10 @@ module.exports = {
                         if (! user || ! await Bcrypt.compare(req.payload.password, user.password)) {
                             throw Boom.unauthorized();
                         }
+
+                        const expiresAt = new Date();
+                        expiresAt.setSeconds(expiresAt.getSeconds() + AUTH_TTL_SECONDS)
+                        user.expiresAt = expiresAt.toISOString();
 
                         if (req.payload.storeCookie) {
                             req.cookieAuth.set(await req.server.methods.getCredentials(user));

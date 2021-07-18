@@ -21,7 +21,8 @@ const initialState = () => ({
     access: false,
     item: null,
     username: null,
-    password: null
+    password: null,
+    expiresAt: null
 });
 
 export default {
@@ -63,6 +64,7 @@ export default {
 
                 commit("set", {property: "item", value: body.user});
                 commit("set", {property: "access", value: true});
+                commit("set", {property: "expiresAt", value: body.expiresAt});
                 commit("set", {property: "isBootstrapped", value: true});
             }
             catch (ex) {
@@ -113,6 +115,7 @@ export default {
 
                 commit("set", {property: "item", value: body});
                 commit("set", {property: "access", value: true});
+                commit("set", {property: "expiresAt", value: body.expiresAt});
             }
             catch (ex) {
                 commit("set", {property: "error", value: true});
@@ -145,6 +148,12 @@ export default {
             }
 
             commit("resetState", null, {root: true});
+        },
+
+        clearCredentialTimeout: async ({commit, dispatch}) => {
+            await dispatch("clearCredential");
+            commit("set", {property: "error", value: true});
+            commit("set", {property: "errMsg", value: "Your session has timed out, please sign in again."});
         },
 
         bootstrap: async ({commit, rootGetters}, {username, password}) => {

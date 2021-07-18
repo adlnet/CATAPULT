@@ -255,7 +255,8 @@ const provision = async () => {
             require("./plugins/routes/v1/mgmt"),
             require("./plugins/routes/v1/courses"),
             require("./plugins/routes/v1/tests"),
-            require("./plugins/routes/v1/sessions")
+            require("./plugins/routes/v1/sessions"),
+            require("./plugins/routes/v1/users")
         ],
         {
             routes: {

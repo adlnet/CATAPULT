@@ -31,6 +31,16 @@ export default {
         initialState,
         ...initialState()
     },
+    getters: {
+        current: (state) => state.item,
+        isAdmin: (state) => () => {
+            if (state.access && state.item && state.item.roles && state.item.roles.includes("admin")) {
+                return true;
+            }
+
+            return false;
+        }
+    },
     mutations: {
         set: (state, {property, value}) => {
             state[property] = value;

@@ -28,6 +28,9 @@ import testNew from "@/components/authenticated/test/new";
 import testDetail from "@/components/authenticated/test/detail";
 import sessionDetail from "@/components/authenticated/session/detail";
 import requirementsList from "@/components/authenticated/requirements/list";
+import admin from "@/components/authenticated/admin";
+import adminAbout from "@/components/authenticated/admin/about";
+import adminUserList from "@/components/authenticated/admin/user/list";
 
 Vue.use(VueRouter);
 
@@ -83,7 +86,22 @@ const idPropToNumber = ({params}) => ({id: Number.parseInt(params.id, 10)}),
                 },
                 {
                     path: "/requirements",
-                    component: requirementsList,
+                    component: requirementsList
+                },
+                {
+                    path: "/admin",
+                    component: admin,
+                    children: [
+                        {
+                            path: "user-list/:initPage?",
+                            component: adminUserList,
+                            props: true
+                        },
+                        {
+                            path: "",
+                            component: adminAbout
+                        }
+                    ]
                 },
                 {
                     path: "/:initPage?",

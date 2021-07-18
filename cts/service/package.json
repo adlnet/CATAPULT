@@ -21,6 +21,7 @@
     "@hapi/hapi": "^20.1.5",
     "@hapi/hoek": "^9.2.0",
     "@hapi/inert": "^6.0.3",
+    "@hapi/jwt": "^2.0.1",
     "@hapi/vision": "^6.1.0",
     "@hapi/wreck": "^17.1.0",
     "bcrypt": "^5.0.1",

@@ -39,6 +39,7 @@
                             <b-icon-person-fill class="rounded-circle bg-info" scale="0.75" variant="light" />
                         </template>
                         <b-dropdown-item :to="{path: '/requirements'}">Spec Requirements</b-dropdown-item>
+                        <b-dropdown-item v-if="isAdmin" :to="{path: '/admin'}">Administration</b-dropdown-item>
                         <b-dropdown-item @click="doSignOut">Sign Out</b-dropdown-item>
                     </b-nav-item-dropdown>
                 </b-nav-form>
@@ -70,6 +71,11 @@
         data: () => ({
             newTestContentIsShown: false
         }),
+        computed: {
+            isAdmin () {
+                return this.$store.getters["service/apiAccess/isAdmin"]();
+            }
+        },
         mounted () {
             //
             // listen for the collapse event so we can set a local value

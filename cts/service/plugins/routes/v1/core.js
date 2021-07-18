@@ -18,7 +18,7 @@
 const Bcrypt = require("bcrypt"),
     Joi = require("joi"),
     Boom = require("@hapi/boom"),
-    Wreck = require("@hapi/wreck"),
+    User = require("./lib/user"),
     { AUTH_TTL_SECONDS } = require("../../../lib/consts"),
     getClientSafeUser = (user) => {
         delete user.password;
@@ -26,118 +26,6 @@ const Bcrypt = require("bcrypt"),
         delete user.tenantId;
 
         return user;
-    },
-    createUser = async (username, password, roles, {req}) => {
-        //
-        // need to create a tenant in the player
-        //
-        let createTenantResponse,
-            createTenantResponseBody;
-
-        try {
-            createTenantResponse = await Wreck.request(
-                "POST",
-                `${req.server.app.player.baseUrl}/api/v1/tenant`,
-                {
-                    headers: {
-                        Authorization: await req.server.methods.playerBasicAuthHeader(req)
-                    },
-                    payload: {
-                        code: username
-                    }
-                }
-            );
-            createTenantResponseBody = await Wreck.read(createTenantResponse, {json: true});
-        }
-        catch (ex) {
-            throw Boom.internal(new Error(`Failed request to create player tenant: ${ex}`));
-        }
-
-        if (createTenantResponse.statusCode !== 200) {
-            throw Boom.internal(new Error(`Failed to create player tenant (${createTenantResponse.statusCode}): ${createTenantResponseBody.message}${createTenantResponseBody.srcError ? " (" + createTenantResponseBody.srcError + ")" : ""}`));
-        }
-
-        const playerTenantId = createTenantResponseBody.id;
-
-        //
-        // with the tenant created get a token for this user to use
-        // to access the player API for that tenant
-        //
-        let createTokenResponse,
-            createTokenResponseBody;
-
-        try {
-            createTokenResponse = await Wreck.request(
-                "POST",
-                `${req.server.app.player.baseUrl}/api/v1/auth`,
-                {
-                    headers: {
-                        Authorization: await req.server.methods.playerBasicAuthHeader(req)
-                    },
-                    payload: {
-                        tenantId: playerTenantId,
-                        audience: `cts-${username}`
-                    }
-                }
-            );
-            createTokenResponseBody = await Wreck.read(createTokenResponse, {json: true});
-        }
-        catch (ex) {
-            throw Boom.internal(new Error(`Failed request to create player tenant: ${ex}`));
-        }
-
-        if (createTokenResponse.statusCode !== 200) {
-            throw Boom.internal(new Error(`Failed to retrieve player token (${createTokenResponse.statusCode}): ${createTokenResponseBody.message}${createTokenResponseBody.srcError ? " (" + createTokenResponseBody.srcError + ")" : ""}`));
-        }
-
-        const playerApiToken = createTokenResponseBody.token;
-
-        let userId,
-            tenantId;
-
-        await req.server.app.db.transaction(
-            async (txn) => {
-                //
-                // create a tenant for this user
-                //
-                try {
-                    const insertResult = await txn.insert(
-                        {
-                            code: `user-${username}`,
-                            playerTenantId
-                        }
-                    ).into("tenants");
-
-                    tenantId = insertResult[0];
-                }
-                catch (ex) {
-                    throw new Error(`Failed to insert tenant: ${ex}`);
-                }
-
-                //
-                // finally create the user which contains the token needed to access
-                // the player API
-                //
-                try {
-                    const insertResult = await txn.insert(
-                        {
-                            tenantId,
-                            username: username,
-                            password: await Bcrypt.hash(password, 8),
-                            playerApiToken,
-                            roles: JSON.stringify(roles)
-                        }
-                    ).into("users");
-
-                    userId = insertResult[0];
-                }
-                catch (ex) {
-                    throw Boom.internal(new Error(`Failed to insert into users: ${ex}`));
-                }
-            }
-        );
-
-        return {userId, tenantId};
     };
 
 module.exports = {
@@ -298,7 +186,7 @@ module.exports = {
 
                         try {
                             // the first user has to be an admin so they can handle other users being created
-                            await createUser(req.payload.firstUser.username, req.payload.firstUser.password, ["admin", "user"], {req});
+                            await User.create(req.payload.firstUser.username, req.payload.firstUser.password, ["admin"], {req});
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to create user: ${ex}`);

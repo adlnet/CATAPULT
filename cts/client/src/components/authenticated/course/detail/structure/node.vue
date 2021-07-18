@@ -28,6 +28,16 @@
                 </b-col>
             </b-row>
         </div>
+        <template v-if="item.type === 'course' && item.objectives">
+            <b-row v-for="(v, k) of item.objectives" :key="k" :class="{'font-weight-bold': k === objSelected}" style="padding-left: 25px;">
+                <b-col>
+                    <span @click="objectiveSelect(k, v)">{{ v.title[0].text }}</span>
+                </b-col>
+                <b-col cols="auto" class="node-type" @click="objectiveSelect(k, v)">
+                    OBJECTIVE
+                </b-col>
+            </b-row>
+        </template>
         <ul style="list-style: none; padding-left: 25px;" v-if="(item.type === 'block' && isOpen === true) || item.type === 'course'">
             <course-detail-structure-node v-for="(child, index) in item.children" :key="index" :item="child" @node-select="childNodeSelect"></course-detail-structure-node>
         </ul>
@@ -54,7 +64,8 @@
         },
         data: () => ({
             isOpen: false,
-            isSelected: false
+            isSelected: false,
+            objSelected: null
         }),
         watch: {
             isSelected (isSelected) {
@@ -78,6 +89,10 @@
             },
             childNodeSelect (node, isSelected) {
                 this.$emit("node-select", node, isSelected);
+            },
+            objectiveSelect (objKey) {
+                this.$emit("objective-select", objKey);
+                this.objSelected = objKey;
             }
         }
     };

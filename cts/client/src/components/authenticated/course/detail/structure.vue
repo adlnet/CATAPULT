@@ -17,7 +17,7 @@
     <b-row>
         <b-col cols="5">
             <ul style="list-style: none;">
-                <structure-node key="course" :item="structure.course" @node-select="nodeSelect"></structure-node>
+                <structure-node key="course" :item="structure.course" ref="courseStructureNode" @node-select="nodeSelect" @objective-select="objectiveSelect"></structure-node>
             </ul>
         </b-col>
         <b-col cols="7">
@@ -38,14 +38,20 @@
                         <h5>Properties</h5>
                         <b-table-simple small borderless striped class="detail-structure-node">
                             <b-tbody>
-                                <b-tr>
-                                    <b-td class="property-label">Publisher ID: </b-td>
+                                <b-tr v-if="selectedNode.item.type === 'objective'">
+                                    <b-td class="property-label">ID: </b-td>
                                     <b-td>{{ selectedNode.item.id }}</b-td>
                                 </b-tr>
-                                <b-tr>
-                                    <b-td class="property-label">LMS ID: </b-td>
-                                    <b-td>{{ selectedNode.item.lmsId }}</b-td>
-                                </b-tr>
+                                <template v-else>
+                                    <b-tr>
+                                        <b-td class="property-label">Publisher ID: </b-td>
+                                        <b-td>{{ selectedNode.item.id }}</b-td>
+                                    </b-tr>
+                                    <b-tr>
+                                        <b-td class="property-label">LMS ID: </b-td>
+                                        <b-td>{{ selectedNode.item.lmsId }}</b-td>
+                                    </b-tr>
+                                </template>
                                 <template v-if="selectedNode.item.type === 'au'">
                                     <b-tr>
                                         <b-td class="property-label">URL: </b-td>
@@ -125,17 +131,34 @@
         },
         methods: {
             nodeSelect (node, isSelected) {
-                this.$emit("nodeSelect", node, isSelected)
-
                 if (isSelected) {
                     if (this.selectedNode !== null) {
-                        this.selectedNode.deselect()
+                        this.selectedNode.deselect();
                     }
-                    this.selectedNode = node
+                    this.selectedNode = node;
                 }
                 else if (node === this.selectedNode) {
-                    this.selectedNode = null
+                    this.selectedNode = null;
                 }
+            },
+
+            objectiveSelect (objKey) {
+                if (this.selectedNode !== null) {
+                    this.selectedNode.deselect();
+                }
+
+                const self = this;
+
+                this.selectedNode = {
+                    item: {
+                        type: "objective",
+                        id: objKey,
+                        ...this.model.item.metadata.structure.course.objectives[objKey]
+                    },
+                    deselect: () => {
+                        self.$refs.courseStructureNode.objSelected = null;
+                    }
+                };
             }
         }
     };

@@ -54,13 +54,19 @@ const fs = require("fs"),
         return true;
     },
     validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
+        const result = [];
+
         for (const objElement of objectiveRefs.childNodes()) {
             const idref = objElement.attr("idref").value();
 
             if (! objectiveMap[idref]) {
                 throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
             }
+
+            result.push(idref);
         }
+
+        return result;
     },
     validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
         const result = {
@@ -98,7 +104,7 @@ const fs = require("fs"),
         );
 
         if (objectiveRefs) {
-            validateObjectiveRefs(objectiveRefs, objectiveMap);
+            result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
         }
 
         result.url = element.get("xmlns:url", schemaNS).text().trim();
@@ -156,7 +162,7 @@ const fs = require("fs"),
         );
 
         if (objectiveRefs) {
-            validateObjectiveRefs(objectiveRefs, objectiveMap);
+            result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
         }
 
         for (const child of element.childNodes()) {
@@ -169,8 +175,6 @@ const fs = require("fs"),
                 result.children.push(
                     validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
                 );
-            }
-            else if (child.name() === "objectives") {
             }
         }
 

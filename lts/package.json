@@ -22,11 +22,11 @@
   },
   "devDependencies": {
     "@rusticisoftware/cmi5": "^3.0.0",
-    "copy-webpack-plugin": "^9.0.0",
-    "eslint": "^7.29.0",
+    "copy-webpack-plugin": "^9.0.1",
+    "eslint": "^7.31.0",
     "eslint-webpack-plugin": "^2.5.4",
-    "html-webpack-plugin": "^5.3.1",
-    "webpack": "^5.38.1",
+    "html-webpack-plugin": "^5.3.2",
+    "webpack": "^5.45.1",
     "webpack-cli": "^4.7.2",
     "zip-webpack-plugin": "^4.0.1"
   }

@@ -10,7 +10,7 @@ module.exports = {
                 // make all of our custom variables available in the style
                 // blocks of all of the components without importing in each
                 //
-                prependData: `@import "~@/styles/custom-vars.scss";`
+                additionalData: `@import "~@/styles/custom-vars.scss";`
             }
         }
     },

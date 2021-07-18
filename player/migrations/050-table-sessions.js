@@ -43,6 +43,7 @@ exports.up = (knex) => knex.schema.createTable(
         table.boolean("is_failed").notNullable().default(false);
         table.boolean("is_terminated").notNullable().default(false);
         table.boolean("is_abandoned").notNullable().default(false);
+        table.enum("abandoned_by", ["new-launch", "api"]);
         table.integer("duration_normal").unsigned();
         table.integer("duration_browse").unsigned();
         table.integer("duration_review").unsigned();

@@ -20,15 +20,18 @@ const Boom = require("@hapi/boom"),
     Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
-    getClientSafeReg = (registration, playerResponseBody) => {
+
+    // sessions is optional because we know calling this from registration creation
+    // will never have any sessions
+    getClientSafeReg = (registration, playerResponseBody, sessionsByAu = []) => {
         const result = Hoek.clone(registration);
 
         delete result.playerId;
 
         result.metadata.actor = playerResponseBody.actor;
         result.metadata.isSatisfied = playerResponseBody.isSatisfied;
-        result.metadata.aus = playerResponseBody.aus;
         result.metadata.moveOn = playerResponseBody.metadata.moveOn;
+        result.metadata.aus = playerResponseBody.aus;
 
         let pending = 0,
             notStarted = 0,
@@ -36,8 +39,12 @@ const Boom = require("@hapi/boom"),
             nonConformant = 0;
 
         result.metadata.aus.forEach(
-            (au) => {
-                if (au.hasBeenAttempted && au.isSatisfied && ! au.isWaived) {
+            (au, index) => {
+                if (sessionsByAu[index] && sessionsByAu[index].some((session) => session.metadata.violatedReqIds.length > 0)) {
+                    au.result = "non-conformant";
+                    nonConformant += 1;
+                }
+                else if (au.hasBeenAttempted && au.isSatisfied && ! au.isWaived) {
                     au.result = "conformant";
                     conformant += 1;
                 }
@@ -251,8 +258,16 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to get player registration details (${response.statusCode}): ${responseBody.message}${responseBody.srcError ? " (" + responseBody.srcError + ")" : ""}`));
                         }
 
+                        const sessions = await db.select("id", "au_index", "metadata").from("sessions").where({registrationId: id, tenantId}).queryContext({jsonCols: ["metadata"]}).orderBy("au_index"),
+                            sessionsByAu = [];
+
+                        for (const session of sessions) {
+                            sessionsByAu[session.auIndex] = sessionsByAu[session.auIndex] || [];
+                            sessionsByAu[session.auIndex].push(session);
+                        }
+
                         const currentCachedResult = registrationFromSelect.metadata.result,
-                            registration = getClientSafeReg(registrationFromSelect, responseBody);
+                            registration = getClientSafeReg(registrationFromSelect, responseBody, sessionsByAu);
 
                         //
                         // check to see if the test result determined from the newly updated player

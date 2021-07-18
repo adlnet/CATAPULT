@@ -464,6 +464,14 @@ const Boom = require("@hapi/boom"),
                                 registrationCourseAuUpdates = registrationCourseAuUpdates || {};
                                 registrationCourseAuUpdates.has_been_attempted = true;
                             }
+                            else if (! regCourseAu.has_been_browsed && session.launch_mode === "Browse") {
+                                registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                                registrationCourseAuUpdates.has_been_browsed = true;
+                            }
+                            else if (! regCourseAu.has_been_reviewed && session.launch_mode === "Review") {
+                                registrationCourseAuUpdates = registrationCourseAuUpdates || {};
+                                registrationCourseAuUpdates.has_been_reviewed = true;
+                            }
 
                             break;
 

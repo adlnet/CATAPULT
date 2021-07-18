@@ -143,7 +143,7 @@ module.exports = {
                                     createdAt: row.courses.created_at,
                                     metadata: row.courses.metadata,
                                     lastTested: row.mostRecentTest.tested_at,
-                                    testResult: row.registrations.metadata.result,
+                                    testResult: row.registrations.metadata ? row.registrations.metadata.result : "not-started",
                                     testId: row.registrations.id
                                 })
                             )

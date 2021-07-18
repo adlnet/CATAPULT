@@ -21,6 +21,7 @@ const stream = require("stream"),
     Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
+    Requirements = require("@cmi5/requirements"),
     sessions = {},
     getClientSafeSession = (session) => {
         delete session.playerId;
@@ -170,7 +171,8 @@ module.exports = {
                                     metadata: JSON.stringify(
                                         {
                                             version: 1,
-                                            launchMethod: createResponseBody.launchMethod
+                                            launchMethod: createResponseBody.launchMethod,
+                                            violatedReqIds: []
                                         }
                                     )
                                 }
@@ -432,6 +434,11 @@ module.exports = {
                     ],
                     path: "/sessions/{id}/lrs/{resource*}",
                     options: {
+                        //
+                        // since this is effectively acting as a proxy this route doesn't use
+                        // direct authorization, it instead relies on the player's underlying
+                        // handling to handle invalid authorization attempts
+                        //
                         auth: false,
                         cors: false
                     },
@@ -443,20 +450,22 @@ module.exports = {
                     // settings that weren't being used anyways
                     //
                     handler: async (req, h) => {
-                        const db = req.server.app.db;
+                        const db = req.server.app.db,
+                            id = req.params.id;
                         let session;
 
                         try {
-                            session = await db.first("*").from("sessions").where({id: req.params.id});
+                            session = await db.first("*").from("sessions").where({id}).queryContext({jsonCols: ["metadata"]});
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
                         }
 
                         if (! session) {
-                            throw Boom.notFound(`session: ${req.params.id}`);
+                            throw Boom.notFound(`session: ${id}`);
                         }
 
+                        const tenantId = session.tenantId;
                         let proxyResponse,
                             rawProxyResponsePayload,
                             response;
@@ -494,7 +503,7 @@ module.exports = {
                                     const parsedPayload = JSON.parse(rawProxyResponsePayload.toString());
 
                                     if (typeof parsedPayload.returnURL !== "undefined") {
-                                        parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", req.params.id);
+                                        parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", id);
                                     }
 
                                     // altering the body means the content length would be off,
@@ -523,59 +532,49 @@ module.exports = {
                             throw ex;
                         }
 
-                        if (proxyResponse.statusCode !== 200 && proxyResponse.statusCode !== 204) {
+                        if (proxyResponse.statusCode !== 200 && proxyResponse.statusCode !== 204 && proxyResponse.headers["content-type"].startsWith("application/json")) {
                             const proxyResponsePayloadAsString = rawProxyResponsePayload.toString();
-
                             let proxyResponsePayload;
 
                             try {
                                 proxyResponsePayload = JSON.parse(proxyResponsePayloadAsString);
-
-                                if (typeof proxyResponsePayload.violatedReqId !== "undefined") {
-                                }
                             }
                             catch (ex) {
-                                console.log(`Failed JSON parse of LRS response error: ${ex}`);
+                                console.log(`Failed JSON parse of LRS response error: ${ex} (${proxyResponsePayloadAsString})`);
+                            }
+
+                            if (proxyResponsePayload && typeof proxyResponsePayload.violatedReqId !== "undefined") {
+                                session.metadata.violatedReqIds.push(proxyResponsePayload.violatedReqId);
+
+                                try {
+                                    await db("sessions").update({metadata: JSON.stringify(session.metadata)}).where({id, tenantId});
+                                }
+                                catch (ex) {
+                                    console.log(`Failed to update session for violated spec requirement (${proxyResponsePayload.violatedReqId}): ${ex}`);
+                                }
+
+                                await h.sessionEvent(id, tenantId, db, {kind: "lrs", violatedReqId: proxyResponsePayload.violatedReqId, summary: `Spec requirement violated`});
                             }
                         }
 
                         if (req.method === "get") {
                             if (req.params.resource === "activities/state") {
                                 if (req.query.stateId === "LMS.LaunchData") {
-                                    await h.sessionEvent(
-                                        req.params.id,
-                                        session.tenantId,
-                                        db,
-                                        {
-                                            kind: "lrs",
-                                            method: req.method,
-                                            resource: req.params.resource,
-                                            summary: "LMS Launch Data retrieved",
-                                            summaryDetail: [
-                                                response.source.contextTemplate !== null ? "contextTemplate confirmed" : "contextTemplate not present",
-                                                response.source.launchMode !== null ? "launchMode confirmed" : "launchMode not present",
-                                                response.source.launchMethod !== null ? "launchMethod confirmed" : "launchMethod not present",
-                                                response.source.launchParameters !== null ? "launchParameters confirmed" : "launchParameters not present",
-                                                response.source.entitlementKey !== null ? "entitlementKey confirmed" : "entitlementKey not present",
-                                                response.source.moveOn !== null ? "moveOn confirmed" : "moveOn not present",
-                                                response.source.returnUrl !== null ? "returnUrl confirmed" : "returnUrl not present"
-                                            ]
-                                        }
-                                    )
+                                    await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "LMS Launch Data retrieved"});
                                 }
                             }
                             else if (req.params.resource === "activities") {
                                 if (req.query.activityId !== null) {
-                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
+                                    await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Activity " + req.query.activityId + " retrieved"});
                                 }
                             }
                             else if (req.params.resource === "agents/profile") {
                                 if (req.query.profileId === "cmi5LearnerPreferences") {
-                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
+                                    await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Learner Preferences Agent Profile Retrieved"});
                                 }
                             }
                             else {
-                                await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
+                                await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: "Unknown"});
                             }
                         }
                         else if (req.method === "put" || req.method === "post") {
@@ -588,11 +587,11 @@ module.exports = {
                                     }
 
                                     for (const st of statements) {
-                                        await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement recorded: ${st.verb.id}`});
+                                        await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement recorded: ${st.verb.id}`});
                                     }
                                 }
                                 else {
-                                    await h.sessionEvent(req.params.id, session.tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement(s) rejected: ${proxyResponse.statusCode}`});
+                                    await h.sessionEvent(id, tenantId, db, {kind: "lrs", method: req.method, resource: req.params.resource, summary: `Statement(s) rejected: ${proxyResponse.statusCode}`});
                                 }
                             }
                         }

@@ -27,6 +27,8 @@ exports.up = (knex) => knex.schema.createTable(
         table.integer("registration_id").unsigned().notNullable().references("id").inTable("registrations").onUpdate("CASCADE").onDelete("CASCADE");
 
         table.boolean("has_been_attempted").notNullable().default(false);
+        table.boolean("has_been_browsed").notNullable().default(false);
+        table.boolean("has_been_reviewed").notNullable().default(false);
         table.integer("duration_normal").unsigned();
         table.integer("duration_browse").unsigned();
         table.integer("duration_review").unsigned();

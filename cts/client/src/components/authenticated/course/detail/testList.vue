@@ -39,7 +39,7 @@
                     </b-link>
                 </template>
                 <template #cell(result)="data">
-                    <test-status :status="data.value" />
+                    <test-status :status="data.item.metadata.result" />
                 </template>
                 <template #cell(updatedAt)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">

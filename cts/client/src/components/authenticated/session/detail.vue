@@ -68,7 +68,16 @@
                         <h5>Event Log</h5>
                         <ul>
                             <li v-for="(event, index) in logs.items" :key="index">
-                                {{ event.metadata.summary }}
+                                <template v-if="event.metadata.violatedReqId">
+                                    Spec requirement violated: <span :id="`violated-req-id-${index}`">{{ event.metadata.violatedReqId }}</span>
+
+                                    <b-popover :target="`violated-req-id-${index}`" :title="event.metadata.violatedReqId" triggers="hover" placement="bottomleft">
+                                        {{ requirements[event.metadata.violatedReqId].txt || `Unrecognized requirement id: ${event.metadata.violatedReqId}` }}
+                                    </b-popover>
+                                </template>
+                                <template v-else>
+                                    {{ event.metadata.summary }}
+                                </template>
                             </li>
                         </ul>
                     </b-col>
@@ -87,6 +96,7 @@
 <script>
     import Vuex from "vuex";
     import alerts from "@/components/alerts";
+    import requirements from "@cmi5/requirements";
 
     export default {
         name: "SessionDetail",
@@ -101,7 +111,8 @@
         },
         data: () => ({
             launchUrl: null,
-            openWindowFailure: false
+            openWindowFailure: false,
+            requirements
         }),
         computed: {
             model () {

@@ -75,7 +75,7 @@ module.exports = Session = {
         return {session, regCourseAu, registration, courseAu};
     },
 
-    abandon: async (sessionId, tenantId, {db, lrsWreck}) => {
+    abandon: async (sessionId, tenantId, by, {db, lrsWreck}) => {
         const txn = await db.transaction();
         let session,
             regCourseAu,
@@ -179,7 +179,7 @@ module.exports = Session = {
         }
 
         try {
-            await txn("sessions").update({is_abandoned: true}).where({id: session.id, tenantId});
+            await txn("sessions").update({is_abandoned: true, abandoned_by: by}).where({id: session.id, tenantId});
         }
         catch (ex) {
             await txn.rollback();

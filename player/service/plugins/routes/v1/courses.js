@@ -681,7 +681,7 @@ module.exports = {
 
                         if (openSessions) {
                             for (const session of openSessions) {
-                                await Session.abandon(session.id, tenantId, {db, lrsWreck});
+                                await Session.abandon(session.id, tenantId, "new-launch", {db, lrsWreck});
                             }
                         }
 

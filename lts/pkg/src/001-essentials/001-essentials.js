@@ -544,7 +544,19 @@ const execute = async () => {
         }
 
         if (launchDataContent.returnURL) {
-            window.document.location.href = launchDataContent.returnURL;
+            const returnUrlBtn = document.createElement("button");
+
+            returnUrlBtn.id = "returnURL";
+            returnUrlBtn.innerHTML = "Click to load LMS returnURL";
+
+            returnUrlBtn.addEventListener(
+                "click",
+                () => {
+                    window.document.location.href = launchDataContent.returnURL;
+                }
+            );
+
+            document.body.appendChild(returnUrlBtn);
         }
 
         Helpers.storeResult(

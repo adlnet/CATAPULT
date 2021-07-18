@@ -1,2 +1,3 @@
 .env
 var
+lib/lms.custom.js

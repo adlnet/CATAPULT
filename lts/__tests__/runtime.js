@@ -68,7 +68,7 @@ describe(
                 beforeAll(async () => {
                     try {
                         regStatements = await Helpers.fetchStatements({registration: result.registration});
-                        sessionId = regStatements[0].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"];
+                        sessionId = result.sessionId;
                     }
                     catch (ex) {
                         throw new Error(`Failed to do post session verification: ${ex}`);
@@ -102,6 +102,9 @@ describe(
                 });
 
                 // validate elements of the launched statement
+                test(Helpers.describeReq("9.6.3.1-3"), () => {
+                    expect(regStatements[0].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"]).toBe(sessionId);
+                });
                 test(Helpers.describeReq("9.6.3.2-1"), () => {
                     expect(regStatements[0].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/masteryscore"]).toBe(result.masteryScore);
                 });
@@ -134,7 +137,7 @@ describe(
                     expect(regStatements[4].object.definition.type).toBe("https://w3id.org/xapi/cmi5/activitytype/block");
                 });
                 test(Helpers.describeReq("9.3.9.0-4"), () => {
-                    expect(regStatements[4].object.id).not.toBe("https://w3id.org/xapi/cmi5/catapult/lts/au/001-essentials");
+                    expect(regStatements[4].object.id).not.toBe("https://w3id.org/xapi/cmi5/catapult/lts/block/001-essentials");
                 });
                 test(Helpers.describeReq("9.3.9.0-5"), () => {
                     expect(regStatements[5].verb.id).toBe("https://w3id.org/xapi/adl/verbs/satisfied");

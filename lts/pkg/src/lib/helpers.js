@@ -17,7 +17,7 @@ import Cmi5 from "@rusticisoftware/cmi5";
 
 const Helpers = {
     storeResult: (success, isError, addtl = {}) => {
-        const resultElement = document.createElement("div");
+        const resultElement = document.createElement("pre");
 
         resultElement.id = "result";
 
@@ -26,7 +26,9 @@ const Helpers = {
                 success,
                 isError,
                 ...addtl
-            }
+            },
+            null,
+            4 // eslint-disable-line no-magic-numbers
         );
 
         document.body.appendChild(resultElement);

@@ -70,6 +70,7 @@
         &::first-letter {
             color: $primary;
         }
+        min-width: 230px;
     }
 
     .about {

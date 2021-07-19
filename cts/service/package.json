@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Web service to support the Catapult CTS UI",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adlnet/CATAPULT.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

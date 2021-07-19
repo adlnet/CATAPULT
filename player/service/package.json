@@ -1,9 +1,13 @@
 {
   "name": "catapult-player-service",
   "version": "1.0.0",
-  "description": "",
+  "description": "Web service implementing a cmi5 launching system to be integrated with an LMS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adlnet/CATAPULT.git"
+  },
   "config": {
-    "port": "3399"
+    "port": "3398"
   },
   "nodemonConfig": {
     "watch": [

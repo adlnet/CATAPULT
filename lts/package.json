@@ -2,6 +2,10 @@
   "name": "catapult-lts",
   "version": "1.0.0",
   "description": "Catapult LMS testing system",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adlnet/CATAPULT.git"
+  },
   "scripts": {
     "test": "jest"
   },

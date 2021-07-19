@@ -1,6 +1,11 @@
 {
   "name": "catapult-cts-client",
   "version": "1.0.0",
+  "description": "Catapult CTS UI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adlnet/CATAPULT.git"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",

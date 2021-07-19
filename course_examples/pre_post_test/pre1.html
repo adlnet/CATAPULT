@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Whole-Earth Structure</title>
+    <link rel="stylesheet" href="style/framed.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div id="container" class="container">
+    <div id="design" class="design">
+        <div class="header" role="banner">
+            <div class="header-title">Introduction to Geology</div>
+            <div class="header-buttons">
+                <div class="navexit">
+                    <button href="#" class="exit-button">Exit</button>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="navigation" role="navigation">
+                <div class="navmenu" id="navmenu">
+                    <ul id="navmenuitems">
+                    </ul>
+                </div>
+            </div>
+            <div id="content" class="content" role="main">
+                <!-- Content will be loaded in here. -->
+            </div>
+        </div>
+        <div class="footer">
+            <div class="footer-title"></div>
+            <div class="footer-buttons">
+                <button id="prev">&laquo; Previous</button>
+                <button id="next">Next &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scorepanel">
+        <div class="scorepanelcontent">
+            <div>Your final score is: <span id="scorepanelscore"></span></div>
+            <button class="exit-button">Exit the Course</button>
+        </div>
+    </div>
+</div>
+
+<script id="pagequiz" class="contentpage" type="text/template" data-title="Quiz" data-questions="2"
+        data-quiz-id="quiz1">
+    <div class="quiz" role="form">
+        <div class="title">
+            Questions
+            <a href="#" onclick="course.autopass()" style="color: green;">&check;</a>
+            <a href="#" onclick="course.autofail()" style="color: red;">&cross;</a>
+            <div class="titleunderbar"></div>
+        </div>
+        <div class="bodycontent">
+            <label for="q0" id="q0-question">How many major types of rock are there?</label>
+            <input type="text" id="q0" name="q0" data-answer="3">
+        </div>
+        <div class="bodycontent">
+            <label for="q1" id="q1-question">What is the outermost layer of the earth's structure?</label>
+            <select name="q1" id="q1">
+                <option value="lower_mantle">Lower mantle</option>
+                <option value="crust" data-correct="yes">Crust</option>
+                <option value="upper_mantle">Upper mantle</option>
+                <option value="outer_core">Outer core</option>
+            </select>
+        </div>
+        <div class="bodycontent">
+            <button onclick="course.submitAnswers()">Submit Answers</button>
+        </div>
+    </div>
+</script>
+
+<script src="js/cmi5.js"></script>
+<script src="js/course_cmi5.js"></script>
+<script src="js/course.js"></script>
+<script type="text/javascript">
+    let course;
+
+    (function () {
+        let queryParams = new URLSearchParams(document.location.search.substring(1));
+        course = new Course({
+            completionBehavior: "quiz",
+            enableBookmarking: true,
+            navigateOnLaunch: true,
+            navigationInjectIntoContent: false,
+            trackingPlugin: new CourseCmi5Plugin()
+        });
+
+        document.getElementById("next").addEventListener("click", function () {
+            course.nextPage();
+        });
+        document.getElementById("prev").addEventListener("click", function () {
+            course.previousPage();
+        });
+        document.addEventListener("click", function (e) {
+            // Capture all exit buttons.
+            if (e.target && e.target.matches(".exit-button")) {
+                course.exit();
+            }
+            // Capture navigation menu item interactions.
+            if (e.target && e.target.matches(".navmenuitem")) {
+                course.gotoPage(e.target.dataset.pageidx);
+            }
+        });
+    })();
+</script>
+
+<script type="text/javascript">
+    /* Resizing code start. */
+    let pageWidth = 800,
+        pageHeight = 600,
+        basePage = {
+            width: 800,
+            height: 600,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+    const $page = document.getElementById('design');
+    const $container = document.getElementById('container');
+
+    getPageSize();
+    scalePages($page, pageWidth, pageHeight);
+
+    //using underscore to delay resize method till finished resizing window
+    window.addEventListener("resize", function () {
+        getPageSize();
+        scalePages($page, pageWidth, pageHeight);
+    });
+
+    function getPageSize() {
+        pageHeight = $container.clientHeight;
+        pageWidth = $container.clientWidth;
+    }
+
+    function scalePages(page, maxWidth, maxHeight) {
+        let scaleX = 1, scaleY = 1;
+        scaleX = maxWidth / basePage.width;
+        scaleY = maxHeight / basePage.height;
+        basePage.scaleX = scaleX;
+        basePage.scaleY = scaleY;
+        basePage.scale = (scaleX > scaleY) ? scaleY : scaleX;
+
+        const newLeftPos = Math.abs(Math.floor(((basePage.width * basePage.scale) - maxWidth) / 2));
+        const newTopPos = Math.abs(Math.floor(((basePage.height * basePage.scale) - maxHeight) / 2));
+
+        page.style.transform = "scale(" + basePage.scale + ")";
+        page.style.left = newLeftPos + 'px';
+        page.style.top = newTopPos + 'px';
+    }
+    /* Resizing code end */
+</script>
+</body>
+</html>

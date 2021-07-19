@@ -17,3 +17,7 @@ The `lts/` contains the implementation of a test suite used to validate the impl
 ## Requirements
 
 The artifact of `requirements/` is a JSON file that can be leveraged by systems to easily map from requirement identifiers to the specification language. It is made publicly available via [npm's public registry](https://www.npmjs.com/package/@cmi5/requirements).
+
+## Course Examples
+
+The `course_examples/` is a collection of cmi5 course packages modelling potential approaches to various aspects of cmi5 implementation for content.

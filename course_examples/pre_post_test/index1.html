@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Introduction to Geology</title>
+    <link rel="stylesheet" href="style/framed.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div id="container" class="container">
+    <div id="design" class="design">
+        <div class="header" role="banner">
+            <div class="header-title">Introduction to Geology</div>
+            <div class="header-buttons">
+                <div class="navexit">
+                    <button href="#" class="exit-button">Exit</button>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="navigation" role="navigation">
+                <div class="navmenu" id="navmenu">
+                    <ul id="navmenuitems">
+                    </ul>
+                </div>
+            </div>
+            <div id="content" class="content" role="main">
+                <!-- Content will be loaded in here. -->
+            </div>
+        </div>
+        <div class="footer">
+            <div class="footer-title"></div>
+            <div class="footer-buttons">
+                <button id="prev">&laquo; Previous</button>
+                <button id="next">Next &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scorepanel">
+        <div class="scorepanelcontent">
+            <div>Your final score is: <span id="scorepanelscore"></span></div>
+            <button class="exit-button">Exit the Course</button>
+        </div>
+    </div>
+</div>
+
+<script id="page1" class="contentpage" type="text/template" data-title="Introduction to Geology">
+    <div class="title">
+        Introduction to Geology
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="bodycontent">
+        <p>Geology (from the Ancient Greek γῆ, gē ("earth") and -λoγία, -logia, ("study of", "discourse")) is an
+            Earth science concerned with the solid Earth, the rocks of which it is composed, and the processes by which
+            they change over time. Geology can also include the study of the solid features of any terrestrial planet or
+            natural satellite such as Mars or the Moon. Modern geology significantly overlaps all other Earth sciences,
+            including hydrology and the atmospheric sciences, and so is treated as one major aspect of integrated Earth
+            system science and planetary science.</p>
+    </div>
+
+    <div class="bodyvideo">
+        <div style="width: 100%; position: relative;">
+            <video data-objectid="https://example.com/vid/id1924" data-name="Mountains">
+                <source src="video/mountains_31175.mp4">
+            </video>
+            <div class="video-start-overlay">
+                <div class="msg">(click or tap here to play and pause the video)</div>
+            </div>
+            <div class="video-complete-overlay hidden">
+                <div class="msg">Video completed and recorded.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bodycontent">
+        <p>Geology describes the structure of the Earth on and beneath its surface, and the processes that have shaped
+            that structure. It also provides tools to determine the relative and absolute ages of rocks found in a given
+            location, and also to describe the histories of those rocks. By combining these tools, geologists are
+            able to chronicle the geological history of the Earth as a whole, and also to demonstrate the age of the
+            Earth. Geology provides the primary evidence for plate tectonics, the evolutionary history of life, and the
+            Earth's past climates.
+        </p>
+
+        <p>
+            Geologists use a wide variety of methods to understand the Earth's structure and evolution, including field
+            work, rock description, geophysical techniques, chemical analysis, physical experiments, and numerical
+            modelling. In practical terms, geology is important for mineral and hydrocarbon exploration and
+            exploitation, evaluating water resources, understanding of natural hazards, the remediation of environmental
+            problems, and providing insights into past climate change. Geology is a major academic discipline, and it
+            plays an important role in geotechnical engineering.
+        </p>
+
+        <p style="color: gray;">
+            (This course uses material from the Wikipedia article
+            <a href="https://en.wikipedia.org/wiki/Geology" target="_blank">"Geology"</a>, which is released under the
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Creative Commons
+                Attribution-Share-Alike License 3.0</a>.)
+        </p>
+    </div>
+</script>
+
+<script src="js/cmi5.js"></script>
+<script src="js/course_cmi5.js"></script>
+<script src="js/course.js"></script>
+<script type="text/javascript">
+    let course;
+
+    (function () {
+        let queryParams = new URLSearchParams(document.location.search.substring(1));
+        course = new Course({
+            completionBehavior: "launch",
+            enableBookmarking: true,
+            navigateOnLaunch: true,
+            navigationInjectIntoContent: false,
+            trackingPlugin: new CourseCmi5Plugin()
+        });
+
+        document.getElementById("next").addEventListener("click", function () {
+            course.nextPage();
+        });
+        document.getElementById("prev").addEventListener("click", function () {
+            course.previousPage();
+        });
+        document.addEventListener("click", function (e) {
+            // Capture all exit buttons.
+            if (e.target && e.target.matches(".exit-button")) {
+                course.exit();
+            }
+            // Capture navigation menu item interactions.
+            if (e.target && e.target.matches(".navmenuitem")) {
+                course.gotoPage(e.target.dataset.pageidx);
+            }
+        });
+    })();
+</script>
+
+<script type="text/javascript">
+    /* Resizing code start. */
+    let pageWidth = 800,
+        pageHeight = 600,
+        basePage = {
+            width: 800,
+            height: 600,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+    const $page = document.getElementById('design');
+    const $container = document.getElementById('container');
+
+    getPageSize();
+    scalePages($page, pageWidth, pageHeight);
+
+    //using underscore to delay resize method till finished resizing window
+    window.addEventListener("resize", function () {
+        getPageSize();
+        scalePages($page, pageWidth, pageHeight);
+    });
+
+    function getPageSize() {
+        pageHeight = $container.clientHeight;
+        pageWidth = $container.clientWidth;
+    }
+
+    function scalePages(page, maxWidth, maxHeight) {
+        let scaleX = 1, scaleY = 1;
+        scaleX = maxWidth / basePage.width;
+        scaleY = maxHeight / basePage.height;
+        basePage.scaleX = scaleX;
+        basePage.scaleY = scaleY;
+        basePage.scale = (scaleX > scaleY) ? scaleY : scaleX;
+
+        const newLeftPos = Math.abs(Math.floor(((basePage.width * basePage.scale) - maxWidth) / 2));
+        const newTopPos = Math.abs(Math.floor(((basePage.height * basePage.scale) - maxHeight) / 2));
+
+        page.style.transform = "scale(" + basePage.scale + ")";
+        page.style.left = newLeftPos + 'px';
+        page.style.top = newTopPos + 'px';
+    }
+    /* Resizing code end */
+</script>
+</body>
+</html>

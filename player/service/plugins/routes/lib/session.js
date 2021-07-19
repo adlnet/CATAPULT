@@ -21,6 +21,22 @@ const Boom = require("@hapi/boom"),
 let Session;
 
 module.exports = Session = {
+    load: async (sessionId, tenantId, {db}) => {
+        let session;
+
+        try {
+            session = await db.first("*").from("sessions").where(function () {
+                    this.where("sessions.id", sessionId).orWhere("sessions.code", sessionId);
+                })
+                .queryContext({jsonCols: ["context_template"]});
+        }
+        catch (ex) {
+            throw new Error(`Failed to select session: ${ex}`);
+        }
+
+        return session;
+    },
+
     loadForChange: async (txn, sessionId, tenantId) => {
         let queryResult;
 

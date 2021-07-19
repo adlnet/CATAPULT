@@ -25,6 +25,23 @@ module.exports = {
         server.route(
             [
                 {
+                    method: "GET",
+                    path: "/session/{id}",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        const result = await Session.load(req.params.id, req.auth.credentials.tenantId, {db: req.server.app.db});
+
+                        if (! result) {
+                            return Boom.notFound();
+                        }
+
+                        return result;
+                    }
+                },
+
+                {
                     method: "POST",
                     path: "/session/{id}/abandon",
                     options: {

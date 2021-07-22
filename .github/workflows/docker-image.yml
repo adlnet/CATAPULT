@@ -32,4 +32,4 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
         projectBaseDir: "./player/"
-        entryPoint: "/player"
+        entryPoint: "./player/"

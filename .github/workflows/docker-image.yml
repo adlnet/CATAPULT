@@ -18,6 +18,7 @@ jobs:
       run: docker build ./player --file ./player/Dockerfile --tag player-image:$(date +%s)
       
   sonarqube:
+    environment: pipeline-environment
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

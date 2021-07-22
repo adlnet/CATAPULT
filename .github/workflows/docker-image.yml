@@ -30,6 +30,9 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      #with:
-      #  projectBaseDir: "."
-      #  entryPoint: "/player"
+      with:
+        projectBaseDir: /player
+        args: >
+          -Dsonar.host.url=https://tla-dev-lrs.usalearning.net/sonar
+          -Dsonar.projectKey=player
+          -Dsonar.verbose=true

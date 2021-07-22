@@ -35,3 +35,5 @@ jobs:
         args: >
           -Dsonar.projectKey=player
           -Dsonar.verbose=true
+          -Dsonar.host.url=https://tla-dev-lrs.usalearning.net/sonar
+          -Dsonar.login=2163e8e212a9b11d25d487e051df2453a7659358

@@ -33,6 +33,5 @@ jobs:
       with:
         projectBaseDir: /player
         args: >
-          -Dsonar.host.url=https://tla-dev-lrs.usalearning.net/sonar
           -Dsonar.projectKey=player
           -Dsonar.verbose=true

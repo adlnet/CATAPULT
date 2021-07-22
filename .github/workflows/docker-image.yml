@@ -32,6 +32,4 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
         projectBaseDir: "./player/"
-        projectKey: "player"
-        projectName: "player"
-        projectVersion: "v0.0.1"
+        entryPoint: "/player"

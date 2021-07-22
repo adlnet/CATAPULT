@@ -21,7 +21,7 @@ jobs:
         debug: true
         acs-report-enable: true
     - name: grype scan JSON results
-      run: ls; for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
+      run: cat results.sarif; cat vulnerabilities.json; for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
       
   sonarqube:
     environment: pipeline-environment

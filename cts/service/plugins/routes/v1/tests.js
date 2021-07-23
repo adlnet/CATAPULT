@@ -20,6 +20,7 @@ const Boom = require("@hapi/boom"),
     Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
+    iri = require("iri"),
 
     // sessions is optional because we know calling this from registration creation
     // will never have any sessions
@@ -117,7 +118,16 @@ module.exports = {
                                 actor: Joi.object({
                                     account: Joi.object({
                                         name: Joi.string().required(),
-                                        homePage: Joi.string().required()
+                                        homePage: Joi.string().required().custom((value, helpers) => {
+                                            try {
+                                                new iri.IRI(value).toAbsolute();
+                                            }
+                                            catch (ex) {
+                                                throw new Error("account homepage must be a valid IRI");
+                                            }
+
+                                            return value;
+                                        })
                                     }).required(),
                                     objectType: Joi.any().allow("Agent").optional(),
                                     name: Joi.string().optional()

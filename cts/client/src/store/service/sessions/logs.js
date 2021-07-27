@@ -15,6 +15,7 @@
 */
 /* globals TextDecoderStream, TransformStream */
 import Vue from "vue";
+import "@stardazed/streams-polyfill";
 
 const initialState = () => ({
     cacheContainer: {}

@@ -94,7 +94,7 @@ module.exports = {
                         validate: {
                             payload: Joi.object({
                                 reason: Joi.string().required()
-                            }).label("Request-WaiveAU")
+                            }).required().label("Request-WaiveAU")
                         }
                     },
                     handler: async (req, h) => {

@@ -432,7 +432,7 @@ const Boom = require("@hapi/boom"),
                         throw Helpers.buildViolatedReqId("11.0.0.0-5", "'audioPreference' property missing");
                     }
 
-                    if (! /^[-A-Za-z0-9]+(?:,[-A-Za-z0-9])*$/.test(req.payload.languagePreference)) {
+                    if (! /^[-A-Za-z0-9]+(?:,[-A-Za-z0-9]+)*$/.test(req.payload.languagePreference)) {
                         throw Helpers.buildViolatedReqId("11.1.0.0-1", `'languagePreference' value invalid: '${req.payload.languagePreference}'`);
                     }
 

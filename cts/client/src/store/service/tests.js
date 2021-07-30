@@ -29,6 +29,12 @@ const initialState = () => ({
         errMsg: null
     }),
     populateItem = (item) => {
+        item.learnerPrefs = {
+            _etag: null,
+            languagePreference: "",
+            audioPreference: null
+        };
+
         return item;
     };
 
@@ -180,7 +186,7 @@ export default {
                         Vue.set(
                             state.detailCache,
                             i.id,
-                            wrapItem(i, {loaded: true})
+                            wrapItem(populateItem(i), {loaded: true})
                         );
                     }
                 }
@@ -266,6 +272,118 @@ export default {
             }
             catch (ex) {
                 dispatch("alert", {content: `Failed to waive AU: ${ex}`, kind: "testDetail"});
+            }
+        },
+
+        loadLearnerPrefs: async ({getters, dispatch, rootGetters}, {id}) => {
+            try {
+                const test = getters.byId({id}),
+                    response = await rootGetters["service/makeApiRequest"](
+                        `tests/${id}/learner-prefs`,
+                        {
+                            method: "GET"
+                        }
+                    );
+
+                if (response.status === 404) {
+                    test.item.learnerPrefs._etag = null;
+                    test.item.learnerPrefs.languagePreference = "";
+                    test.item.learnerPrefs.audioPreference = null;
+
+                    return;
+                }
+
+                let responseBody = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                }
+
+                test.item.learnerPrefs._etag = response.headers.get("etag") || null;
+                test.item.learnerPrefs.languagePreference = responseBody.languagePreference;
+                test.item.learnerPrefs.audioPreference = responseBody.audioPreference;
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to load learner preferences: ${ex}`, kind: "testDetail"});
+            }
+        },
+
+        saveLearnerPrefs: async ({getters, dispatch, rootGetters}, {id}) => {
+            const test = getters.byId({id});
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    `tests/${id}/learner-prefs`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...(test.item.learnerPrefs._etag === null ? {"If-None-Match": "*"} : {"If-Match": test.item.learnerPrefs._etag})
+                        },
+                        body: JSON.stringify({
+                            languagePreference: test.item.learnerPrefs.languagePreference,
+                            audioPreference: test.item.learnerPrefs.audioPreference
+                        })
+                    }
+                );
+
+                if (response.status === 204) {
+                    //
+                    // after successfully saving the preferences the Etag is out of date, and rather than
+                    // trying to calculate it client side for the new value, just fetch the preferences
+                    // again to get the new Etag
+                    //
+                    dispatch("loadLearnerPrefs", {id});
+
+                    dispatch("alert", {content: `Agent preferences saved`, kind: "testDetail", variant: "success"});
+
+                    return;
+                }
+
+                let responseBody = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                }
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to save learner preferences: ${ex}`, kind: "testDetail"});
+            }
+        },
+
+        clearLearnerPrefs: async ({getters, dispatch, rootGetters}, {id}) => {
+            const test = getters.byId({id});
+
+            try {
+                const response = await rootGetters["service/makeApiRequest"](
+                    `tests/${id}/learner-prefs`,
+                    {
+                        method: "DELETE",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "If-Match": test.item.learnerPrefs._etag
+                        }
+                    }
+                );
+
+                if (response.status === 204) {
+                    test.item.learnerPrefs.languagePreference = "";
+                    test.item.learnerPrefs.audioPreference = null;
+                    test.item.learnerPrefs._etag = null;
+
+                    dispatch("alert", {content: `Agent preferences cleared`, kind: "testDetail", variant: "success"});
+
+                    return;
+                }
+
+                let responseBody = await response.json();
+
+                if (! response.ok) {
+                    throw new Error(`Request failed: ${responseBody.message ? responseBody.message : "no message"} (${response.status}${responseBody.srcError ? " - " + responseBody.srcError : ""})`);
+                }
+            }
+            catch (ex) {
+                dispatch("alert", {content: `Failed to clear learner preferences: ${ex}`, kind: "testDetail"});
             }
         }
     }

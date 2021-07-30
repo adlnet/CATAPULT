@@ -230,6 +230,176 @@ module.exports = {
 
                         return null;
                     }
+                },
+
+                {
+                    method: "GET",
+                    path: "/registration/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"],
+                        cors: {
+                            additionalExposedHeaders: ["Etag"]
+                        }
+                    },
+                    handler: async (req, h) => {
+                        // the registrationId could be either the id or the code
+                        const registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
+                            registration = await Registration.load({tenantId, registrationId}, {db, loadAus: false});
+
+                        if (! registration) {
+                            throw Boom.notFound(`registration: ${registrationId}`);
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await lrsWreck.request(
+                                "GET",
+                                "agents/profile?" + new URLSearchParams(
+                                    {
+                                        profileId: "cmi5LearnerPreferences",
+                                        agent: JSON.stringify(registration.actor)
+                                    }
+                                ).toString()
+                            );
+
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to retrieve learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 200 && response.statusCode !== 404) {
+                            throw Boom.internal(new Error(`Failed to retrieve learner preferences (${response.statusCode}): ${responseBody}`));
+                        }
+
+                        const result = h.response(responseBody);
+
+                        result.code(response.statusCode);
+                        result.message(response.statusMessage);
+                        result.header("Etag", response.headers.etag);
+
+                        return result;
+                    }
+                },
+
+                {
+                    method: "POST",
+                    path: "/registration/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"],
+                        payload: {
+                            parse: true
+                        },
+                        validate: {
+                            payload: Joi.object({
+                                languagePreference: Joi.string().pattern(/^[-A-Za-z0-9]+(?:,[-A-Za-z0-9]+)*$/).required(),
+                                audioPreference: Joi.string().allow("on", "off").required()
+                            }).required().label("Request-SaveLearnerPrefs")
+                        }
+                    },
+                    handler: async (req, h) => {
+                        // the registrationId could be either the id or the code
+                        const registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
+                            registration = await Registration.load({tenantId, registrationId}, {db, loadAus: false});
+
+                        if (! registration) {
+                            throw Boom.notFound(`registration: ${registrationId}`);
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await lrsWreck.request(
+                                "PUT",
+                                "agents/profile?" + new URLSearchParams(
+                                    {
+                                        profileId: "cmi5LearnerPreferences",
+                                        agent: JSON.stringify(registration.actor)
+                                    }
+                                ).toString(),
+                                {
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        ...req.headers["if-match"] ? {"If-Match": req.headers["if-match"]} : {},
+                                        ...req.headers["if-none-match"] ? {"If-None-Match": req.headers["if-none-match"]} : {}
+                                    },
+                                    payload: req.payload
+                                }
+                            );
+
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to store learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 204) {
+                            throw Boom.internal(new Error(`Failed to store learner preferences (${response.statusCode}): ${responseBody}`));
+                        }
+
+                        return null;
+                    }
+                },
+
+                {
+                    method: "DELETE",
+                    path: "/registration/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"]
+                    },
+                    handler: async (req, h) => {
+                        // the registrationId could be either the id or the code
+                        const registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            db = req.server.app.db,
+                            lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
+                            registration = await Registration.load({tenantId, registrationId}, {db, loadAus: false});
+
+                        if (! registration) {
+                            throw Boom.notFound(`registration: ${registrationId}`);
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await lrsWreck.request(
+                                "DELETE",
+                                "agents/profile?" + new URLSearchParams(
+                                    {
+                                        profileId: "cmi5LearnerPreferences",
+                                        agent: JSON.stringify(registration.actor)
+                                    }
+                                ).toString(),
+                                {
+                                    headers: {
+                                        ...req.headers["if-match"] ? {"If-Match": req.headers["if-match"]} : {}
+                                        // ...req.headers["if-none-match"] ? {"If-None-Match": req.headers["if-none-match"]} : {}
+                                    }
+                                }
+                            );
+
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to delete learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 204) {
+                            throw Boom.internal(new Error(`Failed to delete learner preferences (${response.statusCode}): ${responseBody}`));
+                        }
+
+                        return null;
+                    }
                 }
             ]
         );

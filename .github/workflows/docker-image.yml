@@ -47,11 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: ls -a via ssh
-      uses: garygrossgarten/github-action-ssh@release
+      uses: fifsky/ssh-action@master
       with:
-        command: ls -a
+        command: |
+          cd /tmp
+          ls -a
         host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-        username: adl-dso
-        privateKey: ${{ secrets.EC2_LRS_PEM}}
-        #passphrase: ${{ secrets.PASSPHRASE }}
+        user: root
+        key: ${{ secrets.EC2_LRS_PEM}}
         

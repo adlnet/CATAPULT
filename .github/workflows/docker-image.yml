@@ -50,7 +50,8 @@ jobs:
       uses: garygrossgarten/github-action-ssh@release
       with:
         command: ls -a
-        host: ${{ secrets.HOST }}
-        username: garygrossgarten
-        passphrase: ${{ secrets.PASSPHRASE }}
-        privateKey: ${{ secrets.PRIVATE_KEY}}
+        host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
+        username: adl-dso
+        privateKey: ${{ secrets.EC2_LRS_PEM}}
+        #passphrase: ${{ secrets.PASSPHRASE }}
+        

@@ -56,5 +56,5 @@ jobs:
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
           #user: root
           key: ${{ secrets.EC2_LRS_PEM }}
-          args: "-tt "
+          args: "-tt -vvv"
         

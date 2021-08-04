@@ -52,10 +52,9 @@ jobs:
           command: |
             cd /tmp
             ls -a
-            echo "env_var:$FIRST_NAME"
             exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          user: root
+          #user: root
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-tt -vvv"
         

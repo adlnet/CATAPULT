@@ -19,6 +19,7 @@ const Boom = require("@hapi/boom"),
     Wreck = require("@hapi/wreck"),
     Hoek = require("@hapi/hoek"),
     Iso8601Duration = require("iso8601-duration"),
+    Requirements = require("@cmi5/requirements"),
     Helpers = require("./lib/helpers"),
     Registration = require("./lib/registration"),
     Session = require("./lib/session"),
@@ -167,7 +168,8 @@ const Boom = require("@hapi/boom"),
                         throw Helpers.buildViolatedReqId("9.3.0.0-5", st.id);
                     }
                     if (session.is_abandoned) {
-                        throw Helpers.buildViolatedReqId("9.3.6.0-2", st.id);
+                        // see comment below in proxied-lrs auth
+                        throw Boom.forbidden(`9.3.6.0-2 - ${Requirements["9.3.6.0-2"].txt} (${st.id})`);
                     }
 
                     if (st.context.contextActivities
@@ -611,7 +613,14 @@ module.exports = {
                         throw Helpers.buildViolatedReqId("8.1.2.0-2", "Session terminated");
                     }
                     if (session.isAbandoned) {
-                        throw Helpers.buildViolatedReqId("8.1.2.0-2", "Session abandoned");
+                        //
+                        // this isn't a spec violation because the AU has no way to have been notified that
+                        // the session has been abandoned, so need to reject requests but don't indicate they
+                        // have violated the specification, particularly important for the CTS which would
+                        // allow the content to continue to run but once the spec is violated there is no way
+                        // for otherwise conformant content to indicate a successful test
+                        //
+                        throw Boom.forbidden(`8.1.2.0-2 - ${Requirements["8.1.2.0-2"].txt} (Session abandoned)`);
                     }
 
                     return {

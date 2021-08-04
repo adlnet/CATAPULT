@@ -54,7 +54,7 @@ jobs:
             ls -a
             exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          #user: root
+          user: ubuntu
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-tt -vvv"
         

@@ -194,7 +194,7 @@ module.exports = Registration = {
                     }
                 ).andWhere(
                     function () {
-                        this.where("id", registrationId).orWhere("code", registrationId);
+                        this.where("id", registrationId).orWhere("code", registrationId.toString());
                     }
                 );
         }
@@ -245,7 +245,7 @@ module.exports = Registration = {
                     }
                 )
                 .andWhere(function () {
-                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId);
+                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId.toString());
                 })
                 .queryContext(
                     {

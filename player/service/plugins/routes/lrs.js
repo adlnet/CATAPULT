@@ -600,7 +600,7 @@ module.exports = {
             {
                 allowEmptyUsername: true,
                 validate: async (req, key, secret) => {
-                    const session = await req.server.app.db.first("*").from("sessions").where({launch_token_id: secret});
+                    const session = await req.server.app.db.first("*").from("sessions").where({launch_token_id: secret.toString()});
 
                     if (! session) {
                         return {isValid: false, credentials: null};

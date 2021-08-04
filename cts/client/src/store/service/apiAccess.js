@@ -95,7 +95,7 @@ export default {
 
                 if (! response.ok) {
                     if (response.status === 401) {
-                        throw "Your email address and / or password is incorrect. Please try again.";
+                        throw "Your username and / or password is incorrect. Please try again.";
                     }
 
                     throw new Error(`Request failed: ${response.status}`);

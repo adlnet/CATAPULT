@@ -23,11 +23,6 @@
             <b-row class="mb-4">
                 <b-col>
                     <b-form inline>
-                        <label class="col-form-label-sm mr-1">Show</label>
-                        <b-form-select size="sm" class="mr-3">
-                            <option value="all" selected>all courses</option>
-                        </b-form-select>
-
                         <label class="sr-only" for="search">Search</label>
                         <b-input-group size="sm" class="mr-3">
                             <b-form-input id="search" placeholder="Search...">

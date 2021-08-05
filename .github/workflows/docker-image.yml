@@ -49,12 +49,12 @@ jobs:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
         with:
-          command: echo "This is the cmd test \n\n\n\n\n\n\n\n\n\n"
-#            echo "cmd test"
-#            ls -a
-#            cd /tmp
-#            ls -a
-#            exit 1
+          command: |
+            ls -a
+            cd /DevSecOps-Foundation
+            ls -a
+            bash rebuild.sh
+            exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
           user: ubuntu
           key: ${{ secrets.EC2_LRS_PEM }}

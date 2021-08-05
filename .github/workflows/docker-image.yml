@@ -49,9 +49,8 @@ jobs:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
         with:
-          command:  echo "cmd test"  
-            ls
-            |
+          command:  |
+            echo "cmd test"
             ls -a
             cd /tmp
             ls -a
@@ -59,5 +58,5 @@ jobs:
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
           user: ubuntu
           key: ${{ secrets.EC2_LRS_PEM }}
-          args: "-tt -vvv"
+          args: "-h -t -v"
         

@@ -49,7 +49,7 @@ jobs:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
         with:
-          command: ls
+          command: echo "This is the cmd test \n\n\n\n\n\n\n\n\n\n"
 #            echo "cmd test"
 #            ls -a
 #            cd /tmp

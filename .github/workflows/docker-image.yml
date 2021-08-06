@@ -64,7 +64,6 @@ jobs:
         uses: fifsky/ssh-action@master
         with:
           command: ls -a
-         #   ls -a
          #   cd /DevSecOps-Foundation
          #   ls -a
          #   bash rebuild.sh

@@ -56,7 +56,7 @@ jobs:
          #   bash rebuild.sh
          #   exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          user: guest
+          user: ubuntu
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
         

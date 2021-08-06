@@ -7,24 +7,16 @@ on:
     branches: [ main ]
 
 jobs:
-      
-  containerize:
+
+  unit-testing:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Build the container image
-      run: docker build ./player --file ./player/Dockerfile --tag player-image:latest
-    - uses: anchore/scan-action@v2
-      with:
-        image: "player-image:latest"
-        fail-build: false
-        debug: true
-        acs-report-enable: true
-    - name: grype scan JSON results
-      run: cat results.sarif; cat vulnerabilities.json; for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
+    - name: Unit Testing
+    - name: Code Coverage
+      run: sleep 15;
       
-  sonarqube:
-    environment: pipeline-environment
+  Static-Scanning:
+    #environment: pipeline-environment
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -41,6 +33,27 @@ jobs:
         args: >
           -Dsonar.projectKey=player
           -Dsonar.verbose=true
+  
+  Container-Hardening:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the container image
+      run: docker build ./player --file ./player/Dockerfile --tag player-image:latest
+    - uses: anchore/scan-action@v2
+      with:
+        image: "player-image:latest"
+        fail-build: false
+        debug: true
+        acs-report-enable: true
+    - name: grype scan JSON results
+      run: cat results.sarif; cat vulnerabilities.json; for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
+
+  Docker-derlivery:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload Latest Image To Docker
+      run: sleep 20;
           
   DAST:
     environment: pipeline-environment
@@ -59,4 +72,11 @@ jobs:
           user: ubuntu
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
+      - name: results
+        run: sleep 5;
         
+  Release-Deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload Latest Image To Docker
+      run: sleep 20;  

@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Unit Testing
+      run: sleep 5;
     - name: Code Coverage
       run: sleep 15;
       

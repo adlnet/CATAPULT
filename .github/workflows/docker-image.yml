@@ -16,7 +16,7 @@ jobs:
       max-parallel: 1
     steps:
     - name: Unit Testing
-      run: ls; cd player/service; npm test;
+      run: ls; cd player; npm test;
     - name: Code Coverage
       run: echo "No code coverage for the CATAPULT player service."
       

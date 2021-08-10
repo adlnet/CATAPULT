@@ -8,8 +8,11 @@ on:
 
 jobs:
 
+
   unit-testing:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
     - name: Unit Testing
       run: sleep 5;
@@ -19,6 +22,8 @@ jobs:
   Static-Scanning:
     #environment: pipeline-environment
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -37,6 +42,8 @@ jobs:
   
   Container-Hardening:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
     - uses: actions/checkout@v2
     - name: Build the container image
@@ -52,6 +59,8 @@ jobs:
 
   Docker-derlivery:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
     - name: Upload Latest Image To Docker
       run: sleep 20;
@@ -59,6 +68,8 @@ jobs:
   DAST:
     environment: pipeline-environment
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
@@ -77,6 +88,8 @@ jobs:
         
   Release-Deploy:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
     - name: Upload Latest Image To Docker
       run: sleep 20;  

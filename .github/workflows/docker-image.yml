@@ -15,9 +15,9 @@ jobs:
       max-parallel: 1
     steps:
     - name: Unit Testing
-      run: sleep 5;
+      run: cd player/service/; npm test;
     - name: Code Coverage
-      run: sleep 15;
+      run: echo "No code coverage for the CATAPULT player service."
       
   Static-Scanning:
     needs: unit-testing
@@ -79,7 +79,8 @@ jobs:
          #   bash rebuild.sh
          #   exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          user: ubuntu
+          user: ${{ secrets.EC2_USER }}
+          password: ${{ secrets.EC2_USER_PASSWORD }}
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
       - name: results

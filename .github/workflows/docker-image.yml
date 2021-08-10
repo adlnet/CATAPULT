@@ -82,7 +82,7 @@ jobs:
          #   exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
           user: ${{ secrets.EC2_USER }}
-          password: ${{ secrets.EC2_USER_PASSWORD }}
+          pass: ${{ secrets.EC2_USER_PASSWORD }}
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
       - name: results

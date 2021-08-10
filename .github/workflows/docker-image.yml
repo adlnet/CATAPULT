@@ -20,10 +20,9 @@ jobs:
       run: sleep 15;
       
   Static-Scanning:
+    needs: unit-testing
     #environment: pipeline-environment
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -41,9 +40,8 @@ jobs:
           -Dsonar.verbose=true
   
   Container-Hardening:
+    needs: Static-Scanning
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
     - uses: actions/checkout@v2
     - name: Build the container image
@@ -57,19 +55,18 @@ jobs:
     - name: grype scan JSON results
       run: cat results.sarif; cat vulnerabilities.json; for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
 
-  Docker-derlivery:
+  Docker-delivery:
+    needs: Container-Hardening
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
     - name: Upload Latest Image To Docker
       run: sleep 20;
           
+          
   DAST:
+    needs: Docker-delivery
     environment: pipeline-environment
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
@@ -88,8 +85,6 @@ jobs:
         
   Release-Deploy:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
     - name: Upload Latest Image To Docker
       run: sleep 20;  

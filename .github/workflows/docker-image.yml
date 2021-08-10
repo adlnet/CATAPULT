@@ -23,6 +23,7 @@ jobs:
     needs: unit-testing
     #environment: pipeline-environment
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
     - uses: actions/checkout@v2
       with:
@@ -67,6 +68,7 @@ jobs:
     needs: Docker-delivery
     environment: pipeline-environment
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master

@@ -23,7 +23,7 @@ jobs:
       
   Static-Scanning:
     needs: unit-testing
-    #environment: pipeline-environment
+    environment: pipeline-environment
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

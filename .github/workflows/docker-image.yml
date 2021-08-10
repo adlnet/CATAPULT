@@ -84,6 +84,7 @@ jobs:
         run: sleep 50;
         
   Release-Deploy:
+    needs: DAST
     runs-on: ubuntu-latest
     steps:
     - name: Upload Latest Image To Docker

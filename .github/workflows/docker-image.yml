@@ -15,6 +15,7 @@ jobs:
     strategy:
       max-parallel: 1
     steps:
+    - uses: actions/checkout@v1
     - name: Unit Testing
       run: ls;
     - name: Code Coverage

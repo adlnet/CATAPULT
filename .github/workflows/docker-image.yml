@@ -11,11 +11,12 @@ jobs:
 
   unit-testing:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       max-parallel: 1
     steps:
     - name: Unit Testing
-      run: cd player/service/; npm test;
+      run: cd player/service; npm test;
     - name: Code Coverage
       run: echo "No code coverage for the CATAPULT player service."
       

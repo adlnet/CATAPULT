@@ -81,8 +81,9 @@ jobs:
          #   bash rebuild.sh
          #   exit 1
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          user: ${{ secrets.EC2_USER }}
-          pass: ${{ secrets.EC2_USER_PASSWORD }}
+          user: ubuntu
+          #user: ${{ secrets.EC2_USER }}
+          #pass: ${{ secrets.EC2_USER_PASSWORD }}
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
       - name: results

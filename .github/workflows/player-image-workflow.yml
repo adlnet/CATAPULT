@@ -72,6 +72,7 @@ jobs:
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag player:latest
     - name: docker push
@@ -83,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - name: ls -a via OPEN SSH Private Key
+      - name: ls -a via OPEN SSh
         uses: garygrossgarten/github-action-ssh@release
         with:
           command: cd docker-test-env;  

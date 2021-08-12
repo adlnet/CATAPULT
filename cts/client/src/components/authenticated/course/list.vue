@@ -78,7 +78,7 @@
                 </template>
                 <template #cell(title)="data">
                     <b-link :to="`/course/${data.item.id}`">
-                        {{ data.item.metadata.structure.course.title[0].text }}
+                        {{ data.value }}
                     </b-link>
                 </template>
                 <template #cell(testResult)="data">
@@ -133,6 +133,8 @@
                     key: "title",
                     label: "Title",
                     sortable: true,
+                    formatter: (value, key, item) => item.metadata.structure.course.title[0].text,
+                    sortByFormatted: true,
                     class: "w-100"
                 },
                 {

@@ -15,7 +15,6 @@ on:
 jobs:
 
   SSH_TEST:
-    needs: Docker-delivery
     environment: pipeline-environment
     runs-on: ubuntu-latest
     continue-on-error: true

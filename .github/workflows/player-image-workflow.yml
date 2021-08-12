@@ -67,8 +67,15 @@ jobs:
     needs: Container-Hardening
     runs-on: ubuntu-latest
     steps:
-    - name: Upload Latest Image To Docker
-      run: sleep 20;
+    - uses: actions/checkout@v2
+    - name: docker login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    - name: build docker image
+      run: docker build ./player --file ./player/Dockerfile --tag player:latest
+    - name: docker push
+      run: docker push ${{ secrets.DOCKER_USER }}/player
           
   DAST:
     needs: Docker-delivery
@@ -79,11 +86,10 @@ jobs:
       - name: ls -a via OPEN SSH Private Key
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: ls -a; 
+          command: cd docker-test-env;  
           host: ${{ secrets.TEST_ENV_CI_EC2 }}
           username: ubuntu
           privateKey: ${{ secrets.CI_EC2_PEM }}
-          args: "-v -t"
       - name: results
         run: sleep 10;
         

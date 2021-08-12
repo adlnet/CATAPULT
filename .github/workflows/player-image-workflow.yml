@@ -6,8 +6,11 @@ on:
     paths-ignore: 
       -  "lts/**"
       -  "cts/**"
-  #pull_request:
-  #  branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths-ignore: 
+      -  "lts/**"
+      -  "cts/**"
 
 jobs:
 
@@ -78,7 +81,8 @@ jobs:
       - name: ls -a via OPEN SSH Private Key
         uses: fifsky/ssh-action@master
         with:
-          command: ls -a
+          command: | 
+            ls -a 
          #   cd /DevSecOps-Foundation
          #   ls -a
          #   bash rebuild.sh

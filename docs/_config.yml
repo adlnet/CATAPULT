@@ -21,8 +21,8 @@
 title: CATAPULT Documentation
 description: >-
   User documentation for the CATAPULT cmi5 Player, LMS Test Suite, and Content Test Suite.
-baseurl: "/catapult" # the subpath of your site, e.g. /blog
-url: "https://adlnet.github.io/"
+baseurl: "/CATAPULT" # the subpath of your site, e.g. /blog
+url: "https://adlnet.github.io"
 twitter_username: ADL_Initiative
 github_username:  adlnet
 

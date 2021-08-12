@@ -71,13 +71,8 @@ jobs:
     -  name: Login to Docker Hub
        uses: docker/login-action@v1
        with:
-         username: ${{ secrets.DOCKERHUB_USER }}
-         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    #- name: docker login
-      #env:
-      #  DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      #  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      #run: docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
+         username: ${{ secrets.DOCKER_USER }}
+         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag player:latest
     - name: docker push

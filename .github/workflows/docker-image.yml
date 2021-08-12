@@ -39,7 +39,7 @@ jobs:
       with:
         #projectBaseDir: /player
         args: >
-          -Dsonar.projectKey=player
+          -Dsonar.projectKey=catapult
           -Dsonar.verbose=true
   
   Container-Hardening:

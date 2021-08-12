@@ -14,6 +14,20 @@ on:
 
 jobs:
 
+  Docker-delivery:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: build docker image
+      run: docker build ./player --file ./player/Dockerfile --tag player:latest
+    - name: docker push
+      run: docker push ${{ secrets.DOCKER_USER }}/player
+
   unit-testing:
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -68,11 +82,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    -  name: Login to Docker Hub
-       uses: docker/login-action@v1
-       with:
-         username: ${{ secrets.DOCKER_USER }}
-         password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag player:latest
     - name: docker push

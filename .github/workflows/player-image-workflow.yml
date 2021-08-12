@@ -14,7 +14,7 @@ on:
 
 jobs:
 
-  DAST:
+  SSH_TEST:
     needs: Docker-delivery
     environment: pipeline-environment
     runs-on: ubuntu-latest

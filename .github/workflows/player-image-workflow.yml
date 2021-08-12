@@ -11,6 +11,9 @@ on:
     paths-ignore: 
       -  "lts/**"
       -  "cts/**"
+## ignore the other projects in the group repo
+
+
 
 jobs:
 

@@ -14,6 +14,29 @@ on:
 
 jobs:
 
+  DAST:
+    needs: Docker-delivery
+    environment: pipeline-environment
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: ls -a via OPEN SSH Private Key
+        uses: fifsky/ssh-action@master
+        with:
+          command: ls; 
+         #   cd /DevSecOps-Foundation
+         #   ls -a
+         #   bash rebuild.sh
+         #   exit 1
+          host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
+          user: ubuntu
+          #user: ${{ secrets.EC2_USER }}
+          #pass: ${{ secrets.EC2_USER_PASSWORD }}
+          key: ${{ secrets.EC2_LRS_PEM }}
+          args: "-v -t"
+      - name: results
+        run: sleep 10;
+
 
   unit-testing:
     runs-on: ubuntu-latest

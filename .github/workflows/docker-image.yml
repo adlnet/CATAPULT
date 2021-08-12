@@ -87,7 +87,7 @@ jobs:
           key: ${{ secrets.EC2_LRS_PEM }}
           args: "-v"
       - name: results
-        run: sleep 50;
+        run: sleep 10;
         
   Release-Deploy:
     needs: DAST

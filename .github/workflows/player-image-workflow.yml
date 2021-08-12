@@ -20,18 +20,12 @@ jobs:
     continue-on-error: true
     steps:
       - name: ls -a via OPEN SSH Private Key
-        uses: fifsky/ssh-action@master
+        uses: garygrossgarten/github-action-ssh@release
         with:
-          command: ls; 
-         #   cd /DevSecOps-Foundation
-         #   ls -a
-         #   bash rebuild.sh
-         #   exit 1
+          command: ls -a; 
           host: ${{ secrets.TEST_ENV_AKA_LRS_EC2 }}
-          user: ubuntu
-          #user: ${{ secrets.EC2_USER }}
-          #pass: ${{ secrets.EC2_USER_PASSWORD }}
-          key: ${{ secrets.EC2_LRS_PEM }}
+          username: ubuntu
+          privateKey: ${{ secrets.EC2_LRS_PEM }}
           args: "-v -t"
       - name: results
         run: sleep 10;

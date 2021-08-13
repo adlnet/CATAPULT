@@ -27,7 +27,7 @@ jobs:
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag player:latest
     - name: docker push
-      run: docker push ${{ secrets.DOCKER_USER }}/player
+      run: docker push ${{ secrets.DOCKER_USER }}/player:latest
 
   unit-testing:
     runs-on: ubuntu-latest
@@ -86,13 +86,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: Login to Docker Hub
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
-      #with:
-      #  username: ${{ secrets.DOCKER_USER }}
-      #  password: ${{ secrets.DOCKER_PASSWORD }}
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag player:latest
     - name: docker push
-      run: docker push ${{ secrets.DOCKER_USER }}/player
+      run: docker push ${{ secrets.DOCKER_USER }}/player:latest
           
   DAST:
     needs: Docker-delivery

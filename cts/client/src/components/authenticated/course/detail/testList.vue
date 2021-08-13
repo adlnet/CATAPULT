@@ -35,11 +35,11 @@
                 </template>
                 <template #cell(registration)="data">
                     <b-link :to="`/test/${data.item.id}`">
-                        {{ data.item.metadata.actor.name }} ({{ data.item.code }})
+                        {{ data.value }}
                     </b-link>
                 </template>
                 <template #cell(result)="data">
-                    <test-status :status="data.item.metadata.result" />
+                    <test-status :status="data.value" />
                 </template>
                 <template #cell(updatedAt)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">
@@ -79,12 +79,16 @@
                     key: "registration",
                     label: "Registration",
                     sortable: true,
+                    formatter: (value, key, item) => `${item.metadata.actor.name } (${item.code})`,
+                    sortByFormatted: true,
                     class: "w-100"
                 },
                 {
                     key: "result",
                     label: "Test Result",
                     sortable: true,
+                    formatter: (value, key, item) => item.metadata.result,
+                    sortByFormatted: true,
                     class: "text-nowrap px-4 align-middle"
                 },
                 {

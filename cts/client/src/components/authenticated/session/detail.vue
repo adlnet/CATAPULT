@@ -43,7 +43,7 @@
                     </b-row>
                 </template>
                 <b-row class="flex-fill">
-                    <b-col cols="8" class="d-flex flex-column">
+                    <b-col cols="8" class="d-flex flex-column fit-window-column">
                         <template v-if="launchUrl">
                             <iframe v-if="model.item.launchMethod === 'iframe'" :src="launchUrl" class="flex-fill"></iframe>
                             <template v-else-if="model.item.launchMethod === 'newWindow'">
@@ -64,7 +64,7 @@
                             Session appears to be closed, providing session details but no launch.
                         </p>
                     </b-col>
-                    <b-col cols="4" class="d-flex flex-column">
+                    <b-col cols="4" class="d-flex flex-column fit-window-column event-log">
                         <h5>Event Log</h5>
                         <ul>
                             <li v-for="(event, index) in logs.items" :key="index">
@@ -212,4 +212,10 @@
 </script>
 
 <style lang="scss" scoped>
+.fit-window-column {
+    height: calc(100vh - 220px);
+}
+.event-log {
+    overflow-y: scroll;
+}
 </style>

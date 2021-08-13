@@ -14,7 +14,7 @@
     limitations under the License.
  -->
 <template>
-    <b-container fluid class="d-flex flex-column p-0" style="min-height: 100vh;">
+    <b-container fluid class="d-flex flex-column p-0" style="overflow-x: hidden">
         <b-row v-if="isSignedIn" class="flex-fill" no-gutters>
             <authenticated />
         </b-row>

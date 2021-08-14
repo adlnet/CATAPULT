@@ -17,7 +17,7 @@ services:
     build: .
     image: catapult:player
     ports:
-      - 3398:3398
+      - ${HOST_PORT}:3398
     depends_on:
       - rdbms
     volumes:
@@ -28,6 +28,13 @@ services:
       - ./migrations:/usr/src/app/migrations:ro
       - ./seeds:/usr/src/app/seeds:ro
     environment:
+      - CONTENT_URL
+      - API_KEY
+      - API_SECRET
+      - TOKEN_SECRET
+      - LRS_ENDPOINT
+      - LRS_USERNAME
+      - LRS_PASSWORD
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player

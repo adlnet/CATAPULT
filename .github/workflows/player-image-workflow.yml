@@ -111,4 +111,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Upload Latest Image To Docker
-      run: Echo "The Image has completed the pipeline"; sleep 20;  
+      run: echo "The Image has completed the pipeline"; sleep 20;  

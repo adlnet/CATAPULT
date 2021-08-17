@@ -17,18 +17,6 @@ on:
 
 jobs:
 
-  delivery-test:
-    runs-on: ubuntu-latest
-    environment: pipeline-environment
-    steps:
-    - uses: actions/checkout@v2
-    - name: Login to Docker Hub
-      run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
-    - name: build docker image
-      run: docker build ./player --file ./player/Dockerfile --tag ${{ secrets.DOCKER_USER }}/player && docker push ${{ secrets.DOCKER_USER }}/player
-    #- name: docker push
-    #  run: docker push ${{ secrets.DOCKER_USER }}/player:latest
-
   unit-testing:
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -80,36 +68,38 @@ jobs:
 
   Docker-delivery:
     needs: Container-Hardening
-    environment: pipeline-environment
     runs-on: ubuntu-latest
+    environment: pipeline-environment
     steps:
     - uses: actions/checkout@v2
     - name: Login to Docker Hub
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
     - name: build docker image
-      run: docker build ./player --file ./player/Dockerfile --tag player:latest
-    - name: docker push
-      run: docker push ${{ secrets.DOCKER_USER }}/player:latest
-          
+      run: docker build ./player --file ./player/Dockerfile --tag ${{ secrets.DOCKER_USER }}/player && docker push ${{ secrets.DOCKER_USER }}/player
+    - name: Docker Logout
+      run: docker logout -u ${{ secrets.DOCKER_USER }}
+      
   DAST:
     needs: Docker-delivery
     environment: pipeline-environment
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - name: ls -a via OPEN SSh
+      - name: provision cicd server for Player Docker Container
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: cd docker-test-env;  
+          command: cd docker-test-env; echo "Starting player container testing"; docker pull adlhub/player;  
           host: ${{ secrets.TEST_ENV_CI_EC2 }}
           username: ubuntu
           privateKey: ${{ secrets.CI_EC2_PEM }}
-      - name: results
-        run: sleep 10;
+      - name: ZAP Scan
+        uses: zaproxy/action-full-scan@v0.2.0
+        with:
+          target: http://${{ secrets.TEST_ENV_CI_EC2 }}:3000
         
   Release-Deploy:
     needs: DAST
     runs-on: ubuntu-latest
     steps:
     - name: Upload Latest Image To Docker
-      run: sleep 20;  
+      run: Echo "The Image has completed the pipeline"; sleep 20;  

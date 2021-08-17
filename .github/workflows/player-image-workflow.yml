@@ -17,6 +17,23 @@ on:
 
 jobs:
 
+  DAST-test:
+    environment: pipeline-environment
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: provision cicd server for Player Docker Container
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: cd docker-test-env; echo "Starting player container testing"; sudo docker pull adlhub/player;  
+          host: ${{ secrets.TEST_ENV_CI_EC2 }}
+          username: ubuntu
+          privateKey: ${{ secrets.CI_EC2_PEM }}
+      - name: ZAP Scan
+        uses: zaproxy/action-full-scan@v0.2.0
+        with:
+          target: http://${{ secrets.TEST_ENV_CI_EC2 }}:3000
+
   unit-testing:
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -86,7 +103,7 @@ jobs:
       - name: provision cicd server for Player Docker Container
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: cd docker-test-env; echo "Starting player container testing"; docker pull adlhub/player;  
+          command: cd docker-test-env; echo "Starting player container testing"; sudo docker pull adlhub/player;  
           host: ${{ secrets.TEST_ENV_CI_EC2 }}
           username: ubuntu
           privateKey: ${{ secrets.CI_EC2_PEM }}

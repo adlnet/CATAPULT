@@ -17,27 +17,7 @@ on:
 
 jobs:
 
-  DAST-test:
-    environment: pipeline-environment
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Login to Docker Hub
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
-      - name: provision cicd server for Player Docker Container
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: cd docker-test-env; echo "Starting player container testing"; #echo ${{ secrets.DOCKER_PASSWORD }} | 
-            #sudo docker login -u ${{ secrets.DOCKER_USER }} --password-stdin; sudo docker pull adlhub/player && sudo docker run adlhub/player -p 3000:3398 
-          host: ${{ secrets.TEST_ENV_CI_EC2 }}
-          username: ubuntu
-          privateKey: ${{ secrets.CI_EC2_PEM }}
-      - name: ZAP Scan
-        uses: zaproxy/action-full-scan@v0.2.0
-        with:
-          target: http://${{ secrets.TEST_ENV_CI_EC2 }}:3000
-
-  unit-testing:
+  Unit-Testing:
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
@@ -50,7 +30,7 @@ jobs:
       run: echo "No code coverage for the CATAPULT player service."
       
   Static-Scanning:
-    needs: unit-testing
+    needs: Unit-Testing
     environment: pipeline-environment
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -103,10 +83,13 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: provision cicd server for Player Docker Container
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: cd docker-test-env; echo "Starting player container testing"; sudo docker pull adlhub/player;  
+          command: cd docker-test-env; echo "Starting player container testing"; #echo ${{ secrets.DOCKER_PASSWORD }} | 
+            #sudo docker login -u ${{ secrets.DOCKER_USER }} --password-stdin; sudo docker pull adlhub/player && sudo docker run adlhub/player -p 3000:3398 
           host: ${{ secrets.TEST_ENV_CI_EC2 }}
           username: ubuntu
           privateKey: ${{ secrets.CI_EC2_PEM }}

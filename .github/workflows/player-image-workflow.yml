@@ -110,5 +110,7 @@ jobs:
     needs: DAST
     runs-on: ubuntu-latest
     steps:
-    - name: Upload Latest Image To Docker
-      run: echo "The Image has completed the pipeline"; echo "Notify project lead that newest image is ready for release or deploy"  
+    - name: Release
+      run: echo "The Image has completed the pipeline"; echo "Notify project lead that newest image is ready for release or deploy"
+    - name: Deploy
+      run: echo "use ssh to deploy to server"

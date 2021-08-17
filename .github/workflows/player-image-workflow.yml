@@ -27,8 +27,8 @@ jobs:
       - name: provision cicd server for Player Docker Container
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: cd docker-test-env; echo "Starting player container testing"; echo ${{ secrets.DOCKER_PASSWORD }} | 
-            sudo docker login -u ${{ secrets.DOCKER_USER }} --password-stdin; sudo docker pull adlhub/player && sudo docker run adlhub/player -p 3000:3398 
+          command: cd docker-test-env; echo "Starting player container testing"; #echo ${{ secrets.DOCKER_PASSWORD }} | 
+            #sudo docker login -u ${{ secrets.DOCKER_USER }} --password-stdin; sudo docker pull adlhub/player && sudo docker run adlhub/player -p 3000:3398 
           host: ${{ secrets.TEST_ENV_CI_EC2 }}
           username: ubuntu
           privateKey: ${{ secrets.CI_EC2_PEM }}

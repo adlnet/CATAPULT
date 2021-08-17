@@ -76,8 +76,6 @@ jobs:
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
     - name: build docker image
       run: docker build ./player --file ./player/Dockerfile --tag ${{ secrets.DOCKER_USER }}/player && docker push ${{ secrets.DOCKER_USER }}/player
-    - name: Docker Logout
-      run: docker logout -u ${{ secrets.DOCKER_USER }}
       
   DAST:
     needs: Docker-delivery

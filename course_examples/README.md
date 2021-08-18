@@ -28,6 +28,10 @@ Examples with an `_framed` suffix show a traditional scaling layout that attempt
 Examples with an `_responsive` suffix show a responsive layout that performs better in mobile environments. Not every
 example will have both formats.
 
+All packages use https://www.npmjs.com/package/@rusticisoftware/cmi5 version 3.0.0 as the JS implementation of the cmi5
+AU runtime. Newer versions of these software dependencies may work with the existing source code but were the latest
+provided working versions at the time of development.
+
 ## How to Use an Example Package
 
 1. Zip up the contents of an example.

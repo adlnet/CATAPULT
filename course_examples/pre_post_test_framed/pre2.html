@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Introduction to Geology</title>
+    <link rel="stylesheet" href="style/framed.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div id="container" class="container">
+    <div id="design" class="design">
+        <div id="info-bar" class="info-bar">
+            Read-only mode, no data will be saved.
+        </div>
+        <div class="header" role="banner">
+            <div class="header-title">Introduction to Geology</div>
+            <div class="header-buttons">
+                <div class="navexit">
+                    <button class="exit-button">Exit</button>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="navigation" role="navigation">
+                <div class="navmenu" id="navmenu">
+                    <ul id="navmenuitems">
+                    </ul>
+                </div>
+            </div>
+            <div id="content" class="content" role="main">
+                <!-- Content will be loaded in here. -->
+            </div>
+        </div>
+        <div class="footer">
+            <div id="warning-icon" class="warning-icon" onclick="course.showErrorPanel()">
+                <div class="warning-icon-container">&#x26A0;</div>
+            </div>
+            <div class="footer-title">&nbsp;</div>
+            <div class="footer-progress">Progress (resets every launch): <span id="footer-progress-value" class="footer-progress-value">0</span>%</div>
+            <div class="footer-buttons">
+                <button id="prev">&laquo; Previous</button>
+                <button id="next">Next &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="score-panel" class="full-overlay">
+        <div class="message-content">
+            <div>Your final score is: <span id="score-panel-score"></span></div>
+            <div id="score-passed" class="score-passed">You achieved a passing score.</div>
+            <div id="score-failed" class="score-failed">You did not achieve a passing score.</div>
+            <button class="exit-button">Exit the Course</button>
+        </div>
+    </div>
+    <div id="bookmark-overlay" class="full-overlay">
+        <div class="message-content">
+            <div>Would you like to resume from your bookmark?</div>
+            <div>
+                <button class="restart-button">Restart From Beginning</button>
+                <button class="resume-button">Resume From Bookmark</button>
+            </div>
+        </div>
+    </div>
+    <div id="error-message-overlay" class="full-overlay">
+        <div class="message-content">
+            <div>One or more errors occurred.  Most recent error:</div>
+            <div id="error-content"></div>
+            <div>
+                <button class="close-button" onclick="course.hideErrorPanel()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="pagequiz" class="contentpage" type="text/template" data-title="Pre-Test" data-questions="3"
+        data-quiz-id="quiz1">
+    <div class="quiz" role="form">
+        <div class="title">
+            <div class="title-contents">
+                <div class="title-contents-heading">Questions</div>
+                <div class="title-contents-buttons">
+                    <button onclick="course.autopass()" style="color: green;">(Select correct answers) &check;</button>
+                    <button onclick="course.autofail()" style="color: red;">(Select wrong answers) &cross;</button>
+                </div>
+            </div>
+            <div class="titleunderbar"></div>
+        </div>
+        <div class="body-content">
+            <label for="q0" id="q0-question">How many types of faults are there?</label>
+            <input type="text" id="q0" name="q0" data-answer="3">
+        </div>
+        <div class="body-content radio">
+            <label id="q1-question">What type of rock solidifies or crystallizes from melt?</label>
+            <div class="radiochoices">
+                <div class="radiochoice">
+                    <input type="radio" name="q1" id="q1_1" value="sedimentary"><label for="q1_1">Sedimentary</label>
+                </div>
+                <div class="radiochoice">
+                    <input type="radio" name="q1" id="q1_2" value="igneous" data-correct="yes"><label
+                        for="q1_2">Igneous</label>
+                </div>
+                <div class="radiochoice">
+                    <input type="radio" name="q1" id="q1_3" value="metamorphic"><label for="q1_3">Metamorphic</label>
+                </div>
+            </div>
+        </div>
+        <div class="body-content">
+            <label for="q2" id="q2-question">Which of these are distinct physical properties of rocks? (select all that
+                apply)</label>
+            <select name="q2" id="q2" multiple>
+                <option value="absorbency">Absorbency</option>
+                <option value="luster" data-correct="yes">Luster</option>
+                <option value="hardness" data-correct="yes">Hardness</option>
+                <option value="intelligence">Intelligence</option>
+            </select>
+        </div>
+        <div class="body-content">
+            <button onclick="course.submitAnswers()">Submit Answers</button>
+        </div>
+    </div>
+</script>
+
+<script src="js/cmi5.js"></script>
+<script src="js/course_cmi5.js"></script>
+<script src="js/course.js"></script>
+<script type="text/javascript">
+    let course;
+
+    (function () {
+        let queryParams = new URLSearchParams(document.location.search.substring(1));
+        course = new Course({
+            completionBehavior: "quiz",
+            enableBookmarking: true,
+            navigateOnLaunch: true,
+            navigationInjectIntoContent: false,
+            trackingPlugin: new CourseCmi5Plugin()
+        });
+
+        document.getElementById("next").addEventListener("click", () => {
+            course.nextPage();
+        });
+        document.getElementById("prev").addEventListener("click", () => {
+            course.previousPage();
+        });
+        document.addEventListener("click", e => {
+            // Capture all exit buttons.
+            if (e.target && e.target.matches(".exit-button")) {
+                course.exit();
+            }
+            // Capture navigation menu item interactions.
+            if (e.target && e.target.matches(".navmenuitem")) {
+                course.gotoPage(e.target.dataset.pageidx);
+            }
+        });
+    })();
+</script>
+
+<script type="text/javascript">
+    /* Resizing code start. */
+    let pageWidth = 800,
+        pageHeight = 600,
+        basePage = {
+            width: 800,
+            height: 600,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+    const $page = document.getElementById('design');
+    const $container = document.getElementById('container');
+
+    getPageSize();
+    scalePages($page, pageWidth, pageHeight);
+
+    //using underscore to delay resize method till finished resizing window
+    window.addEventListener("resize", function () {
+        getPageSize();
+        scalePages($page, pageWidth, pageHeight);
+    });
+
+    function getPageSize() {
+        pageHeight = $container.clientHeight;
+        pageWidth = $container.clientWidth;
+    }
+
+    function scalePages(page, maxWidth, maxHeight) {
+        let scaleX = 1, scaleY = 1;
+        scaleX = maxWidth / basePage.width;
+        scaleY = maxHeight / basePage.height;
+        basePage.scaleX = scaleX;
+        basePage.scaleY = scaleY;
+        basePage.scale = (scaleX > scaleY) ? scaleY : scaleX;
+
+        const newLeftPos = Math.abs(Math.floor(((basePage.width * basePage.scale) - maxWidth) / 2));
+        const newTopPos = Math.abs(Math.floor(((basePage.height * basePage.scale) - maxHeight) / 2));
+
+        page.style.transform = "scale(" + basePage.scale + ")";
+        page.style.left = newLeftPos + 'px';
+        page.style.top = newTopPos + 'px';
+    }
+    /* Resizing code end */
+</script>
+</body>
+</html>

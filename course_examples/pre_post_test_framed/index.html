@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Introduction to Geology</title>
+    <link rel="stylesheet" href="style/framed.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div id="container" class="container">
+    <div id="design" class="design">
+        <div id="info-bar" class="info-bar">
+            Read-only mode, no data will be saved.
+        </div>
+        <div class="header" role="banner">
+            <div class="header-title">Introduction to Geology</div>
+            <div class="header-buttons">
+                <div class="navexit">
+                    <button class="exit-button">Exit</button>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="navigation" role="navigation">
+                <div class="navmenu" id="navmenu">
+                    <ul id="navmenuitems">
+                    </ul>
+                </div>
+            </div>
+            <div id="content" class="content" role="main">
+                <!-- Content will be loaded in here. -->
+            </div>
+        </div>
+        <div class="footer">
+            <div id="warning-icon" class="warning-icon" onclick="course.showErrorPanel()">
+                <div class="warning-icon-container">&#x26A0;</div>
+            </div>
+            <div class="footer-title">&nbsp;</div>
+            <div class="footer-progress">Progress (resets every launch): <span id="footer-progress-value" class="footer-progress-value">0</span>%</div>
+            <div class="footer-buttons">
+                <button id="prev">&laquo; Previous</button>
+                <button id="next">Next &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="score-panel" class="full-overlay">
+        <div class="message-content">
+            <div>Your final score is: <span id="score-panel-score"></span></div>
+            <div id="score-passed" class="score-passed">You achieved a passing score.</div>
+            <div id="score-failed" class="score-failed">You did not achieve a passing score.</div>
+            <button class="exit-button">Exit the Course</button>
+        </div>
+    </div>
+    <div id="bookmark-overlay" class="full-overlay">
+        <div class="message-content">
+            <div>Would you like to resume from your bookmark?</div>
+            <div>
+                <button class="restart-button">Restart From Beginning</button>
+                <button class="resume-button">Resume From Bookmark</button>
+            </div>
+        </div>
+    </div>
+    <div id="error-message-overlay" class="full-overlay">
+        <div class="message-content">
+            <div>One or more errors occurred.  Most recent error:</div>
+            <div id="error-content"></div>
+            <div>
+                <button class="close-button" onclick="course.hideErrorPanel()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="page1" class="contentpage" type="text/template" data-title="Introduction to Geology">
+    <div class="title">
+        Introduction to Geology
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <p>Geology (from the Ancient Greek γῆ, gē ("earth") and -λoγία, -logia, ("study of", "discourse")) is an
+            Earth science concerned with the solid Earth, the rocks of which it is composed, and the processes by which
+            they change over time. Geology can also include the study of the solid features of any terrestrial planet or
+            natural satellite such as Mars or the Moon. Modern geology significantly overlaps all other Earth sciences,
+            including hydrology and the atmospheric sciences, and so is treated as one major aspect of integrated Earth
+            system science and planetary science.</p>
+    </div>
+
+    <div class="body-video">
+        <div style="width: 100%; position: relative;">
+            <video data-objectid="https://example.com/vid/id1924" data-name="Mountains">
+                <source src="video/mountains_31175.mp4">
+            </video>
+            <div class="video-start-overlay">
+                <div class="msg">(click or tap here to play and pause the video)</div>
+            </div>
+            <div class="video-complete-overlay hidden">
+                <div class="msg">Video completed and recorded.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="body-content">
+        <p>Geology describes the structure of the Earth on and beneath its surface, and the processes that have shaped
+            that structure. It also provides tools to determine the relative and absolute ages of rocks found in a given
+            location, and also to describe the histories of those rocks. By combining these tools, geologists are
+            able to chronicle the geological history of the Earth as a whole, and also to demonstrate the age of the
+            Earth. Geology provides the primary evidence for plate tectonics, the evolutionary history of life, and the
+            Earth's past climates.
+        </p>
+
+        <p>
+            Geologists use a wide variety of methods to understand the Earth's structure and evolution, including field
+            work, rock description, geophysical techniques, chemical analysis, physical experiments, and numerical
+            modelling. In practical terms, geology is important for mineral and hydrocarbon exploration and
+            exploitation, evaluating water resources, understanding of natural hazards, the remediation of environmental
+            problems, and providing insights into past climate change. Geology is a major academic discipline, and it
+            plays an important role in geotechnical engineering.
+        </p>
+
+        <p class="text-attribution">
+            (This course uses material from the Wikipedia article
+            <a href="https://en.wikipedia.org/wiki/Geology" target="_blank">"Geology"</a>, which is released under the
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Creative Commons
+                Attribution-Share-Alike License 3.0</a>.)
+        </p>
+    </div>
+</script>
+
+<script id="page2" class="contentpage" type="text/template" data-title="Geologic Materials">
+    <div class="title">
+        Geologic Materials
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <h2>Geologic Materials</h2>
+
+        <p>The majority of geological data comes from research on solid Earth materials. These typically fall into one
+            of two categories: rock and unlithified material.</p>
+
+        <h3>Rock</h3>
+
+        <p>The majority of research in geology is associated with the study of rock, as rock provides the primary record
+            of the majority of the geologic history of the Earth. There are three major types of rock: igneous,
+            sedimentary, and metamorphic. The rock cycle illustrates the relationships among them (see diagram).</p>
+
+        <div class="bodyimg" style="background-image: url('img/cycle1.jpg')">
+            <img src="img/cycle1.jpg" alt="cycle1.jpg" role="img">
+        </div>
+
+        <p>When a rock solidifies or crystallizes from melt (magma or lava), it is an igneous rock. This rock can be
+            weathered and eroded, then redeposited and lithified into a sedimentary rock. It can then be turned into a
+            metamorphic rock by heat and pressure that change its mineral content, resulting in a characteristic fabric.
+            All three types may melt again, and when this happens, new magma is formed, from which an igneous rock may
+            once more solidify.</p>
+
+        <h4>Tests</h4>
+
+        <p>To study all three types of rock, geologists evaluate the minerals of which they are composed. Each mineral
+            has distinct physical properties, and there are many tests to determine each of them. The specimens can be
+            tested for:</p>
+
+        <ul>
+            <li>Luster: Quality of light reflected from the surface of a mineral. Examples are metallic, pearly, waxy,
+                dull.
+            </li>
+            <li>Color: Minerals are grouped by their color. Mostly diagnostic but impurities can change a mineral's
+                color.
+            </li>
+            <li>Streak: Performed by scratching the sample on a porcelain plate. The color of the streak can help name
+                the mineral.
+            </li>
+            <li>Hardness: The resistance of a mineral to scratching.</li>
+            <li>Breakage pattern: A mineral can either show fracture or cleavage, the former being breakage of uneven
+                surfaces, and the latter a breakage along closely spaced parallel planes.
+            </li>
+            <li>Specific gravity: the weight of a specific volume of a mineral.</li>
+            <li>Effervescence: Involves dripping hydrochloric acid on the mineral to test for fizzing.</li>
+            <li>Magnetism: Involves using a magnet to test for magnetism.</li>
+            <li>Taste: Minerals can have a distinctive taste, such as halite (which tastes like table salt).</li>
+            <li>Smell: Minerals can have a distinctive odor. For example, sulfur smells like rotten eggs.</li>
+        </ul>
+
+        <h3>Unlithified material</h3>
+        <p>Geologists also study unlithified materials (referred to as drift), which typically come from more recent
+            deposits. These materials are superficial deposits that lie above the bedrock. This study is often known
+            as Quaternary geology, after the Quaternary period of geologic history.</p>
+
+        <h4>Magma</h4>
+        <p>However, unlithified material does not only include sediments. Magma is the original unlithified source of
+            all igneous rocks. The active flow of molten rock is closely studied in volcanology, and igneous petrology
+            aims to determine the history of igneous rocks from their final crystallization to their original molten
+            source.</p>
+    </div>
+</script>
+
+<script id="page3" class="contentpage" type="text/template" data-title="Whole-Earth Structure">
+    <div class="title">
+        Whole-Earth Structure
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <h2>Plate tectonics</h2>
+        <p>In the 1960s, it was discovered that the Earth's lithosphere, which includes the crust and rigid uppermost
+            portion of the upper mantle, is separated into tectonic plates that move across the plastically deforming,
+            solid, upper mantle, which is called the asthenosphere. This theory is supported by several types of
+            observations, including seafloor spreading and the global distribution of mountain terrain and
+            seismicity.</p>
+        <p>There is an intimate coupling between the movement of the plates on the surface and the convection of the
+            mantle (that is, the heat transfer caused by the bulk movement of molecules within fluids). Thus, oceanic
+            plates and the adjoining mantle convection currents always move in the same direction – because the oceanic
+            lithosphere is actually the rigid upper thermal boundary layer of the convecting mantle. This coupling
+            between rigid plates moving on the surface of the Earth and the convecting mantle is called plate
+            tectonics.</p>
+        <p>The development of plate tectonics has provided a physical basis for many observations of the solid Earth.
+            Long linear regions of geologic features are explained as plate boundaries.</p>
+        <p>For example:</p>
+        <ul>
+            <li>Mid-ocean ridges, high regions on the seafloor where hydrothermal vents and volcanoes exist, are seen as
+                divergent boundaries, where two plates move apart.
+            </li>
+            <li>Arcs of volcanoes and earthquakes are theorized as convergent boundaries, where one plate subducts, or
+                moves, under another.
+            </li>
+        </ul>
+        <p>Transform boundaries, such as the San Andreas Fault system, resulted in widespread powerful earthquakes.
+            Plate tectonics also has provided a mechanism for Alfred Wegener's theory of continental drift, in which
+            the continents move across the surface of the Earth over geologic time. They also provided a driving force
+            for crustal deformation, and a new setting for the observations of structural geology. The power of the
+            theory of plate tectonics lies in its ability to combine all of these observations into a single theory of
+            how the lithosphere moves over the convecting mantle.</p>
+        <h2>Earth structure</h2>
+
+        <img width="33%" src="img/jordens_inre-numbers.svg" alt="jordens_inre-numbers.svg" role="img" align="left">
+
+        <p>Advances in seismology, computer modeling, and mineralogy and crystallography at high temperatures and
+            pressures give insights into the internal composition and structure of the Earth.</p>
+        <p>Seismologists can use the arrival times of seismic waves in reverse to image the interior of the Earth. Early
+            advances in this field showed the existence of a liquid outer core (where shear waves were not able to
+            propagate) and a dense solid inner core. These advances led to the development of a layered model of the
+            Earth, with a crust and lithosphere on top, the mantle below (separated within itself by seismic
+            discontinuities at 410 and 660 kilometers), and the outer core and inner core below that. More recently,
+            seismologists have been able to create detailed images of wave speeds inside the earth in the same way a
+            doctor images a body in a CT scan. These images have led to a much more detailed view of the interior of the
+            Earth, and have replaced the simplified layered model with a much more dynamic model.</p>
+        <p>Mineralogists have been able to use the pressure and temperature data from the seismic and modeling studies
+            alongside knowledge of the elemental composition of the Earth to reproduce these conditions in experimental
+            settings and measure changes in crystal structure. These studies explain the chemical changes associated
+            with the major seismic discontinuities in the mantle and show the crystallographic structures expected in
+            the inner core of the Earth.</p>
+    </div>
+</script>
+
+<script id="page4" class="contentpage" type="text/template" data-title="Geological Time">
+    <div class="title">
+        Geological Time
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <p>The geological time scale encompasses the history of the Earth. It is bracketed at the earliest by the
+            dates of the first Solar System material at 4.567 Ga (or 4.567 billion years ago) and the formation of
+            the Earth at 4.54 Ga (4.54 billion years), which is the beginning of the informally recognized
+            Hadean eon – a division of geological time. At the later end of the scale, it is marked by the present day
+            (in the Holocene epoch).</p>
+        <h2>Timescale of the Earth</h2>
+        <p>The following five timelines show the geologic time scale. The first shows the entire time from the formation
+            of the Earth to the present, but this gives little space for the most recent eon. Therefore, the second
+            timeline shows an expanded view of the most recent eon. In a similar way, the most recent era is expanded in
+            the third timeline, the most recent period is expanded in the fourth timeline, and the most recent epoch is
+            expanded in the fifth timeline.</p>
+        <div class="bodyimg" style="background-image: url('img/earth_timescale.png')">
+            <img src="img/earth_timescale.png" alt="earth_timescale.png" role="img">
+        </div>
+        <h2>Important milestones on Earth</h2>
+        <ul>
+            <li>4.567 Ga (gigaannum: billion years ago): Solar system formation</li>
+            <li>4.54 Ga: Accretion, or formation, of Earth</li>
+            <li>c. 4 Ga: End of Late Heavy Bombardment, the first life</li>
+            <li>c. 3.5 Ga: Start of photosynthesis</li>
+            <li>c. 2.3 Ga: Oxygenated atmosphere, first snowball Earth</li>
+            <li>730–635 Ma (megaannum: million years ago): second snowball Earth</li>
+            <li>541 ± 0.3 Ma: Cambrian explosion – vast multiplication of hard-bodied life; first abundant fossils;
+                start of the Paleozoic
+            </li>
+            <li>c. 380 Ma: First vertebrate land animals</li>
+            <li>250 Ma: Permian-Triassic extinction – 90% of all land animals die; end of Paleozoic and beginning of
+                Mesozoic
+            </li>
+            <li>66 Ma: Cretaceous–Paleogene extinction – Dinosaurs die; end of Mesozoic and beginning of Cenozoic</li>
+            <li>c. 7 Ma: First hominins appear</li>
+            <li>3.9 Ma: First Australopithecus, direct ancestor to modern Homo sapiens, appear</li>
+            <li>200 ka (kiloannum: thousand years ago): First modern Homo sapiens appear in East Africa</li>
+        </ul>
+    </div>
+</script>
+
+<script id="page5" class="contentpage" type="text/template" data-title="Dating Methods">
+    <div class="title">
+        Dating Methods
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <h2>Relative dating</h2>
+        <p>Methods for relative dating were developed when geology first emerged as a natural science. Geologists still
+            use the following principles today as a means to provide information about geological history and the timing
+            of geological events.
+        </p>
+        <p>The principle of uniformitarianism states that the geological processes observed in operation that modify the
+            Earth's crust at present have worked in much the same way over geological time. A fundamental principle
+            of geology advanced by the 18th-century Scottish physician and geologist James Hutton is that "the present
+            is the key to the past." In Hutton's words: "the past history of our globe must be explained by what can be
+            seen to be happening now."
+        </p>
+        <p>The principle of intrusive relationships concerns crosscutting intrusions. In geology, when an igneous
+            intrusion cuts across a formation of sedimentary rock, it can be determined that the igneous intrusion is
+            younger than the sedimentary rock. Different types of intrusions include stocks, laccoliths, batholiths,
+            sills and dikes.
+        </p>
+        <p>The principle of cross-cutting relationships pertains to the formation of faults and the age of the sequences
+            through which they cut. Faults are younger than the rocks they cut; accordingly, if a fault is found that
+            penetrates some formations but not those on top of it, then the formations that were cut are older than the
+            fault, and the ones that are not cut must be younger than the fault. Finding the key bed in these situations
+            may help determine whether the fault is a normal fault or a thrust fault.
+        </p>
+        <p>The principle of inclusions and components states that, with sedimentary rocks, if inclusions (or clasts) are
+            found in a formation, then the inclusions must be older than the formation that contains them. For example,
+            in sedimentary rocks, it is common for gravel from an older formation to be ripped up and included in a
+            newer layer. A similar situation with igneous rocks occurs when xenoliths are found. These foreign bodies
+            are picked up as magma or lava flows, and are incorporated, later to cool in the matrix. As a result,
+            xenoliths are older than the rock that contains them.
+        </p>
+        <p>The principle of original horizontality states that the deposition of sediments occurs as essentially
+            horizontal beds. Observation of modern marine and non-marine sediments in a wide variety of environments
+            supports this generalization (although cross-bedding is inclined, the overall orientation of cross-bedded
+            units is horizontal).
+        </p>
+        <p>The principle of superposition states that a sedimentary rock layer in a tectonically undisturbed sequence is
+            younger than the one beneath it and older than the one above it. Logically a younger layer cannot slip
+            beneath a layer previously deposited. This principle allows sedimentary layers to be viewed as a form of the
+            vertical timeline, a partial or complete record of the time elapsed from deposition of the lowest layer to
+            deposition of the highest bed.
+        </p>
+        <p>The principle of faunal succession is based on the appearance of fossils in sedimentary rocks. As organisms
+            exist during the same period throughout the world, their presence or (sometimes) absence provides a relative
+            age of the formations where they appear. Based on principles that William Smith laid out almost a hundred
+            years before the publication of Charles Darwin's theory of evolution, the principles of succession developed
+            independently of evolutionary thought. The principle becomes quite complex, however, given the uncertainties
+            of fossilization, localization of fossil types due to lateral changes in habitat (facies change in
+            sedimentary strata), and that not all fossils formed globally at the same time.
+        </p>
+
+        <div class="bodyimg" style="background-image: url('img/utahstrat.jpg')">
+            <img src="img/utahstrat.jpg" alt="utahstrat.jpg" role="img">
+        </div>
+
+        <h2>Absolute dating</h2>
+        <p>Geologists also use methods to determine the absolute age of rock samples and geological events. These dates
+            are useful on their own and may also be used in conjunction with relative dating methods or to calibrate
+            relative methods.
+        </p>
+        <p>At the beginning of the 20th century, advancement in geological science was facilitated by the ability to
+            obtain accurate absolute dates to geological events using radioactive isotopes and other methods. This
+            changed the understanding of geological time. Previously, geologists could only use fossils and
+            stratigraphic correlation to date sections of rock relative to one another. With isotopic dates, it became
+            possible to assign absolute ages to rock units, and these absolute dates could be applied to fossil
+            sequences in which there was datable material, converting the old relative ages into new absolute ages.
+        </p>
+        <p>For many geological applications, isotope ratios of radioactive elements are measured in minerals that give
+            the amount of time that has passed since a rock passed through its particular closure temperature, the point
+            at which different radiometric isotopes stop diffusing into and out of the crystal lattice. These
+            are used in geochronologic and thermochronologic studies. Common methods include uranium–lead dating,
+            potassium–argon dating, argon–argon dating and uranium–thorium dating. These methods are used for a variety
+            of applications. Dating of lava and volcanic ash layers found within a stratigraphic sequence can provide
+            absolute age data for sedimentary rock units that do not contain radioactive isotopes and calibrate relative
+            dating techniques. These methods can also be used to determine ages of pluton emplacement. Thermochemical
+            techniques can be used to determine temperature profiles within the crust, the uplift of mountain ranges,
+            and paleo-topography.
+        </p>
+        <p>Fractionation of the lanthanide series elements is used to compute ages since rocks were removed from the
+            mantle.
+        </p>
+        <p>Other methods are used for more recent events. Optically stimulated luminescence and cosmogenic radionuclide
+            dating are used to date surfaces and/or erosion rates. Dendrochronology can also be used for the dating of
+            landscapes. Radiocarbon dating is used for geologically young materials containing organic carbon.</p>
+    </div>
+</script>
+
+<script id="page6" class="contentpage" type="text/template" data-title="Geological Development of an Area">
+    <div class="title">
+        Geological Development of an Area
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <p>The geology of an area changes through time as rock units are deposited and inserted, and deformational
+            processes change their shapes and locations.
+        </p>
+        <p>Rock units are first emplaced either by deposition onto the surface or intrusion into the overlying rock.
+            Deposition can occur when sediments settle onto the surface of the Earth and later lithify into sedimentary
+            rock, or when as volcanic material such as volcanic ash or lava flows blanket the surface. Igneous
+            intrusions such as batholiths, laccoliths, dikes, and sills, push upwards into the overlying rock, and
+            crystallize as they intrude.
+        </p>
+        <p>After the initial sequence of rocks has been deposited, the rock units can be deformed and/or metamorphosed.
+            Deformation typically occurs as a result of horizontal shortening, horizontal extension, or side-to-side
+            (strike-slip) motion. These structural regimes broadly relate to convergent boundaries, divergent
+            boundaries, and transform boundaries, respectively, between tectonic plates.
+        </p>
+
+        <img width="33%" src="img/fault_types.svg" alt="fault_types.svg" role="img" align="left"
+             style="padding-right: 10px">
+
+        <p>When rock units are placed under horizontal compression, they shorten and become thicker. Because rock units,
+            other than muds, do not significantly change in volume, this is accomplished in two primary ways: through
+            faulting and folding. In the shallow crust, where brittle deformation can occur, thrust faults form, which
+            causes the deeper rock to move on top of the shallower rock. Because deeper rock is often older, as noted by
+            the principle of superposition, this can result in older rocks moving on top of younger ones. Movement along
+            faults can result in folding, either because the faults are not planar or because rock layers are dragged
+            along, forming drag folds as slip occurs along the fault. Deeper in the Earth, rocks behave plastically and
+            fold instead of faulting. These folds can either be those where the material in the center of the fold
+            buckles upwards, creating "antiforms", or where it buckles downwards, creating "synforms". If the tops of
+            the rock units within the folds remain pointing upwards, they are called anticlines and synclines,
+            respectively. If some of the units in the fold are facing downward, the structure is called an overturned
+            anticline or syncline, and if all of the rock units are overturned or the correct up-direction is unknown,
+            they are simply called by the most general terms, antiforms, and synforms.
+        </p>
+        <p>Even higher pressures and temperatures during horizontal shortening can cause both folding and metamorphism
+            of the rocks. This metamorphism causes changes in the mineral composition of the rocks; creates a foliation,
+            or planar surface, that is related to mineral growth under stress. This can remove signs of the original
+            textures of the rocks, such as bedding in sedimentary rocks, flow features of lavas, and crystal patterns in
+            crystalline rocks.
+        </p>
+        <p>Extension causes the rock units as a whole to become longer and thinner. This is primarily accomplished
+            through normal faulting and through the ductile stretching and thinning. Normal faults drop rock units that
+            are higher below those that are lower. This typically results in younger units ending up below older units.
+            Stretching of units can result in their thinning. In fact, at one location within the Maria Fold and Thrust
+            Belt, the entire sedimentary sequence of the Grand Canyon appears over a length of less than a meter. Rocks
+            at the depth to be ductilely stretched are often also metamorphosed. These stretched rocks can also pinch
+            into lenses, known as boudins, after the French word for "sausage" because of their visual similarity.
+        </p>
+        <p>Where rock units slide past one another, strike-slip faults develop in shallow regions, and become shear
+            zones at deeper depths where the rocks deform ductilely.
+        </p>
+        <p>The addition of new rock units, both depositionally and intrusively, often occurs during deformation.
+            Faulting and other deformational processes result in the creation of topographic gradients, causing material
+            on the rock unit that is increasing in elevation to be eroded by hillslopes and channels. These sediments
+            are deposited on the rock unit that is going down. Continual motion along the fault maintains the
+            topographic gradient in spite of the movement of sediment and continues to create accommodation space for
+            the material to deposit. Deformational events are often also associated with volcanism and igneous activity.
+            Volcanic ashes and lavas accumulate on the surface, and igneous intrusions enter from below. Dikes, long,
+            planar igneous intrusions, enter along cracks, and therefore often form in large numbers in areas that are
+            being actively deformed. This can result in the emplacement of dike swarms, such as those that are
+            observable across the Canadian shield, or rings of dikes around the lava tube of a volcano.
+        </p>
+        <p>All of these processes do not necessarily occur in a single environment and do not necessarily occur in a
+            single order. The Hawaiian Islands, for example, consist almost entirely of layered basaltic lava flows. The
+            sedimentary sequences of the mid-continental United States and the Grand Canyon in the southwestern United
+            States contain almost-undeformed stacks of sedimentary rocks that have remained in place since Cambrian
+            time. Other areas are much more geologically complex. In the southwestern United States, sedimentary,
+            volcanic, and intrusive rocks have been metamorphosed, faulted, foliated, and folded. Even older rocks, such
+            as the Acasta gneiss of the Slave craton in northwestern Canada, the oldest known rock in the world have
+            been metamorphosed to the point where their origin is indiscernible without laboratory analysis. In
+            addition, these processes can occur in stages. In many places, the Grand Canyon in the southwestern United
+            States being a very visible example, the lower rock units were metamorphosed and deformed, and then
+            deformation ended and the upper, undeformed units were deposited. Although any amount of rock emplacement
+            and rock deformation can occur, and they can occur any number of times, these concepts provide a guide to
+            understanding the geological history of an area.</p>
+    </div>
+</script>
+
+<script id="page7" class="contentpage" type="text/template" data-title="Applied Geology">
+    <div class="title">
+        Applied Geology
+        <div class="titleunderbar"></div>
+    </div>
+    <div class="body-content">
+        <h2>Economic geology</h2>
+        <p>Economic geology is a branch of geology that deals with aspects of economic minerals that humankind uses to
+            fulfill various needs. Economic minerals are those extracted profitably for various practical uses. Economic
+            geologists help locate and manage the Earth's natural resources, such as petroleum and coal, as well as
+            mineral resources, which include metals such as iron, copper, and uranium.</p>
+
+        <h2>Mining geology</h2>
+        <p>Mining geology consists of the extractions of mineral resources from the Earth. Some resources of economic
+            interests include gemstones, metals such as gold and copper, and many minerals such as asbestos, perlite,
+            mica, phosphates, zeolites, clay, pumice, quartz, and silica, as well as elements such as sulfur, chlorine,
+            and helium.</p>
+
+        <h2>Petroleum geology</h2>
+        <p>Petroleum geologists study the locations of the subsurface of the Earth that can contain extractable
+            hydrocarbons, especially petroleum and natural gas. Because many of these reservoirs are found in
+            sedimentary basins, they study the formation of these basins, as well as their sedimentary and tectonic
+            evolution and the present-day positions of the rock units.</p>
+
+        <h2>Engineering geology</h2>
+        <p>Engineering geology is the application of geological principles to engineering practice for the purpose of
+            assuring that the geological factors affecting the location, design, construction, operation, and
+            maintenance of engineering works are properly addressed.</p>
+        <p>In the field of civil engineering, geological principles and analyses are used in order to ascertain the
+            mechanical principles of the material on which structures are built. This allows tunnels to be built without
+            collapsing, bridges and skyscrapers to be built with sturdy foundations, and buildings to be built that will
+            not settle in clay and mud.</p>
+
+        <h2>Hydrology and environmental issues</h2>
+        <p>Geology and geological principles can be applied to various environmental problems such as stream
+            restoration, the restoration of brownfields, and the understanding of the interaction between natural
+            habitat and the geological environment. Groundwater hydrology, or hydrogeology, is used to locate
+            groundwater, which can often provide a ready supply of uncontaminated water and is especially important
+            in arid regions, and to monitor the spread of contaminants in groundwater wells.</p>
+        <p>Geologists also obtain data through stratigraphy, boreholes, core samples, and ice cores. Ice cores and
+            sediment cores are used for paleoclimate reconstructions, which tell geologists about past and present
+            temperature, precipitation, and sea level across the globe. These datasets are our primary source of
+            information on global climate change outside of instrumental data.</p>
+
+        <h2>Natural hazards</h2>
+        <p>Geologists and geophysicists study natural hazards in order to enact safe building codes and warning systems
+            that are used to prevent loss of property and life. Examples of important natural hazards that are pertinent
+            to geology (as opposed those that are mainly or only pertinent to meteorology) are:</p>
+
+        <ul>
+            <li>Avalanches</li>
+            <li>Earthquakes</li>
+            <li>Floods</li>
+            <li>Landslides and debris flows</li>
+            <li>River channel migration and avulsion</li>
+            <li>Rockfalls</li>
+            <li>Sinkholes</li>
+            <li>Soil liquefaction</li>
+            <li>Subsidence</li>
+            <li>Tsunamis</li>
+            <li>Volcanoes</li>
+        </ul>
+    </div>
+</script>
+
+<script id="pagequiz" class="contentpage" type="text/template" data-title="Quiz" data-questions="5"
+        data-quiz-id="quiz1">
+    <div class="quiz" role="form">
+        <div class="title">
+            <div class="title-contents">
+                <div class="title-contents-heading">Questions</div>
+                <div class="title-contents-buttons">
+                    <button onclick="course.autopass()" style="color: green;">(Select correct answers) &check;</button>
+                    <button onclick="course.autofail()" style="color: red;">(Select wrong answers) &cross;</button>
+                </div>
+            </div>
+            <div class="titleunderbar"></div>
+        </div>
+        <div class="body-content">
+            <label for="q0" id="q0-question">How many major types of rock are there?</label>
+            <input type="text" id="q0" name="q0" data-answer="3">
+        </div>
+        <div class="body-content">
+            <label for="q1" id="q1-question">What is the outermost layer of the earth's structure?</label>
+            <select name="q1" id="q1">
+                <option value="lower_mantle">Lower mantle</option>
+                <option value="crust" data-correct="yes">Crust</option>
+                <option value="upper_mantle">Upper mantle</option>
+                <option value="outer_core">Outer core</option>
+            </select>
+        </div>
+        <div class="body-content">
+            <label for="q2" id="q2-question">How many types of faults are there?</label>
+            <input type="text" id="q2" name="q2" data-answer="3">
+        </div>
+        <div class="body-content radio">
+            <label id="q3-question">What type of rock solidifies or crystallizes from melt?</label>
+            <div class="radiochoices">
+                <div class="radiochoice">
+                    <input type="radio" name="q3" id="q3_1" value="sedimentary"><label for="q3_1">Sedimentary</label>
+                </div>
+                <div class="radiochoice">
+                    <input type="radio" name="q3" id="q3_2" value="igneous" data-correct="yes"><label
+                        for="q3_2">Igneous</label>
+                </div>
+                <div class="radiochoice">
+                    <input type="radio" name="q3" id="q3_3" value="metamorphic"><label for="q3_3">Metamorphic</label>
+                </div>
+            </div>
+        </div>
+        <div class="body-content">
+            <label for="q4" id="q4-question">Which of these are distinct physical properties of rocks? (select all that
+                apply)</label>
+            <select name="q4" id="q4" multiple>
+                <option value="absorbency">Absorbency</option>
+                <option value="luster" data-correct="yes">Luster</option>
+                <option value="hardness" data-correct="yes">Hardness</option>
+                <option value="intelligence">Intelligence</option>
+            </select>
+        </div>
+        <div class="body-content">
+            <button onclick="course.submitAnswers()">Submit Answers</button>
+        </div>
+    </div>
+</script>
+
+<script src="js/cmi5.js"></script>
+<script src="js/course_cmi5.js"></script>
+<script src="js/course.js"></script>
+<script type="text/javascript">
+    let course;
+
+    (function () {
+        let queryParams = new URLSearchParams(document.location.search.substring(1));
+        course = new Course({
+            pageListQueryParam: queryParams.get("pages"),
+            completionBehavior: "launch",
+            enableBookmarking: true,
+            navigateOnLaunch: true,
+            navigationInjectIntoContent: false,
+            trackingPlugin: new CourseCmi5Plugin()
+        });
+
+        document.getElementById("next").addEventListener("click", () => {
+            course.nextPage();
+        });
+        document.getElementById("prev").addEventListener("click", () => {
+            course.previousPage();
+        });
+        document.addEventListener("click", e => {
+            // Capture all exit buttons.
+            if (e.target && e.target.matches(".exit-button")) {
+                course.exit();
+            }
+            // Capture navigation menu item interactions.
+            if (e.target && e.target.matches(".navmenuitem")) {
+                course.gotoPage(e.target.dataset.pageidx);
+            }
+        });
+    })();
+</script>
+
+<script type="text/javascript">
+    /* Resizing code start. */
+    let pageWidth = 800,
+        pageHeight = 600,
+        basePage = {
+            width: 800,
+            height: 600,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+    const $page = document.getElementById('design');
+    const $container = document.getElementById('container');
+
+    getPageSize();
+    scalePages($page, pageWidth, pageHeight);
+
+    //using underscore to delay resize method till finished resizing window
+    window.addEventListener("resize", function () {
+        getPageSize();
+        scalePages($page, pageWidth, pageHeight);
+    });
+
+    function getPageSize() {
+        pageHeight = $container.clientHeight;
+        pageWidth = $container.clientWidth;
+    }
+
+    function scalePages(page, maxWidth, maxHeight) {
+        let scaleX = 1, scaleY = 1;
+        scaleX = maxWidth / basePage.width;
+        scaleY = maxHeight / basePage.height;
+        basePage.scaleX = scaleX;
+        basePage.scaleY = scaleY;
+        basePage.scale = (scaleX > scaleY) ? scaleY : scaleX;
+
+        const newLeftPos = Math.abs(Math.floor(((basePage.width * basePage.scale) - maxWidth) / 2));
+        const newTopPos = Math.abs(Math.floor(((basePage.height * basePage.scale) - maxHeight) / 2));
+
+        page.style.transform = "scale(" + basePage.scale + ")";
+        page.style.left = newLeftPos + 'px';
+        page.style.top = newTopPos + 'px';
+    }
+    /* Resizing code end */
+</script>
+</body>
+</html>

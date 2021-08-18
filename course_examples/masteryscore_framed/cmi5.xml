@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<courseStructure xmlns="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
+    <course id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-single-au-mastery-score-framed">
+        <title>
+            <langstring lang="en-US">Introduction to Geology - Framed Style - Mastery Score</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+    </course>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-single-au-mastery-score-framed/1"
+        moveOn="CompletedOrPassed" masteryScore="0.3" launchMethod="OwnWindow">
+        <title>
+            <langstring lang="en-US">Introduction to Geology - Framed Style - Mastery Score</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+        <url>index.html</url>
+    </au>
+</courseStructure>

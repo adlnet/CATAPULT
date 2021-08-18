@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<courseStructure xmlns="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
+    <course id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest">
+        <title>
+            <langstring lang="en-US">Introduction to Geology - Pre/Post Test</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+    </course>
+    <block id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1">
+        <title>
+            <langstring lang="en-US">Introduction to Geology</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/pre"
+            moveOn="Passed">
+            <title>
+                <langstring lang="en-US">Pre-test</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    Pre-test
+                </langstring>
+            </description>
+            <url>pre1.html</url>
+        </au>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/content"
+            moveOn="CompletedOrPassed">
+            <title>
+                <langstring lang="en-US">Content</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    This course will introduce you into the basics of geology. This includes subjects such as
+                    plate tectonics, geological materials and the history of the Earth.
+                </langstring>
+            </description>
+            <url>index.html?pages=1</url>
+        </au>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/post"
+            moveOn="Passed">
+            <title>
+                <langstring lang="en-US">Post-test</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    Post-test
+                </langstring>
+            </description>
+            <!--
+            <requires>
+                <require idref="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/content"></require>
+            </requires>
+            -->
+            <url>post1.html</url>
+        </au>
+    </block>
+    <block id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block2">
+        <title>
+            <langstring lang="en-US">Geological Materials</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This lesson will introduce you to rocks and unlithified materials and the tests used to distinguish them.
+            </langstring>
+        </description>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block2/pre"
+            moveOn="Passed">
+            <title>
+                <langstring lang="en-US">Pre-test</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    Pre-test
+                </langstring>
+            </description>
+            <!--
+            <requires>
+                <require idref="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/post"></require>
+            </requires>
+            -->
+            <url>pre2.html</url>
+        </au>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block2/content"
+            moveOn="CompletedOrPassed">
+            <title>
+                <langstring lang="en-US">Content</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    This lesson will introduce you to rocks and unlithified materials and the tests used to distinguish them.
+                </langstring>
+            </description>
+            <!--
+            <requires>
+                <require idref="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block1/post"></require>
+            </requires>
+            -->
+            <url>index.html?pages=2</url>
+        </au>
+        <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block2/post"
+            moveOn="Passed">
+            <title>
+                <langstring lang="en-US">Post-test</langstring>
+            </title>
+            <description>
+                <langstring lang="en-US">
+                    Post-test
+                </langstring>
+            </description>
+            <!--
+            <requires>
+                <require idref="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-preposttest/block2/content"></require>
+            </requires>
+            -->
+            <url>post2.html</url>
+        </au>
+    </block>
+</courseStructure>

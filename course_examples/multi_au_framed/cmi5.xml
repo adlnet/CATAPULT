@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<courseStructure xmlns="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
+    <course id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed">
+        <title>
+            <langstring lang="en-US">Introduction to Geology - Multi AU at Root</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+    </course>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/1"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Introduction to Geology</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">
+                This course will introduce you into the basics of geology. This includes subjects such as
+                plate tectonics, geological materials and the history of the Earth.
+            </langstring>
+        </description>
+        <url>index.html?pages=1&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/2"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Geological Materials</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">This lesson will introduce you to rocks and unlithified materials and the tests used to distinguish them.
+            </langstring>
+        </description>
+        <url>index.html?pages=2&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/3"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Whole-Earth Structure</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">This lesson will introduce you to plate tectonics and Earth structure.
+            </langstring>
+        </description>
+        <url>index.html?pages=3&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/4"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Geological Time</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">A breakdown of the history of Earth's timeline in geological terms.
+            </langstring>
+        </description>
+        <url>index.html?pages=4&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/5"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Dating Methods</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">Techniques for determining the age of geological materials.
+            </langstring>
+        </description>
+        <url>index.html?pages=5&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/6"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Geological Development of an Area</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">An overview of how geological areas develop and change over time.
+            </langstring>
+        </description>
+        <url>index.html?pages=6&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/7"
+        moveOn="CompletedOrPassed">
+        <title>
+            <langstring lang="en-US">Applied Geology</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">A description of the various functional roles in industry for geology.
+            </langstring>
+        </description>
+        <url>index.html?pages=7&amp;complete=launch</url>
+    </au>
+    <au id="https://w3id.org/xapi/cmi5/catapult/lts/course/geology-intro-multi-au-framed/quiz"
+        moveOn="CompletedAndPassed">
+        <title>
+            <langstring lang="en-US">Quiz</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">Review your understanding of geology.
+            </langstring>
+        </description>
+        <url>index.html?pages=quiz&amp;complete=quiz</url>
+    </au>
+</courseStructure>

@@ -250,8 +250,29 @@ To the right of the title and metadata are two buttons:
 
 <figure>
   <img src="{{ '/cts/img/course_details_tests.png'| relative_url }}" />
-  <figcaption>Two tests on the Conformance Tests tab.</figcaption>
+  <figcaption>The course details page, showing two tests on the Conformance Tests tab.</figcaption>
 </figure>
+
+Below all of that, you'll find two tabs. The first one is called "Conformance Tests", and it contains a list of the
+tests that have been created for course. The list has the following columns:
+
+- **Registration:** The name of the actor for this test's registration, followed by the registration ID. This value
+  is also a link to the [Test Details](#test-details) page.
+- **Test Result:** The current result of the conformance test.
+- **Last Updated:** How long ago the test was updated (e.g., an AU was launched).
+
+Clicking any of those three column headers will sort the list. Clicking a second time will reverse the sort order.
+
+The list also has an "Actions" column with two buttons:
+
+- **Resume**: Clicking this button will take you to the [Test Details](#test-details) page.
+- **Download**: Clicking this button will download the test's JSON report file.
+
+The second tab is called "Course Structure", and it provides a view of the information from the course structure file.
+In the left column, there is a tree view with the course itself at the top, and all of the AUs and blocks that make up
+the course underneath. Clicking any of those components will show metadata in the panel to the right. For a
+description of each of the fields in the metadata panel, see the cmi5 specification, [Section 13.1: Course Structure
+Data Model](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#131-course-structure-data-model).
 
 <figure>
   <img src="{{ '/cts/img/course_details_structure.png' | relative_url }}" />

@@ -30,7 +30,6 @@
 function Course(opts) {
     // Make sure we know how to clean up correctly, even if we're being exited from a redirect or window closing event.
     window.addEventListener("beforeunload", event => {
-        event.preventDefault();
         this.exit({isUnloading: true});
     });
 

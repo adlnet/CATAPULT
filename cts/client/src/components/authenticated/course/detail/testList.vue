@@ -16,6 +16,8 @@
 <template>
     <b-row>
         <b-col>
+            <alerts kind="courseDetailTestList" />
+
             <b-table
                 :fields="tableFields"
                 :items="cache.items"
@@ -60,11 +62,13 @@
 
 <script>
     import Vuex from "vuex";
+    import alerts from "@/components/alerts";
     import testStatus from "@/components/testStatus";
 
     export default {
         name: "CourseDetailTestList",
         components: {
+            alerts,
             testStatus
         },
         props: {
@@ -127,8 +131,13 @@
                 }
             ),
 
-            download ({item}) {
-                console.log("components:courses::detail::testList::download", item);
+            async download ({item}) {
+                try {
+                    await this.$store.dispatch("service/tests/triggerDownload", {id: item.id});
+                }
+                catch (ex) {
+                    this.$store.dispatch("service/courses/alert", {content: `Failed to trigger download (${item.id}): ${ex}`, kind: "courseDetailTestList"});
+                }
             }
         }
     };

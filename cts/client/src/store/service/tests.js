@@ -385,6 +385,77 @@ export default {
             catch (ex) {
                 dispatch("alert", {content: `Failed to clear learner preferences: ${ex}`, kind: "testDetail"});
             }
+        },
+
+        triggerDownload: async ({getters, dispatch, rootGetters}, {id}) => {
+            await dispatch("loadById", {id, force: true});
+            await dispatch("logs/load", {props: {id}, force: true});
+
+            const test = getters.byId({id}).item,
+                logs = getters["logs/cache"]({cacheKey: getters["logs/cacheKey"]({id})}),
+                code = test.code,
+                sessionCreationItems = logs.items.filter((item) => (item.metadata && item.metadata.resource === "sessions:create")),
+                sessionLoadPromises = [];
+
+            for (const item of sessionCreationItems) {
+                sessionLoadPromises.push(dispatch("service/sessions/loadById", {id: item.metadata.sessionId, force: true}, {root: true}));
+                sessionLoadPromises.push(dispatch("service/sessions/logs/load", {props: {id: item.metadata.sessionId}, force: true}, {root: true}));
+            }
+
+            await Promise.all(sessionLoadPromises);
+
+            const fileContents = {
+                    id,
+                    code,
+                    dateCreated: new Date().toJSON(),
+                    metadata: test.metadata
+                },
+
+                //
+                // this is a little unorthodox/odd for a service to be performing but it
+                // makes some sort of sense because this service action can be dispatched
+                // by multiple components, and since the element handling is really outside
+                // of the scope of what Vue should be expected to provide it mostly doesn't
+                // matter where we put it, it'll be odd anywhere else too
+                //
+                element = document.createElement("a");
+
+            fileContents.logs = logs.items.map(
+                (logItem) => {
+                    const result = {
+                        ...logItem
+                    };
+
+                    if (logItem.metadata && logItem.metadata.resource === "sessions:create") {
+                        result.session = {
+                            metadata: rootGetters["service/sessions/byId"]({id: logItem.metadata.sessionId}).item.metadata,
+                            // create a new array so that it can be inplace sorted
+                            logs: [
+                                ...rootGetters["service/sessions/logs/cache"](
+                                    {
+                                        cacheKey: rootGetters["service/sessions/logs/cacheKey"]({id: logItem.metadata.sessionId})
+                                    }
+                                ).items
+                            ]
+                        };
+
+                        result.session.logs.sort((a, b) => a.id - b.id);
+                    }
+
+                    return result;
+                }
+            );
+
+            fileContents.logs.sort((a, b) => a.id - b.id);
+
+            element.setAttribute("href", "data:text/plain;charset=utf-8," + JSON.stringify(fileContents, null, 2)); // eslint-disable-line no-magic-numbers
+            element.setAttribute("download", `catapult-cts-${code}.json`);
+
+            element.style.display = "none";
+            document.body.appendChild(element);
+
+            element.click();
+            document.body.removeChild(element);
         }
     }
 };

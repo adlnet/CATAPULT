@@ -297,7 +297,8 @@
                     "waiveAU",
                     "loadLearnerPrefs",
                     "saveLearnerPrefs",
-                    "clearLearnerPrefs"
+                    "clearLearnerPrefs",
+                    "triggerDownload"
                 ]
             ),
             ...Vuex.mapActions(
@@ -334,25 +335,13 @@
                 }
             },
 
-            download () {
-                /* eslint-disable vue/script-indent */
-                const fileContents = {
-                        id: this.id,
-                        code: this.model.item.code,
-                        dateCreated: new Date().toJSON(),
-                        logs: this.logCache.items
-                    },
-                    element = document.createElement("a");
-                /* eslint-enable vue/script-indent */
-
-                element.setAttribute("href", "data:text/plain;charset=utf-8," + JSON.stringify(fileContents, null, 2)); // eslint-disable-line no-magic-numbers
-                element.setAttribute("download", `catapult-cts-${this.model.item.code}.json`);
-
-                element.style.display = "none";
-                document.body.appendChild(element);
-
-                element.click();
-                document.body.removeChild(element);
+            async download () {
+                try {
+                    await this.triggerDownload({id: this.id});
+                }
+                catch (ex) {
+                    this.$store.dispatch("service/tests/alert", {content: `Failed to trigger download: ${ex}`, kind: "testDetail"});
+                }
             },
 
             async doSaveLearnerPrefs () {

@@ -28,7 +28,9 @@ title: CTS User Guide
 
 The Catapult Content Test Suite (CTS) is a web application for content developers and testers who need to verify that
 their content is conformant with the [cmi5 specification](https://aicc.github.io/CMI-5_Spec_Current/). This guide is
-for those users. Other types of cmi5 users, particularly learners, do not need to use the CTS.
+for those users, who are assumed to be somewhat familiar with cmi5, and also with the [xAPI
+specification](https://github.com/adlnet/xAPI-Spec). Other types of cmi5 users, particularly learners, do not need to
+use the CTS.
 
 The [Tutorial](#tutorial) section will guide you through signing into the CTS for the first time, adding a course,
 testing it, and downloading the test report. The [Reference](#reference) section goes into more details about
@@ -39,6 +41,7 @@ different parts of the application.
 * [Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
 * [cmi5 CATAPULT!](https://adlnet.gov/projects/cmi5-CATAPULT/)
 * [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
+* [cmi5 specification](https://aicc.github.io/CMI-5_Spec_Current/)
 * [xAPI specification](https://github.com/adlnet/xAPI-Spec)
 
 ## Tutorial
@@ -46,8 +49,8 @@ different parts of the application.
 This tutorial will guide you through your first steps using the Catapult CTS. It covers signing in, importing a
 course, starting a conformance test, and launching assignable units (AUs). Before working through this tutorial, you
 should have access to an instance of the CTS web application. If there is not a hosted instance available for your
-use, you may wish to host a local instance on your own computer. See the [CTS deployment guide](#) for more
-information.
+use, you may wish to host a local instance on your own computer. See the [CTS README
+file](https://github.com/adlnet/CATAPULT/blob/main/cts/README.md) for more information.
 
 ### Signing In
 
@@ -79,7 +82,7 @@ password, and the address of the instance's sign in page.
 </figure>
 
 After logging in, you should see a navigation bar at the top of the browser window. On the right side of the
-navigation bar are three buttons: "New Course", "New Test", and the round "User" button.
+navigation bar are three buttons: "New Course", "New Test", and a round "User" button.
 
 <figure>
   <img src="{{ '/cts/img/navbar.png'| relative_url }}" />
@@ -113,31 +116,31 @@ details about the problem.
   <figcaption>An error message.</figcaption>
 </figure>
 
-**If your course imports successfully:** You'll be taken to the course details page for your new course. At the top of
+**If your course imports successfully:** You'll be taken to the Course Details page for your new course. At the top of
 the page, underneath the navigation bar, you'll find the course title and some metadata about the course. To the
 right, you'll find "Test" and "Delete" buttons. Below, you'll find two tabs. On the first tab, called "Conformance
-Tests", you'll find an empty table that will contain all of the test registrations that you create for this course.
+Tests", you'll find an empty table that will contain the test registrations that you create for this course.
 
 <figure>
   <img src="{{ '/cts/img/course_details_no_tests.png'| relative_url }}" />
-  <figcaption>A course details page, with the Conformance Tests tab visible.</figcaption>
+  <figcaption>A Course Details page, with the Conformance Tests tab visible.</figcaption>
 </figure>
 
 ### Testing
 
-**To start a test from the course details page:** Click the "Test" button in the upper right corner of the
+**To start a test from the Course Details page:** Click the "Test" button in the upper right corner of the
 screen. You'll be taken to a page where you can create the xAPI actor object for your test registration. Either
 provide values for the form fields, or click the "Randomize" button to have the CTS generate values for you. When
-you're done, click the "Continue" button.
+you're done, click the "Continue" button to proceed to the Test Details page.
 
 <figure>
   <img src="{{ '/cts/img/new_test_registration.png'| relative_url }}" />
   <figcaption>Creating a new test registration with a random xAPI actor.</figcaption>
 </figure>
 
-On the Conformance Test page, you'll see information about the course and registration, followed by a configuration
-section where you can adjust the cmi5 Agent Profile values. Underneath that you will find cards for each Assignable
-Unit within the course. This is where you will launch or waive each AU, and see their cmi5 conformance status.
+On the Test Details page, you'll see information about the course and registration, followed by a configuration
+section where you can adjust the cmi5 Agent Profile values. Underneath that you will find cards for each assignable
+unit within the course. This is where you will launch or waive each AU, and see their cmi5 conformance status.
 
 On the right side of the page, you'll see a Test Report. This will be filled in as you progress through each AU in the
 course. When you're finished, you may click the "Download" button to download a file containing a record of your test
@@ -155,7 +158,7 @@ the Reference section for more information.
 
 When you launch an AU, you'll see the content in an iframe or a new window (depending on the course structure and
 configuration) alongside a running log of statements and other session events that will be updated as you progress
-through the AU. You'll also see a "Close" button that will return you to the Conformance Test page, and an "Abandon"
+through the AU. You'll also see a "Close" button that will return you to the Test Details page, and an "Abandon"
 button that will issue an abandoned statement and cause any subsequent statements from the AU to be rejected.
 
 <figure>
@@ -202,13 +205,13 @@ new test from anywhere in the application. Its components are (from left to righ
 
 <figure>
   <img src="{{ '/cts/img/navbar.png'| relative_url }}" />
-  <figcaption>The navigation bar, showing (from left to right) the Catapult logo, Home link, New Course button,
-  New Test button, and User button.</figcaption>
+  <figcaption>The navigation bar, showing (from left to right) the Catapult logo, Home link, "New Course" button,
+  "New Test" button, and "User" button.</figcaption>
 </figure>
 
 #### Test Result Indicators
 
-The CTS used a combination of symbol, color, and (when space allows) text to indicate the result of conformance
+The CTS uses a combination of symbol, color, and (when space allows) text to indicate the result of conformance
 testing for assignable units (AUs), blocks, and courses. These test result indicators are used by the [Course
 List](#course-list) and [Test Details](#test-details) pages, among others. The different types of indicator are as
 follows:
@@ -236,7 +239,7 @@ follows:
 
 ### Course Details
 
-*Accessed by: clicking a course's title in the [Course List](#course-list), or creating a [New Course](#new-course).*
+*Accessed by: clicking a course's title in the [Course List](#course-list), or creating a [new course](#new-course).*
 
 At the top of the Course Details page, you'll see a heading with the course's title, followed by its LMS ID (generated
 by the CTS) and Publisher ID (from the course structure), and how long ago the course was imported into the CTS.
@@ -280,7 +283,7 @@ Data Model](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#
 
 ### Course List
 
-*Accessed by: clicking the "Home" link on the navigation bar.*
+*Accessed by: clicking the "Home" link on the [navigation bar](#navigation-bar).*
 
 The Course List is the CTS's home page, and it shows you every course that you have imported. It gives summary
 information about each course, as well as links to [Course Details](#course-details) and [Test
@@ -317,7 +320,7 @@ from the server.
 
 ### New Course
 
-*Accessed by: clicking the "New Course" button on the navigation bar.*
+*Accessed by: clicking the "New Course" button on the [navigation bar](#navigation-bar).*
 
 The New Course page has two tabs, one for each method of importing courses into the CTS.
 
@@ -376,8 +379,8 @@ After clicking the "Continue" button, you'll be taken to the [Test Details](#tes
 
 ### Requirements List
 
-*Accessed by: clicking the round "User" button on the navigation bar, then selecting "Spec Requirements" from the
-drop-down menu.*
+*Accessed by: clicking the round "User" button on the [navigation bar](#navigation-bar), then selecting "Spec
+Requirements" from the drop-down menu.*
 
 The Requirements List provides in-app access to the cmi5 specification requirements. Each requirement has an
 identifier based on the specification section that it comes from. For example, requirements 8.1.1.0-1 through
@@ -398,7 +401,7 @@ a [Course Details](#course-details) page.*
 
 The Test Details page is where you can launch AUs and view detailed information about a course's cmi5 conformance.
 The left column of the page contains metadata and the assignable units that make up the course. The right column
-contains a test report showing the conformance status of each course component, and an log of the test events, such as
+contains a test report showing the conformance status of each course component, and a log of the test events, such as
 AUs being launched.
 
 <figure>
@@ -441,7 +444,7 @@ the AU's title as a heading. The other information and controls in the card are 
   browse, or review.
 - **Waive Button:** Clicking this button will issue a ["Waived"
   statement](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#937-waived) for the AU. A drop-down
-  menu will open, so you may select a
+  menu will open, so that you may select a
   [reason](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#9552-reason) for waiving the AU:
   "Tested Out", "Equivalent AU", "Equivalent Outside Activity", or "Administrative". *Note: waiving an AU does not
   affect its conformance test result. You must still launch the AU and satisfy its moveOn criteria to get a

@@ -394,4 +394,143 @@ You may filter the list by identifier or by text.
 
 ### Test Details
 
+*Accessed by: creating a [new test](#new-test), or resuming an existing test from the [Course List](#course-list) or
+a [Course Details](#course-details) page.*
+
+The Test Details page is where you can launch AUs and view detailed information about a course's cmi5 conformance.
+The left column of the page contains metadata and the assignable units that make up the course. The right column
+contains a test report showing the conformance status of each course component, and an log of the test events, such as
+AUs being launched.
+
+<figure>
+  <img src="{{ '/cts/img/test_details.png'| relative_url }}" />
+  <figcaption>A Test Details page, showing one conformant AU and others waiting to be tested.</figcaption>
+</figure>
+
+#### Configuration
+The Configuration section has two tabs. The first shows information about the xAPI Actor for this test's registration,
+which was set when the test was created (see [New Test](#new-test)). The second tab is for modifying the xAPI [Agent
+Profile](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#110-xapi-agent-profile-data-model), which
+for cmi5 courses contains the learner's language and audio preferences.
+
+- **Language preference:** A comma-separated list of RFC 5646 Language Tags in order of preference.
+- **Audio preference:** "On" if audio should be on at course startup, or "Off" if audio should be off.
+
+Underneath those two form fields are buttons to save, clear, or reload the values from the LRS.
+
+<figure>
+  <img src="{{ '/cts/img/test_agent_profile.png'| relative_url }}" />
+  <figcaption>The Agent Profile tab, with values provided for language and audio preferences.</figcaption>
+</figure>
+
+*Note: the cmi5 specification requires both values to be present in the Agent Profile, so the "Save" button will be
+disabled until a value is provided for both.*
+
+#### Assignable Units
+Below the Configuration section is the Assignable Units section. Each assignable unit in the course has a card with
+the AU's title as a heading. The other information and controls in the card are as follows:
+
+- **Test Result:** In the upper right corner of the card. This will initially be "Not Started", and will change
+  after the AU is launched.
+- **Block Path:** If the course makes use of
+  [blocks](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#1312-block-metadata), then the path to
+  this AU from the course root is shown underneath the title. That way you can distinguish between AUs with similar
+  titles in different blocks.
+- **Launch Button:** Clicking this button will begin a new [AU Session](#au-session). Clicking the triangle on the
+  right side of the button will open a drop-down menu to select different cmi5 [launch
+  modes](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#1022-launchmode): normal (the default),
+  browse, or review.
+- **Waive Button:** Clicking this button will issue a ["Waived"
+  statement](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#937-waived) for the AU. A drop-down
+  menu will open, so you may select a
+  [reason](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#9552-reason) for waiving the AU:
+  "Tested Out", "Equivalent AU", "Equivalent Outside Activity", or "Administrative". *Note: waiving an AU does not
+  affect its conformance test result. You must still launch the AU and satisfy its moveOn criteria to get a
+  "Conformant" result.*
+
+<figure>
+  <img src="{{ '/cts/img/au_card.png' | relative_url }}" />
+  <figcaption>An AU card, showing a "Conformant" test result.</figcaption>
+</figure>
+
+There is also one more control in the AU card:
+- **Show Configuration:** Clicking this toggle will open a form with fields for the course structure settings that you
+  may override, and a "Reset" button to undo any changes.
+
+The available settings are:
+
+- **Launch method:**
+  ([launchMethod](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#81-launch-method)) This setting
+  controls whether the AU is launched in an iframe in the same window as the CTS, or in a new window. It is only
+  available when the AU's launchMethod value in the course structure is either "AnyWindow" or unspecified.
+- **Launch parameters:**
+  ([launchParameters](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#launchparameters))
+  Additional data that the AU may make use of at run time. The acceptable values for this setting are defined by the
+  course designer.
+- **Mastery score:**
+  ([masteryScore](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#masteryscore)) The score used to
+  determined passing or failure of judged activity in the AU. This should be a decimal number between 0.0 and 1.0
+  (inclusive).
+- **Move on:** ([moveOn](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#moveon)) The criteria
+  used to determine whether the AU has been sufficiently satisfied. Please note that in order for the CTS to reach a
+  "Conformant" result for a test, all AUs have to be satisfied. If you change this value to "Passed", but the AU only
+  issues "Completed" statements, then you'll not be able to verify the AU's conformance.
+- **Alternate entitlement key:**
+  ([entitlementKey.alternate](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#xapi_state_properties_entitlementKey_alternate))
+  Some AUs may require the LMS to provide an agreed upon entitlement key in order to be launched. If you are testing
+  such content, this is where you can provide the entitlement key.
+- **Context template additions:**
+  ([contextTemplate](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#1021-contexttemplate)) The
+  cmi5 specification requires the LMS to provide a template for the context property of any xAPI statements that the
+  AU issues. This template must include a session ID and a publisher ID for the activity, but may also include
+  additional values. If you wish to do so, you may provide a JSON object for this purpose.
+
+<figure>
+  <img src="{{ '/cts/img/au_configuration.png'| relative_url }}" />
+  <figcaption>An AU with altered configuration settings.</figcaption>
+</figure>
+
+#### Test Report
+
+At the top of the Test Report is a "Download" button. Clicking it will download the test's JSON report file, which
+you'll want to do after you've finished testing the entire course.
+
+The body of the Test Report has two sections. The first shows the conformance status of the course and each of its AUs
+in a tree view. Click the "+" icon next to the course title to show its AUs and blocks. The icon will change to "-",
+and you can click it again to hide the course's contents. Likewise, you can open and close any blocks inside the
+course to view their contents.
+
+The second sections is the Registration Log, and it contains a summary list of events during the test session. In
+particular, an entry is added to the log each time an AU is launched, with a link to a record of that [AU
+session](#au-session).
+
+<figure>
+  <img src="{{ '/cts/img/test_report.png'| relative_url }}" />
+  <figcaption>A test report showing one opened block with two conformant AUs, one closed block, and a registration log
+  with links to two AU sessions.</figcaption>
+</figure>
+
 #### AU Session
+
+The AU Session page contains a content area for AUs that are launched in an iframe, and an event log that shows a
+running summary of the xAPI statements and other events that happen during the session. Above the event log are
+two buttons:
+
+- **Close:** Clicking this button will return you to the Test Details page. If the AU is still open, it will be
+  unloaded.
+- **Abandon:** Clicking this button will issue an ["Abandoned"
+  statement](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#936-abandoned), and any further xAPI
+  statements issued by the AU will be rejected.
+
+<figure>
+  <img src="{{ '/cts/img/au_session.png' | relative_url }}" />
+  <figcaption>An AU test session, showing the content and an event long.</figcaption>
+</figure>
+
+You may revisit an AU session without re-launching the AU by clicking on its log entry in the [Test
+Report](#test-report). That way, you can review the session's event log.
+
+<figure>
+  <img src="{{ '/cts/img/au_session_requirement_violated.png' | relative_url }}" />
+  <figcaption>Revisiting an AU session to review its event log.</figcaption>
+</figure>

@@ -22,4 +22,9 @@ to develop tools and resources to support the adoption of cmi5 and xAPI across t
 enterprise.
 
 * [About CATAPULT]({{ "/about" | relative_url }})
-* [User Guide for the cmi5 Content Test Suite]({{ "/cts" | relative_url }})
+* [Project CATAPULT GitHub Repository](https://github.com/adlnet/CATAPULT)
+* [Project CATAPULT Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
+* [cmi5 Content Test Suite User Guide]({{ "/cts" | relative_url }})
+* [cmi5 Content Test Suite README](https://github.com/adlnet/CATAPULT/blob/main/cts/README.md)
+* [cmi5 LMS Test Suite README](https://github.com/adlnet/CATAPULT/blob/main/lts/README.md)
+* [cmi5 Player README](https://github.com/adlnet/CATAPULT/blob/main/player/README.md)

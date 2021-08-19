@@ -36,11 +36,10 @@ different parts of the application.
 
 ### Other Resources
 
-* [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
+* [Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
 * [cmi5 CATAPULT!](https://adlnet.gov/projects/cmi5-CATAPULT/)
-* Best Practices Guide
-* Example Content
-* CTS Deployment Guide
+* [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
+* [xAPI specification](https://github.com/adlnet/xAPI-Spec)
 
 ## Tutorial
 

@@ -217,7 +217,7 @@ List](#course-list) and [Test Details](#test-details) pages, among others. The d
 follows:
 
 - **Conformant:** This test result indicator is a white checkmark on a green background. For AUs, it means that every
-  requirement of the cmi5 specification has been met, and the AU as been satisfied according to its "moveOn"
+  requirement of the cmi5 specification has been met, and the AU has been satisfied according to its "moveOn"
   criteria. For blocks and courses, it means that all of the child AUs and blocks have been tested and are conformant.
 - **Non-conformant:** This test result indicator is a white "X" on a red background. For AUs, it means that some
   requirement of the cmi5 specification was not met. For blocks and courses, it means that a child AU has been tested
@@ -256,7 +256,7 @@ To the right of the title and metadata are two buttons:
 </figure>
 
 Below all of that, you'll find two tabs. The first one is called "Conformance Tests", and it contains a list of the
-tests that have been created for course. The list has the following columns:
+tests that have been created for the course. The list has the following columns:
 
 - **Registration:** The name of the actor for this test's registration, followed by the registration ID. This value
   is also a link to the [Test Details](#test-details) page.
@@ -471,7 +471,7 @@ The available settings are:
   course designer.
 - **Mastery score:**
   ([masteryScore](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#masteryscore)) The score used to
-  determined passing or failure of judged activity in the AU. This should be a decimal number between 0.0 and 1.0
+  determine passing or failure of judged activity in the AU. This should be a decimal number between 0.0 and 1.0
   (inclusive).
 - **Move on:** ([moveOn](https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#moveon)) The criteria
   used to determine whether the AU has been sufficiently satisfied. Please note that in order for the CTS to reach a
@@ -502,7 +502,7 @@ in a tree view. Click the "+" icon next to the course title to show its AUs and 
 and you can click it again to hide the course's contents. Likewise, you can open and close any blocks inside the
 course to view their contents.
 
-The second sections is the Registration Log, and it contains a summary list of events during the test session. In
+The second section is the Registration Log, and it contains a summary list of events during the test session. In
 particular, an entry is added to the log each time an AU is launched, with a link to a record of that [AU
 session](#au-session).
 

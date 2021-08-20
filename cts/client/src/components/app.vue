@@ -14,11 +14,11 @@
     limitations under the License.
  -->
 <template>
-    <b-container fluid class="d-flex flex-column p-0" style="min-height: 100vh;">
+    <b-container fluid class="d-flex flex-column p-0 main-container">
         <b-row v-if="isSignedIn" class="flex-fill" no-gutters>
             <authenticated />
         </b-row>
-        <b-row v-else class="flex-fill" no-gutters style="background-color: #94a9c8;">
+        <b-row v-else class="flex-fill unathenticated-row" no-gutters>
             <unauthenticated />
         </b-row>
     </b-container>
@@ -47,4 +47,12 @@
 </script>
 
 <style lang="scss" scoped>
+.main-container {
+    overflow-x: hidden
+}
+
+.unathenticated-row {
+    background-color: #94a9c8;
+    min-height: 100vh;
+}
 </style>

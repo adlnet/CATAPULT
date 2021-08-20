@@ -44,7 +44,7 @@
                             </b-button>
                         </b-col>
                     </b-row>
-                    <b-form-group label="Name (optional)">
+                    <b-form-group label="Name">
                         <b-form-input type="text" v-model="actor.name">
                         </b-form-input>
                     </b-form-group>

@@ -31,6 +31,16 @@ export default {
         initialState,
         ...initialState()
     },
+    getters: {
+        current: (state) => state.item,
+        isAdmin: (state) => () => {
+            if (state.access && state.item && state.item.roles && state.item.roles.includes("admin")) {
+                return true;
+            }
+
+            return false;
+        }
+    },
     mutations: {
         set: (state, {property, value}) => {
             state[property] = value;
@@ -95,7 +105,7 @@ export default {
 
                 if (! response.ok) {
                     if (response.status === 401) {
-                        throw "Your email address and / or password is incorrect. Please try again.";
+                        throw "Your username and / or password is incorrect. Please try again.";
                     }
 
                     throw new Error(`Request failed: ${response.status}`);

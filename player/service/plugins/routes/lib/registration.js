@@ -180,41 +180,50 @@ module.exports = Registration = {
         return registrationId;
     },
 
-    load: async ({tenantId, registrationId}, {db}) => {
+    load: async ({tenantId, registrationId}, {db, loadAus = true}) => {
         let registration;
 
         try {
-            registration = await db.first("*").queryContext({jsonCols: ["actor", "metadata"]}).from("registrations").where(
-                {
-                    tenantId,
-                    id: registrationId
-                }
-            );
+            registration = await db
+                .first("*")
+                .queryContext({jsonCols: ["actor", "metadata"]})
+                .from("registrations")
+                .where(
+                    {
+                        tenantId
+                    }
+                ).andWhere(
+                    function () {
+                        this.where("id", registrationId).orWhere("code", registrationId.toString());
+                    }
+                );
         }
         catch (ex) {
             throw new Error(`Failed to load registration: ${ex}`);
         }
 
-        try {
-            registration.aus = await db
-                .select(
-                    "has_been_attempted",
-                    "duration_normal",
-                    "duration_browse",
-                    "duration_review",
-                    "is_passed",
-                    "is_completed",
-                    "is_waived",
-                    "waived_reason",
-                    "is_satisfied",
-                    "metadata"
-                )
-                .from("registrations_courses_aus")
-                .where({tenantId, registrationId})
-                .queryContext({jsonCols: ["metadata"]});
-        }
-        catch (ex) {
-            throw new Error(`Failed to load registration AUs: ${ex}`);
+        if (loadAus) {
+            try {
+                registration.aus = await db
+                    .select(
+                        "has_been_attempted",
+                        "duration_normal",
+                        "duration_browse",
+                        "duration_review",
+                        "is_passed",
+                        "is_completed",
+                        "is_waived",
+                        "waived_reason",
+                        "is_satisfied",
+                        "metadata"
+                    )
+                    .from("registrations_courses_aus")
+                    .where({tenantId, registrationId: registration.id})
+                    .queryContext({jsonCols: ["metadata"]});
+            }
+            catch (ex) {
+                throw new Error(`Failed to load registration AUs: ${ex}`);
+            }
         }
 
         return registration;
@@ -236,7 +245,7 @@ module.exports = Registration = {
                     }
                 )
                 .andWhere(function () {
-                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId);
+                    this.where("registrations.id", registrationId).orWhere("registrations.code", registrationId.toString());
                 })
                 .queryContext(
                     {

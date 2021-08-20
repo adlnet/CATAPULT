@@ -21,30 +21,7 @@
             <alerts kind="courseList" />
 
             <b-row class="mb-4">
-                <b-col>
-                    <b-form inline>
-                        <label class="col-form-label-sm mr-1">Show</label>
-                        <b-form-select size="sm" class="mr-3">
-                            <option value="all" selected>all courses</option>
-                        </b-form-select>
-
-                        <label class="sr-only" for="search">Search</label>
-                        <b-input-group size="sm" class="mr-3">
-                            <b-form-input id="search" placeholder="Search...">
-                            </b-form-input>
-                            <b-input-group-append>
-                                <b-button variant="outline-info">
-                                    <b-icon-search></b-icon-search>
-                                </b-button>
-                            </b-input-group-append>
-                        </b-input-group>
-
-                        <b-button size="sm" class="mr-1" @click="load({force: true})">
-                            Force Reload
-                        </b-button>
-                    </b-form>
-                </b-col>
-                <b-col cols="auto" class="d-flex align-items-baseline justify-content-end">
+                <b-col class="pl-0 d-flex align-items-baseline">
                     <b-spinner v-if="cache.loadingMore" small></b-spinner>
                     <b-col cols="auto">
                         <b-form inline>
@@ -73,6 +50,11 @@
                         Load More
                     </b-button>
                 </b-col>
+                <b-col cols="auto" class="d-flex align-items-baseline justify-content-end">
+                    <b-button size="sm" class="mr-1" @click="load({force: true})">
+                        Reload
+                    </b-button>
+                </b-col>
             </b-row>
 
             <b-table
@@ -96,7 +78,7 @@
                 </template>
                 <template #cell(title)="data">
                     <b-link :to="`/course/${data.item.id}`">
-                        {{ data.item.metadata.structure.course.title[0].text }}
+                        {{ data.value }}
                     </b-link>
                 </template>
                 <template #cell(testResult)="data">
@@ -135,14 +117,12 @@
 
 <script>
     import Vuex from "vuex";
-    import {BIconSearch} from "bootstrap-vue";
     import alerts from "@/components/alerts";
     import testStatus from "@/components/testStatus";
 
     export default {
         name: "CourseList",
         components: {
-            BIconSearch,
             alerts,
             testStatus
         },
@@ -153,6 +133,8 @@
                     key: "title",
                     label: "Title",
                     sortable: true,
+                    formatter: (value, key, item) => item.metadata.structure.course.title[0].text,
+                    sortByFormatted: true,
                     class: "w-100"
                 },
                 {

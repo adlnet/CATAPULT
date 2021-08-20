@@ -61,12 +61,16 @@
                                 <b-tab title="Agent Profile">
                                     <b-form>
                                         <b-form-group label="Language preference">
-                                            <b-form-input v-model="languagePreference"></b-form-input>
+                                            <b-form-input v-model="model.item.learnerPrefs.languagePreference" :state="langPrefState" invalid-feedback="Value has to be a comma separated list of language codes"></b-form-input>
                                         </b-form-group>
                                         <b-form-group label="Audio preference">
-                                            <b-form-radio v-model="audioPreference" value="on">On</b-form-radio>
-                                            <b-form-radio v-model="audioPreference" value="off">Off</b-form-radio>
+                                            <b-form-radio name="audioPreference" v-model="model.item.learnerPrefs.audioPreference" value="on">On</b-form-radio>
+                                            <b-form-radio name="audioPreference" v-model="model.item.learnerPrefs.audioPreference" value="off">Off</b-form-radio>
+                                            <b-form-radio name="audioPreference" v-model="model.item.learnerPrefs.audioPreference" :value="null">None</b-form-radio>
                                         </b-form-group>
+                                        <b-button variant="primary" size="sm" :disabled="model.item.learnerPrefs.languagePreference === '' || model.item.learnerPrefs.audioPreference === null" @click="doSaveLearnerPrefs" class="mr-2">Save</b-button>
+                                        <b-button variant="primary" size="sm" :disabled="model.item.learnerPrefs._etag === null" @click="doClearLearnerPrefs" class="mr-2">Clear</b-button>
+                                        <b-button size="sm" @click="loadLearnerPrefs({id})">Reload</b-button>
                                     </b-form>
                                 </b-tab>
                             </b-tabs>
@@ -239,9 +243,7 @@
             structureNode
         },
         data: () => ({
-            aUconfigs: {},
-            audioPreference: null,
-            languagePreference: null
+            aUconfigs: {}
         }),
         props: {
             id: {
@@ -266,10 +268,24 @@
                 const cacheKey = this.$store.getters["service/tests/logs/cacheKey"]({id: this.id})
 
                 return this.$store.getters["service/tests/logs/cache"]({cacheKey});
+            },
+            langPrefState () {
+                const value = this.model.item.learnerPrefs.languagePreference;
+
+                if (value === null || value === "") {
+                    return null;
+                }
+
+                if (/^[-A-Za-z0-9]+(?:,[-A-Za-z0-9]+)*$/.test(value)) {
+                    return true;
+                }
+
+                return false;
             }
         },
         mounted () {
             this.loadLogs({props: {id: this.id}, force: true});
+            this.loadLearnerPrefs({id: this.id});
         },
         created () {
             this.$store.dispatch("service/tests/loadById", {id: this.id});
@@ -278,7 +294,11 @@
             ...Vuex.mapActions(
                 "service/tests",
                 [
-                    "waiveAU"
+                    "waiveAU",
+                    "loadLearnerPrefs",
+                    "saveLearnerPrefs",
+                    "clearLearnerPrefs",
+                    "triggerDownload"
                 ]
             ),
             ...Vuex.mapActions(
@@ -315,25 +335,31 @@
                 }
             },
 
-            download () {
-                /* eslint-disable vue/script-indent */
-                const fileContents = {
-                        id: this.id,
-                        code: this.model.item.code,
-                        dateCreated: new Date().toJSON(),
-                        logs: this.logCache.items
-                    },
-                    element = document.createElement("a");
-                /* eslint-enable vue/script-indent */
+            async download () {
+                try {
+                    await this.triggerDownload({id: this.id});
+                }
+                catch (ex) {
+                    this.$store.dispatch("service/tests/alert", {content: `Failed to trigger download: ${ex}`, kind: "testDetail"});
+                }
+            },
 
-                element.setAttribute("href", "data:text/plain;charset=utf-8," + JSON.stringify(fileContents, null, 2)); // eslint-disable-line no-magic-numbers
-                element.setAttribute("download", `catapult-cts-${this.model.item.code}.json`);
+            async doSaveLearnerPrefs () {
+                try {
+                    await this.saveLearnerPrefs({id: this.id});
+                }
+                catch (ex) {
+                    console.log(`Failed call to save learner preferences: ${ex}`);
+                }
+            },
 
-                element.style.display = "none";
-                document.body.appendChild(element);
-
-                element.click();
-                document.body.removeChild(element);
+            async doClearLearnerPrefs () {
+                try {
+                    await this.clearLearnerPrefs({id: this.id});
+                }
+                catch (ex) {
+                    console.log(`Failed call to clear learner preferences: ${ex}`);
+                }
             },
 
             async doLaunchAU (index, launchMode) {

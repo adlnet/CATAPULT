@@ -26,7 +26,7 @@ module.exports = Session = {
 
         try {
             session = await db.first("*").from("sessions").where(function () {
-                    this.where("sessions.id", sessionId).orWhere("sessions.code", sessionId);
+                    this.where("sessions.id", sessionId).orWhere("sessions.code", sessionId.toString());
                 })
                 .queryContext({jsonCols: ["context_template"]});
         }
@@ -53,7 +53,7 @@ module.exports = Session = {
                     }
                 )
                 .andWhere(function () {
-                    this.where("sessions.id", sessionId).orWhere("sessions.code", sessionId);
+                    this.where("sessions.id", sessionId).orWhere("sessions.code", sessionId.toString());
                 })
                 .queryContext(
                     {

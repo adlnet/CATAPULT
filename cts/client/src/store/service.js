@@ -17,6 +17,7 @@ import apiAccess from "./service/apiAccess";
 import courses from "./service/courses";
 import tests from "./service/tests";
 import sessions from "./service/sessions";
+import users from "./service/users";
 
 export default {
     namespaced: true,
@@ -42,6 +43,7 @@ export default {
         apiAccess,
         courses,
         tests,
-        sessions
+        sessions,
+        users
     }
 };

@@ -21,7 +21,7 @@
                 label="Enter course structure XML string to validate and import."
                 class="flex-fill d-flex flex-column"
             >
-                <b-form-textarea id="courseStructureEntry" v-model="structure" class="flex-fill" no-resize>
+                <b-form-textarea id="courseStructureEntry" v-model="structure" class="flex-fill textarea-fill" no-resize>
                 </b-form-textarea>
             </b-form-group>
             <div class="text-center mb-3">
@@ -76,6 +76,10 @@
 </script>
 
 <style lang="scss">
+    .textarea-fill {
+        height: calc(100vh - 330px) !important;
+    }
+
     #courseNew-xmlEditor {
         div {
             display: flex;

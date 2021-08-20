@@ -16,6 +16,8 @@
 <template>
     <b-row>
         <b-col>
+            <alerts kind="courseDetailTestList" />
+
             <b-table
                 :fields="tableFields"
                 :items="cache.items"
@@ -35,11 +37,11 @@
                 </template>
                 <template #cell(registration)="data">
                     <b-link :to="`/test/${data.item.id}`">
-                        {{ data.item.metadata.actor.name }} ({{ data.item.code }})
+                        {{ data.value }}
                     </b-link>
                 </template>
                 <template #cell(result)="data">
-                    <test-status :status="data.item.metadata.result" />
+                    <test-status :status="data.value" />
                 </template>
                 <template #cell(updatedAt)="data">
                     <span v-if="data.value" v-b-popover.hover="data.value">
@@ -60,11 +62,13 @@
 
 <script>
     import Vuex from "vuex";
+    import alerts from "@/components/alerts";
     import testStatus from "@/components/testStatus";
 
     export default {
         name: "CourseDetailTestList",
         components: {
+            alerts,
             testStatus
         },
         props: {
@@ -79,12 +83,16 @@
                     key: "registration",
                     label: "Registration",
                     sortable: true,
+                    formatter: (value, key, item) => `${item.metadata.actor.name } (${item.code})`,
+                    sortByFormatted: true,
                     class: "w-100"
                 },
                 {
                     key: "result",
                     label: "Test Result",
                     sortable: true,
+                    formatter: (value, key, item) => item.metadata.result,
+                    sortByFormatted: true,
                     class: "text-nowrap px-4 align-middle"
                 },
                 {
@@ -123,8 +131,13 @@
                 }
             ),
 
-            download ({item}) {
-                console.log("components:courses::detail::testList::download", item);
+            async download ({item}) {
+                try {
+                    await this.$store.dispatch("service/tests/triggerDownload", {id: item.id});
+                }
+                catch (ex) {
+                    this.$store.dispatch("service/courses/alert", {content: `Failed to trigger download (${item.id}): ${ex}`, kind: "courseDetailTestList"});
+                }
             }
         }
     };

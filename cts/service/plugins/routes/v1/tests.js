@@ -20,6 +20,7 @@ const Boom = require("@hapi/boom"),
     Hoek = require("@hapi/hoek"),
     Joi = require("joi"),
     { v4: uuidv4 } = require("uuid"),
+    iri = require("iri"),
 
     // sessions is optional because we know calling this from registration creation
     // will never have any sessions
@@ -117,7 +118,16 @@ module.exports = {
                                 actor: Joi.object({
                                     account: Joi.object({
                                         name: Joi.string().required(),
-                                        homePage: Joi.string().required()
+                                        homePage: Joi.string().required().custom((value, helpers) => {
+                                            try {
+                                                new iri.IRI(value).toAbsolute();
+                                            }
+                                            catch (ex) {
+                                                throw new Error("account homepage must be a valid IRI");
+                                            }
+
+                                            return value;
+                                        })
                                     }).required(),
                                     objectType: Joi.any().allow("Agent").optional(),
                                     name: Joi.string().optional()
@@ -368,6 +378,165 @@ module.exports = {
                         }
 
                         await h.registrationEvent(registrationId, tenantId, db, {kind: "spec", auIndex, reason, resource: "registration:waive-au", summary: `Waived (${auIndex})`});
+
+                        return null;
+                    }
+                },
+
+                {
+                    method: "GET",
+                    path: "/tests/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"],
+                        cors: {
+                            additionalExposedHeaders: ["Etag"]
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            registration = await db.first("*").from("registrations").where({tenantId, id: registrationId});
+
+                        if (! registration) {
+                            return Boom.notFound();
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await Wreck.request(
+                                "GET",
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${registration.playerId}/learner-prefs`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req)
+                                    }
+                                }
+                            );
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to get learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 200 && response.statusCode !== 404) {
+                            throw Boom.internal(new Error(`Failed to request learner preferences from player (${response.statusCode}): ${responseBody.message}${responseBody.srcError ? " (" + responseBody.srcError + ")" : ""}`));
+                        }
+
+                        const result = h.response(responseBody);
+
+                        result.code(response.statusCode);
+                        result.message(response.statusMessage);
+                        result.header("Etag", response.headers.etag);
+
+                        return result;
+                    }
+                },
+
+                {
+                    method: "POST",
+                    path: "/tests/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"],
+                        cors: {
+                            additionalHeaders: ["If-Match"]
+                        },
+                        payload: {
+                            parse: true
+                        },
+                        validate: {
+                            payload: Joi.object({
+                                languagePreference: Joi.string().pattern(/^[-A-Za-z0-9]+(?:,[-A-Za-z0-9]+)*$/).required(),
+                                audioPreference: Joi.string().allow("on", "off").required()
+                            }).label("Request-PostLearnerPrefs")
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            registration = await db.first("*").from("registrations").where({tenantId, id: registrationId});
+
+                        if (! registration) {
+                            return Boom.notFound();
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await Wreck.request(
+                                "POST",
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${registration.playerId}/learner-prefs`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req),
+                                        "Content-Type": "application/json",
+                                        ...req.headers["if-match"] ? {"If-Match": req.headers["if-match"]} : {},
+                                        ...req.headers["if-none-match"] ? {"If-None-Match": req.headers["if-none-match"]} : {}
+                                    },
+                                    payload: req.payload
+                                }
+                            );
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to save learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 204) {
+                            throw Boom.internal(new Error(`Failed to save learner preferences in player (${response.statusCode}): ${responseBody.message}${responseBody.srcError ? " (" + responseBody.srcError + ")" : ""}`));
+                        }
+
+                        return null;
+                    }
+                },
+
+                {
+                    method: "DELETE",
+                    path: "/tests/{id}/learner-prefs",
+                    options: {
+                        tags: ["api"],
+                        cors: {
+                            additionalHeaders: ["If-Match"]
+                        }
+                    },
+                    handler: async (req, h) => {
+                        const db = req.server.app.db,
+                            registrationId = req.params.id,
+                            tenantId = req.auth.credentials.tenantId,
+                            registration = await db.first("*").from("registrations").where({tenantId, id: registrationId});
+
+                        if (! registration) {
+                            return Boom.notFound();
+                        }
+
+                        let response,
+                            responseBody;
+
+                        try {
+                            response = await Wreck.request(
+                                "DELETE",
+                                `${req.server.app.player.baseUrl}/api/v1/registration/${registration.playerId}/learner-prefs`,
+                                {
+                                    headers: {
+                                        Authorization: await req.server.methods.playerBearerAuthHeader(req),
+                                        ...req.headers["if-match"] ? {"If-Match": req.headers["if-match"]} : {}
+                                        // ...req.headers["if-none-match"] ? {"If-None-Match": req.headers["if-none-match"]} : {}
+                                    }
+                                }
+                            );
+                            responseBody = await Wreck.read(response, {json: true});
+                        }
+                        catch (ex) {
+                            throw Boom.internal(new Error(`Failed request to player to delete learner preferences: ${ex}`));
+                        }
+
+                        if (response.statusCode !== 204) {
+                            throw Boom.internal(new Error(`Failed to delete learner preferences in player (${response.statusCode}): ${responseBody.message}${responseBody.srcError ? " (" + responseBody.srcError + ")" : ""}`));
+                        }
 
                         return null;
                     }

@@ -91,6 +91,9 @@ module.exports = {
         );
 
         lrsEndpoint = process.env.LRS_ENDPOINT;
+        if (!lrsEndpoint.endsWith("/")) {
+            lrsEndpoint += "/";
+        }
         lrsKey = process.env.LRS_KEY;
         lrsSecret = process.env.LRS_SECRET;
     },

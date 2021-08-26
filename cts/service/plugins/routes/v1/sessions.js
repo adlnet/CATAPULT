@@ -82,7 +82,6 @@ module.exports = {
                                 testId: Joi.number().integer().min(0).required(),
                                 auIndex: Joi.number().integer().min(0).required(),
                                 alternateEntitlementKey: Joi.string().optional(),
-                                contextTemplateAdditions: Joi.object().optional(),
                                 launchMode: Joi.any().allow("Normal", "Browse", "Review").optional(),
                                 launchMethod: Joi.any().allow("iframe", "newWindow").optional(),
                                 contextTemplateAdditions: Joi.object().optional(),

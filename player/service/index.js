@@ -67,10 +67,15 @@ const provision = async () => {
 
     const db = await require("./lib/db")();
 
+    let lrsEndpoint = LRS_ENDPOINT;
+    if (!lrsEndpoint.endsWith("/")) {
+        lrsEndpoint += "/";
+    }
+
     server.app = {
         contentUrl: CONTENT_URL || "http://localhost:3398/content",
         lrs: {
-            endpoint: LRS_ENDPOINT,
+            endpoint: lrsEndpoint,
             username: LRS_USERNAME,
             password: LRS_PASSWORD
         },

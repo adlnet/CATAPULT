@@ -21,3 +21,7 @@ The artifact of `requirements/` is a JSON file that can be leveraged by systems 
 ## Course Examples
 
 The `course_examples/` is a collection of cmi5 course packages modelling potential approaches to various aspects of cmi5 implementation for content.
+
+## Documentation
+
+The `docs/` contains the source files for building the [documentation site](https://adlnet.github.io/CATAPULT/). It contains user guides for using the tools, etc.

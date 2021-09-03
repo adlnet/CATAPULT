@@ -36,14 +36,6 @@ The [Tutorial](#tutorial) section will guide you through signing into the CTS fo
 testing it, and downloading the test report. The [Reference](#reference) section goes into more details about
 different parts of the application.
 
-### Other Resources
-
-* [Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
-* [cmi5 CATAPULT!](https://adlnet.gov/projects/cmi5-CATAPULT/)
-* [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
-* [cmi5 specification](https://aicc.github.io/CMI-5_Spec_Current/)
-* [xAPI specification](https://github.com/adlnet/xAPI-Spec)
-
 ## Tutorial
 
 This tutorial will guide you through your first steps using the Catapult CTS. It covers signing in, importing a

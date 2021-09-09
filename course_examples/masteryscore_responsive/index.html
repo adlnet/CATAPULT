@@ -603,7 +603,7 @@
     </div>
 </script>
 
-<script src="js/cmi5.js"></script>
+<script src="js/cmi5.min.js"></script>
 <script src="js/course_cmi5.js"></script>
 
 <script src="js/course.js"></script>
@@ -611,7 +611,6 @@
     let course;
 
     (function() {
-        // TODO Polyfill for IE?  Or switch back to static?
         let queryParams = new URLSearchParams(document.location.search.substring(1));
         course = new Course({
 

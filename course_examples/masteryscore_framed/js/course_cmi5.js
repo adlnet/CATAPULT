@@ -59,7 +59,7 @@ function CourseCmi5Plugin() {
     this.activeStatements = 0;
     this.callbackOnStatementSend = null;
     this.launchMode = "";
-    this.statementQueue = [];
+    this.statementBatch = [];
 }
 
 /**
@@ -352,11 +352,11 @@ CourseCmi5Plugin.prototype.experienced = function (pageId, name, overallProgress
 /**
  * Generate an xAPI "answered" statement that represents the details of the learner's interaction, including success.
  *
- * @param  {Object} interactionObj The interaction details.
- * @param  {Object} opts           Configuration around the storage and sending of the interaction.
- * @return {Promise}              The promise from the statement network call.
+ * @param  {Array}  interactionList A list of interaction details.
+ * @param  {Object} opts            Configuration around the storage and sending of the interaction.
+ * @return {Promise}                The promise from the statement network call.
  */
-CourseCmi5Plugin.prototype.interactionCapture = function (interactionObj, opts) {
+CourseCmi5Plugin.prototype.captureInteractions = function (interactionList, opts) {
     if (!this.cmi5) {
         return Promise.resolve(null);
     }
@@ -368,30 +368,34 @@ CourseCmi5Plugin.prototype.interactionCapture = function (interactionObj, opts) 
         opts.queue = false;
     }
 
-    let stmt = this.cmi5.prepareStatement(VERB_ANSWERED);
-    stmt.result = {
-        response: interactionObj.userAnswers.join("[,]")
-    }
-    if (typeof interactionObj.success !== "undefined") {
-        stmt.result.success = !!interactionObj.success;
-    }
-    stmt.object = {
-        objectType: "Activity",
-        id: this.cmi5.getActivityId() + "/test/" + interactionObj.testId + "/question/" + interactionObj.interactionId,
-        definition: {
-            type: "http://adlnet.gov/expapi/activities/cmi.interaction",
-            interactionType: interactionObj.interactionType,
-            name: {"en-US": interactionObj.name},
-            correctResponsesPattern: [interactionObj.correctAnswers.join("[,]")]
+    let stmts = [];
+    interactionList.forEach(interactionObj => {
+        let stmt = this.cmi5.prepareStatement(VERB_ANSWERED);
+        stmt.result = {
+            response: interactionObj.userAnswers.join("[,]")
         }
-    };
-    if (interactionObj.description) {
-        stmt.object.definition.description = {"en-US": interactionObj.description};
-    }
-    if (interactionObj.choices) {
-        stmt.object.definition.choices = interactionObj.choices;
-    }
-    return this.sendStatement(stmt, opts);
+        if (typeof interactionObj.success !== "undefined") {
+            stmt.result.success = !!interactionObj.success;
+        }
+        stmt.object = {
+            objectType: "Activity",
+            id: this.cmi5.getActivityId() + "/test/" + interactionObj.testId + "/question/" + interactionObj.interactionId,
+            definition: {
+                type: "http://adlnet.gov/expapi/activities/cmi.interaction",
+                interactionType: interactionObj.interactionType,
+                name: {"en-US": interactionObj.name},
+                correctResponsesPattern: [interactionObj.correctAnswers.join("[,]")]
+            }
+        };
+        if (interactionObj.description) {
+            stmt.object.definition.description = {"en-US": interactionObj.description};
+        }
+        if (interactionObj.choices) {
+            stmt.object.definition.choices = interactionObj.choices;
+        }
+        stmts.push(stmt);
+    });
+    return this.sendStatements(stmts, opts);
 }
 
 /**
@@ -529,10 +533,8 @@ CourseCmi5Plugin.prototype._shouldSendStatement = function (opts) {
 /**
  * If there are buffered statements waiting to be sent, begin sending them.
  */
-CourseCmi5Plugin.prototype.flushQueue = function () {
-    while (this.statementQueue.length > 0) {
-        this._sendStatement(this.statementQueue.pop());
-    }
+CourseCmi5Plugin.prototype.flushBatch = function () {
+    return this._sendStatements(this.statementBatch);
 }
 
 /**
@@ -542,8 +544,20 @@ CourseCmi5Plugin.prototype.flushQueue = function () {
  * @param  {Object=} opts
  * @return {Promise} Does nothing, provided for matching interface with sendStatement.
  */
-CourseCmi5Plugin.prototype.queueStatement = function (statement, opts) {
-    this.statementQueue.push(statement);
+CourseCmi5Plugin.prototype.batchStatement = function (statement, opts) {
+    this.statementBatch.push(statement);
+    return Promise.resolve(null);
+}
+
+/**
+ * Buffer cmi5 statements to be sent in the future.
+ *
+ * @param  {Array}   statements cmi5 statements to save.
+ * @param  {Object=} opts
+ * @return {Promise} Does nothing, provided for matching interface with sendStatement.
+ */
+CourseCmi5Plugin.prototype.batchStatements = function (statements, opts) {
+    this.statementBatch = this.statementBatch.concat(statements);
     return Promise.resolve(null);
 }
 
@@ -568,9 +582,38 @@ CourseCmi5Plugin.prototype.sendStatement = function (statement, opts) {
     // for initialized/terminated statements.
     if (this._shouldSendStatement(opts)) {
         if (opts.queue) {
-            return this.queueStatement(statement, opts);
+            return this.batchStatement(statement, opts);
         } else {
             return this._sendStatement(statement);
+        }
+    }
+    return Promise.resolve(null);
+}
+
+/**
+ * Send a list of cmi5 statements to the LRS.
+ *
+ * @param  {Array}   statements A cmi5 statement to save.
+ * @param  {Object=} opts       Configuration around the sending parameters of a cmi5 statement.
+ * @return {Promise}            The network call attempting to save the cmi5 statement.
+ */
+CourseCmi5Plugin.prototype.sendStatements = function (statements, opts) {
+    if (!opts) {
+        opts = {};
+    }
+    if (!opts.forceSend) {
+        opts.forceSend = false;
+    }
+    if (!opts.hasOwnProperty("queue")) {
+        opts.queue = false;
+    }
+    // forceSend sends the statement even if we're in browse/review mode.  Normally should only be used
+    // for initialized/terminated statements.
+    if (this._shouldSendStatement(opts)) {
+        if (opts.queue) {
+            return this.batchStatements(statements, opts);
+        } else {
+            return this._sendStatements(statements);
         }
     }
     return Promise.resolve(null);
@@ -588,6 +631,30 @@ CourseCmi5Plugin.prototype._sendStatement = function (statement) {
     this.activeStatements += 1;
     this.callbackOnStatementSend(null, null, this.activeStatements);
     return this.cmi5.sendStatement(statement).then(result => {
+        this.activeStatements -= 1;
+        if (this.callbackOnStatementSend) {
+            this.callbackOnStatementSend(result, null, this.activeStatements);
+        }
+    }).catch(error => {
+        this.activeStatements -= 1;
+        if (this.callbackOnStatementSend) {
+            this.callbackOnStatementSend(null, error, this.activeStatements);
+        }
+    })
+}
+
+/**
+ * Statement tracker sending statements and waiting for statement network calls to end, responsible for updating the
+ * main course adapter whenever there's a state change.
+ *
+ * @param  {Array} statements A list of cmi5 statements to save.
+ * @return {Promise}          The network call attempting to save the cmi5 statement.
+ * @private
+ */
+CourseCmi5Plugin.prototype._sendStatements = function (statements) {
+    this.activeStatements += 1;
+    this.callbackOnStatementSend(null, null, this.activeStatements);
+    return this.cmi5.sendStatements(statements).then(result => {
         this.activeStatements -= 1;
         if (this.callbackOnStatementSend) {
             this.callbackOnStatementSend(result, null, this.activeStatements);

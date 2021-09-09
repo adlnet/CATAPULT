@@ -13,7 +13,7 @@ Then build the LMS test packages by doing:
 
 ## Running Manually
 
-The test suite itself can then be executed manually by following the documented test procedure using an LMS user interface and the package library.
+The test suite itself can then be executed manually by following the [documented test procedure (procedure.md)](procedure.md) using an LMS user interface and the package library.
 
 ## Running Automatically
 

@@ -515,7 +515,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to store course content: ${ex}`));
                         }
 
-                        return db.first("*").from("courses").where({tenantId: req.auth.credentials.tenantId, id: courseId});
+                        return db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId: req.auth.credentials.tenantId, id: courseId});
                     }
                 },
 

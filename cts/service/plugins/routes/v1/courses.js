@@ -85,8 +85,8 @@ module.exports = {
                                             player_id: payload.id,
                                             metadata: JSON.stringify({
                                                 version: 1,
-                                                structure: JSON.parse(payload.structure),
-                                                aus: JSON.parse(payload.metadata).aus
+                                                structure: payload.structure,
+                                                aus: payload.metadata.aus
                                             })
                                         }
                                     ).into("courses");

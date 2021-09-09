@@ -27,4 +27,13 @@ enterprise.
 * [cmi5 Content Test Suite User Guide]({{ "/cts" | relative_url }})
 * [cmi5 Content Test Suite README](https://github.com/adlnet/CATAPULT/blob/main/cts/README.md)
 * [cmi5 LMS Test Suite README](https://github.com/adlnet/CATAPULT/blob/main/lts/README.md)
+* [cmi5 Player User Guide]({{ "/player" | relative_url }})
 * [cmi5 Player README](https://github.com/adlnet/CATAPULT/blob/main/player/README.md)
+
+### Other Resources
+
+* [Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
+* [cmi5 CATAPULT!](https://adlnet.gov/projects/cmi5-CATAPULT/)
+* [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
+* [cmi5 specification](https://aicc.github.io/CMI-5_Spec_Current/)
+* [xAPI specification](https://github.com/adlnet/xAPI-Spec)

@@ -305,7 +305,7 @@ Course.prototype.addPerPageListeners = function () {
  */
 Course.prototype.fail = function (scoreObj) {
     this.trackingPlugin.fail(scoreObj).then(() => {
-        this.trackingPlugin.flushQueue();
+        this.trackingPlugin.flushBatch();
     }).catch(e => {
         this.trackingError("Unable to save failed statement: " + String(e));
     });
@@ -322,7 +322,7 @@ Course.prototype.fail = function (scoreObj) {
  */
 Course.prototype.pass = function (scoreObj) {
     this.trackingPlugin.passAndComplete(scoreObj).then(() => {
-        this.trackingPlugin.flushQueue();
+        this.trackingPlugin.flushBatch();
     }).catch(e => {
         this.trackingError("Unable to save passed/completed statement: " + String(e));
     });
@@ -500,8 +500,13 @@ Course.prototype.submitAnswers = function () {
     const pageName = this.pageList[this.currentPageIdx];
     const page = document.getElementById("page" + pageName);
 
+    let interactionTrackingData = [];
     for (let i = 0; i < this.numQuestions; i++) {
-        if (this.checkAndSave(page.dataset.quizId, "q" + i)) {
+        let statusAndData = this.checkAndPrepare(page.dataset.quizId, "q" + i);
+        if (statusAndData.data) {
+            interactionTrackingData.push(statusAndData.data);
+        }
+        if (statusAndData.isCorrect) {
             correct += 1;
         }
     }
@@ -529,6 +534,8 @@ Course.prototype.submitAnswers = function () {
         document.getElementById("score-failed").classList.add("visible");
         this.fail(scoreObj);
     }
+
+    this.trackingPlugin.captureInteractions(interactionTrackingData, {queue: this.trackingDelayInteractionSave});
 }
 
 /**
@@ -536,11 +543,13 @@ Course.prototype.submitAnswers = function () {
  * tracking behaviors around it if appropriate.
  * @param {string} testId A unique identifier for the current page's test element, for tracking.
  * @param {string} name   The identifier of the current question.
- * @returns {boolean}     Whether the question was answered correctly.
+ * @returns {Object}      isCorrect: Whether the question was answered correctly.
+ *                        interactionData: Any useful data about the interaction, null if none.
  */
-Course.prototype.checkAndSave = function (testId, name) {
+Course.prototype.checkAndPrepare = function (testId, name) {
     let nodes = document.getElementsByName(name);
     let success = false;
+    let interactionData = null;
 
     if (nodes.length > 0) {
         if (nodes[0].type === "text") {
@@ -550,20 +559,16 @@ Course.prototype.checkAndSave = function (testId, name) {
                 success = true;
             }
 
-            if (this.trackInteractions) {
-                this.trackingPlugin.interactionCapture({
-                    testId: testId,
-                    interactionType: "fill-in",
-                    interactionId: name,
-                    userAnswers: [userAnswer],
-                    correctAnswers: [correctAnswer],
-                    name: document.getElementById(name + "-question").innerHTML,
-                    description: "",
-                    success: success
-                }, {queue: this.trackingDelayInteractionSave}).catch(e => {
-                    this.trackingError("Unable to save interaction statement: " + String(e));
-                });
-            }
+            interactionData = {
+                testId: testId,
+                interactionType: "fill-in",
+                interactionId: name,
+                userAnswers: [userAnswer],
+                correctAnswers: [correctAnswer],
+                name: document.getElementById(name + "-question").innerHTML,
+                description: "",
+                success: success
+            };
         } else if (nodes[0].type === "radio") {
             let failedMatch = false;
             let userAnswers = [];
@@ -590,21 +595,17 @@ Course.prototype.checkAndSave = function (testId, name) {
             if (!failedMatch) {
                 success = true;
             }
-            if (this.trackInteractions) {
-                this.trackingPlugin.interactionCapture({
-                    testId: testId,
-                    interactionType: "choice",
-                    interactionId: name,
-                    userAnswers: userAnswers,
-                    correctAnswers: correctAnswers,
-                    choices: choices,
-                    name: document.getElementById(name + "-question").innerHTML,
-                    description: "",
-                    success: success
-                }, {queue: this.trackingDelayInteractionSave}).catch(e => {
-                    this.trackingError("Unable to save interaction statement: " + String(e));
-                });
-            }
+            interactionData = {
+                testId: testId,
+                interactionType: "choice",
+                interactionId: name,
+                userAnswers: userAnswers,
+                correctAnswers: correctAnswers,
+                choices: choices,
+                name: document.getElementById(name + "-question").innerHTML,
+                description: "",
+                success: success
+            };
         } else if (nodes[0].tagName.toLowerCase() === "select") {
             let failedMatch = false;
             let userAnswers = [];
@@ -632,24 +633,20 @@ Course.prototype.checkAndSave = function (testId, name) {
                 success = true;
             }
 
-            if (this.trackInteractions) {
-                this.trackingPlugin.interactionCapture({
-                    testId: testId,
-                    interactionType: "choice",
-                    interactionId: name,
-                    userAnswers: userAnswers,
-                    correctAnswers: correctAnswers,
-                    choices: choices,
-                    name: document.getElementById(name + "-question").innerHTML,
-                    description: "",
-                    success: success
-                }, {queue: this.trackingDelayInteractionSave}).catch(e => {
-                    this.trackingError("Unable to save interaction statement: " + String(e));
-                });
-            }
+            interactionData = {
+                testId: testId,
+                interactionType: "choice",
+                interactionId: name,
+                userAnswers: userAnswers,
+                correctAnswers: correctAnswers,
+                choices: choices,
+                name: document.getElementById(name + "-question").innerHTML,
+                description: "",
+                success: success
+            };
         }
     }
-    return success;
+    return {isCorrect: success, data: interactionData};
 }
 
 /**

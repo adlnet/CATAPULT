@@ -1,3 +1,5 @@
+![Architecture Diagram](arch.png)
+
 ## Running via Docker Compose
 
 After cloning the repository, create a `.env` file in the `cts/` directory. This file needs to include information for the following:

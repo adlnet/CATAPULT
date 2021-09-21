@@ -33,6 +33,7 @@ enterprise.
 ### Other Resources
 
 * [Course Examples](https://github.com/adlnet/CATAPULT/tree/main/course_examples)
+* [cmi5 Best Practices Guide](https://adlnet.gov/assets/uploads/cmi5%20Best%20Practices%20Guide%20-%20From%20Conception%20to%20Conformance.pdf) (PDF)
 * [cmi5 CATAPULT!](https://adlnet.gov/projects/cmi5-CATAPULT/)
 * [cmi5 Resources](https://www.adlnet.gov/resources/cmi5-resources/) from ADL Initiative
 * [cmi5 specification](https://aicc.github.io/CMI-5_Spec_Current/)

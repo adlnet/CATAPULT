@@ -1,3 +1,5 @@
+![Architecture Diagram](arch.png)
+
 # LMS Test Suite
 
 ## Building the Package Library

@@ -86,7 +86,7 @@ module.exports = {
                                 launchMethod: Joi.any().allow("iframe", "newWindow").optional(),
                                 contextTemplateAdditions: Joi.object().optional(),
                                 launchParameters: Joi.string().optional(),
-                                masteryScore: Joi.number().positive().optional(),
+                                masteryScore: Joi.number().positive().min(0).max(1).optional(),
                                 moveOn: Joi.any().allow("Passed", "Completed", "CompletedAndPassed", "CompletedOrPassed", "NotApplicable").optional()
                             }).required().label("Request-PostSession")
                         }

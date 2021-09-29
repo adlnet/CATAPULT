@@ -589,7 +589,7 @@ module.exports = {
                                 contextTemplateAdditions: Joi.object().optional(),
                                 launchMode: Joi.any().allow("Normal", "Browse", "Review").optional(),
                                 launchParameters: Joi.string().optional(),
-                                masteryScore: Joi.number().positive().optional(),
+                                masteryScore: Joi.number().positive().min(0).max(1).optional(),
                                 moveOn: Joi.any().allow("Passed", "Completed", "CompletedAndPassed", "CompletedOrPassed", "NotApplicable").optional(),
                                 alternateEntitlementKey: Joi.string().optional(),
                                 returnUrl: Joi.string().optional().description("LMS URL that learner should be sent to when the AU exits"),

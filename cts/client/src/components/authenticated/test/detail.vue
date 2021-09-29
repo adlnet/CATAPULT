@@ -94,7 +94,14 @@
                                 </b-row>
                                 <b-row>
                                     <b-col>
-                                        <b-dropdown split text="Launch" variant="primary" class="mr-3" @click="doLaunchAU(index)">
+                                        <b-dropdown
+                                            split
+                                            text="Launch"
+                                            variant="primary"
+                                            class="mr-3"
+                                            @click="doLaunchAU(index)"
+                                            :disabled="!isConfigValid(index)"
+                                            :title="(aUconfigs && aUconfigs[index] && aUconfigs[index].launchErrorMessage) ? aUconfigs[index].launchErrorMessage : ''">
                                             <b-dropdown-item-button @click="doLaunchAU(index, 'Normal')">Force Normal</b-dropdown-item-button>
                                             <b-dropdown-item-button @click="doLaunchAU(index, 'Browse')">Force Browse</b-dropdown-item-button>
                                             <b-dropdown-item-button @click="doLaunchAU(index, 'Review')">Force Review</b-dropdown-item-button>
@@ -141,8 +148,16 @@
                                         <b-form-group label="Launch parameters">
                                             <b-form-textarea v-model="aUconfigs[index].launchParameters"></b-form-textarea>
                                         </b-form-group>
-                                        <b-form-group label="Mastery score">
-                                            <b-form-input v-model="aUconfigs[index].masteryScore" number type="number" min="0" max="1" step="0.1"></b-form-input>
+                                        <b-form-group label="Mastery score" :invalid-feedback="aUconfigs[index].masteryScoreErr">
+                                            <b-form-input
+                                                v-model="aUconfigs[index].masteryScore"
+                                                number
+                                                type="number"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                :state="isMasteryScoreValid(index)">
+                                            </b-form-input>
                                         </b-form-group>
                                         <b-form-group label="Move on">
                                             <b-form-select v-model="aUconfigs[index].moveOn">
@@ -176,7 +191,7 @@
                             <template #header>
                                 <b-row>
                                     <b-col>
-                                        <h4 style="margin-bottom: 0px;">Test Report</h4>
+                                        <h4 style="margin-bottom: 0">Test Report</h4>
                                     </b-col>
                                     <b-col cols="auto" class="text-right">
                                         <b-button size="sm" variant="primary" @click="download">Download</b-button>
@@ -184,7 +199,7 @@
                                 </b-row>
                             </template>
                             <h5>Conformance Status</h5>
-                            <ul v-if="courseModel.loaded" style="list-style: none; padding-left: 0px;">
+                            <ul v-if="courseModel.loaded" style="list-style: none; padding-left: 0">
                                 <structure-node key="course" :item="courseModel.item.metadata.structure.course" :courseResult="model.item.metadata.result" :auList="model.item.metadata.aus"></structure-node>
                             </ul>
                             <h5>Registration Log</h5>
@@ -404,17 +419,59 @@
             contextTemplateAdditionsBlur (index) {
                 this.aUconfigs[index].contextTemplateAdditionsState = null;
 
-                try {
-                    this.aUconfigs[index].contextTemplateAdditions = JSON.parse(this.aUconfigs[index].contextTemplateAdditionsText);
-                }
-                catch (ex) {
-                    this.aUconfigs[index].contextTemplateAdditionsState = false
-                    this.aUconfigs[index].contextTemplateAdditionsErr = `Invalid JSON: ${ex}`;
+                if (this.aUconfigs[index].contextTemplateAdditionsText) {
+                    try {
+                        const decode = JSON.parse(this.aUconfigs[index].contextTemplateAdditionsText)
+                        if (!!decode && decode.constructor === Object) {
+                            this.aUconfigs[index].contextTemplateAdditions = decode;
+                        }
+                        else {
+                            this.aUconfigs[index].contextTemplateAdditionsState = false;
+                            this.aUconfigs[index].contextTemplateAdditionsErr = `JSON must be an object.`;
 
-                    return;
-                }
+                            return;
+                        }
+                    }
+                    catch (ex) {
+                        this.aUconfigs[index].contextTemplateAdditionsState = false;
+                        this.aUconfigs[index].contextTemplateAdditionsErr = `Invalid JSON: ${ex}`;
 
-                this.aUconfigs[index].contextTemplateAdditionsState = true;
+                        return;
+                    }
+
+                    this.aUconfigs[index].contextTemplateAdditionsState = true;
+                }
+            },
+
+            isConfigValid (index) {
+                if (!this.aUconfigs || !this.aUconfigs[index]) {
+                    return true;
+                }
+                this.aUconfigs[index].launchErrorMessage = "";
+                if (this.isMasteryScoreValid(index) === false) {
+                    this.aUconfigs[index].launchErrorMessage = "Mastery score failed to validate: " + this.aUconfigs[index].masteryScoreErr;
+                    return false;
+                }
+                if (this.aUconfigs[index].contextTemplateAdditionsState === false) {
+                    this.aUconfigs[index].launchErrorMessage = "Context template additions failed to validate: " + this.aUconfigs[index].contextTemplateAdditionsErr;
+                    return false;
+                }
+                return true;
+            },
+
+            isMasteryScoreValid (index) {
+                this.aUconfigs[index].masteryScoreErr = "";
+                if (!this.aUconfigs ||
+                    !this.aUconfigs[index] ||
+                    typeof this.aUconfigs[index].masteryScore === "undefined" ||
+                    this.aUconfigs[index].masteryScore === "") {
+                    return null;
+                }
+                if (this.aUconfigs[index].masteryScore < 0 || this.aUconfigs[index].masteryScore > 1) {
+                    this.aUconfigs[index].masteryScoreErr = "Mastery score must be a decimal value between 0 and 1 (inclusive)";
+                    return false;
+                }
+                return true;
             }
         }
     };

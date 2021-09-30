@@ -326,16 +326,27 @@ module.exports = {
                         const db = req.server.app.db,
                             tenantId = req.auth.credentials.tenantId,
                             lmsId = `https://w3id.org/xapi/cmi5/catapult/player/course/${uuidv4()}`,
-                            contentType = req.headers["content-type"];
+                            contentType = req.headers["content-type"],
+
+                            //
+                            // application/x-zip-compressed seems to be deprecated but at least Windows 10
+                            // still uses it for the MIME type value for a .zip file (depending on Registry
+                            // settings) so this should support it
+                            //
+                            // the specification is only concerned about the format of the file and doesn't
+                            // have requirements around MIME recognition or inclusion in import so it isn't
+                            // a violation to make this handling more lax
+                            //
+                            isZip = contentType === "application/zip" || contentType === "application/x-zip-compressed";
 
                         let courseStructureData,
                             zip;
 
-                        if (contentType !== "application/zip" && contentType !== "text/xml") {
+                        if (! isZip && contentType !== "text/xml") {
                             throw Helpers.buildViolatedReqId("14.0.0.0-1", `Unrecognized Content-Type: ${contentType}` , "badRequest");
                         }
 
-                        if (contentType === "application/zip") {
+                        if (isZip) {
                             try {
                                 zip = new StreamZip.async({file: req.payload.path});
                             }
@@ -504,7 +515,7 @@ module.exports = {
                         }
 
                         try {
-                            if (contentType === "application/zip") {
+                            if (isZip) {
                                 await zip.extract(null, courseDir);
                             }
                             else {

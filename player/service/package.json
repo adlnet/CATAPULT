@@ -35,7 +35,7 @@
     "joi": "^17.4.1",
     "knex": "^0.95.7",
     "knex-stringcase": "^1.4.5",
-    "libxmljs": "^0.19.7",
+    "libxmljs2": "^0.28.0",
     "mysql": "^2.18.1",
     "node-stream-zip": "^1.13.6",
     "uuid": "^8.3.2",

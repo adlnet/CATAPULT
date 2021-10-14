@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:14.17.3
+FROM node:14.17.3-alpine
+RUN apk add --no-cache --virtual .gyp \
+        python \
+        make \
+        g++ \
 RUN apt-get update && apt-get install dumb-init
 ENV NODE_ENV production
 WORKDIR /usr/src/app

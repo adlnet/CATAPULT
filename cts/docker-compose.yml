@@ -61,7 +61,7 @@ services:
       - API_KEY=${PLAYER_KEY}
       - API_SECRET=${PLAYER_SECRET}
   rdbms:
-    image: mysql:8.0.17
+    image: mysql/mysql-server:8.0.23
     volumes:
       - catapult-cts-data:/var/lib/mysql
       - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro

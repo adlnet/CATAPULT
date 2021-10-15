@@ -37,6 +37,7 @@ main {
     box-shadow: inset -2rem 0 2rem -2rem rgb(0 0 0 / 40%);
     overflow-y: auto;
     user-select: none;
+    z-index: 110;
 }
 
 .navcorner {

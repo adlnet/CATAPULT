@@ -523,42 +523,44 @@ describe(
             () => {
                 let regStatements;
 
-                beforeAll(async () => {
-                    try {
-                        regStatements = await Helpers.fetchStatements({registration: result.registration});
-                    }
-                    catch (ex) {
-                        throw new Error(`Failed to do post session verification: ${ex}`);
-                    }
-                });
+                if (Helpers.hasWaive()) {
+                    beforeAll(async () => {
+                        try {
+                            regStatements = await Helpers.fetchStatements({registration: result.registration});
+                        }
+                        catch (ex) {
+                            throw new Error(`Failed to do post session verification: ${ex}`);
+                        }
+                    });
+                }
 
-                test(Helpers.describeReq("9.6.3.1-3"), () => {
+                run(Helpers.describeReq("9.6.3.1-3"), () => {
                     expect(regStatements[2].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"]).toBe(sessionId);
                 });
-                test(Helpers.describeReq("9.6.2.1-1"), () => {
+                run(Helpers.describeReq("9.6.2.1-1"), () => {
                     expect(regStatements[2].context.contextActivities.category).toContainObject(
                         {
                             id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
                         }
                     );
                 });
-                test(Helpers.describeReq("9.5.4.2-1"), () => {
+                run(Helpers.describeReq("9.5.4.2-1"), () => {
                     expect(regStatements[2].result.duration).toBeDefined();
                 });
-                test("abandoned statement actor", () => {
+                run("abandoned statement actor", () => {
                     if (typeof result.actor.objectType === "undefined") {
                         delete regStatements[2].actor.objectType;
                     }
 
                     expect(regStatements[2].actor).toEqual(result.actor);
                 });
-                test("abandoned statement verb", () => {
+                run("abandoned statement verb", () => {
                     expect(regStatements[2].verb.id).toBe("https://w3id.org/xapi/adl/verbs/abandoned");
                 });
-                test("abandoned statement object", () => {
+                run("abandoned statement object", () => {
                     expect(regStatements[2].object.id).toBe(result.activityId);
                 });
-                test("abandoned statement registration", () => {
+                run("abandoned statement registration", () => {
                     expect(regStatements[2].context.registration).toBe(result.registration);
                 });
             }
@@ -602,39 +604,41 @@ describe(
             () => {
                 let regStatements;
 
-                beforeAll(async () => {
-                    try {
-                        regStatements = await Helpers.fetchStatements({registration: result.registration});
-                    }
-                    catch (ex) {
-                        throw new Error(`Failed to do post session verification: ${ex}`);
-                    }
-                });
+                if (Helpers.hasWaive()) {
+                    beforeAll(async () => {
+                        try {
+                            regStatements = await Helpers.fetchStatements({registration: result.registration});
+                        }
+                        catch (ex) {
+                            throw new Error(`Failed to do post session verification: ${ex}`);
+                        }
+                    });
+                }
 
-                test(Helpers.describeReq("9.3.7.0-1"), () => {
+                run(Helpers.describeReq("9.3.7.0-1"), () => {
                     expect(regStatements[3].verb.id).toBe("https://w3id.org/xapi/adl/verbs/waived");
                 });
-                test(Helpers.describeReq("9.3.7.0-2 (d)"), () => {
+                run(Helpers.describeReq("9.3.7.0-2 (d)"), () => {
                     // Also validates: 9.5.5.2-1
                     expect(regStatements[3].result.extensions["https://w3id.org/xapi/cmi5/result/extensions/reason"]).toBe(reason);
                 });
-                test(Helpers.describeReq("9.3.7.0-3"), () => {
+                run(Helpers.describeReq("9.3.7.0-3"), () => {
                     expect(regStatements[3].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"]).toBeDefined();
                 });
-                test(Helpers.describeReq("9.5.2.0-1 (d2)"), () => {
+                run(Helpers.describeReq("9.5.2.0-1 (d2)"), () => {
                     expect(regStatements[3].result.success).toBe(true);
                 });
-                test(Helpers.describeReq("9.5.3.0-1 (d2)"), () => {
+                run(Helpers.describeReq("9.5.3.0-1 (d2)"), () => {
                     expect(regStatements[3].result.completion).toBe(true);
                 });
-                test(Helpers.describeReq("9.6.2.1-1"), () => {
+                run(Helpers.describeReq("9.6.2.1-1"), () => {
                     expect(regStatements[3].context.contextActivities.category).toContainObject(
                         {
                             id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
                         }
                     );
                 });
-                test(Helpers.describeReq("9.6.2.2-1 (d4)"), () => {
+                run(Helpers.describeReq("9.6.2.2-1 (d4)"), () => {
                     expect(regStatements[3].context.contextActivities.category).toContainObject(
                         {
                             id: "https://w3id.org/xapi/cmi5/context/categories/moveon"
@@ -642,22 +646,22 @@ describe(
                     );
                 });
 
-                test("waived statement actor", () => {
+                run("waived statement actor", () => {
                     if (typeof result.actor.objectType === "undefined") {
                         delete regStatements[3].actor.objectType;
                     }
 
                     expect(regStatements[3].actor).toEqual(result.actor);
                 });
-                test("waived statement registration", () => {
+                run("waived statement registration", () => {
                     expect(regStatements[3].context.registration).toBe(result.registration);
                 });
 
-                test("waived statement object", () => {
+                run("waived statement object", () => {
                     expect(regStatements[3].object.id).toBe(result.activityId);
                 });
 
-                test(Helpers.describeReq("9.6.2.1-1"), () => {
+                run(Helpers.describeReq("9.6.2.1-1"), () => {
                     expect(regStatements[4].context.contextActivities.category).toContainObject(
                         {
                             id: "https://w3id.org/xapi/cmi5/context/categories/cmi5"
@@ -665,7 +669,7 @@ describe(
                     );
                 });
 
-                test("satisfied statement actor", () => {
+                run("satisfied statement actor", () => {
                     if (typeof result.actor.objectType === "undefined") {
                         delete regStatements[4].actor.objectType;
                     }
@@ -673,14 +677,14 @@ describe(
                     expect(regStatements[4].actor).toEqual(result.actor);
                 });
 
-                test("satisfied statement verb", () => {
+                run("satisfied statement verb", () => {
                     expect(regStatements[4].verb.id).toBe("https://w3id.org/xapi/adl/verbs/satisfied");
                 });
 
-                test("satisfied statement registration", () => {
+                run("satisfied statement registration", () => {
                     expect(regStatements[4].context.registration).toBe(result.registration);
                 });
-                test("satisfied statement sessionid matches waived statement sessionid", () => {
+                run("satisfied statement sessionid matches waived statement sessionid", () => {
                     expect(regStatements[4].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"]).toBe(regStatements[4].context.extensions["https://w3id.org/xapi/cmi5/context/extensions/sessionid"]);
                 });
             }

@@ -493,7 +493,7 @@ module.exports = {
                             }
 
                             proxyResponse = await Wreck.request(req.method, uri, options);
-                            rawProxyResponsePayload = await Wreck.read(proxyResponse);
+                            rawProxyResponsePayload = await Wreck.read(proxyResponse, {gunzip: true});
 
                             let responsePayload = rawProxyResponsePayload;
 
@@ -505,10 +505,6 @@ module.exports = {
                                         parsedPayload.returnURL = parsedPayload.returnURL.replace("__sessionId__", id);
                                     }
 
-                                    // altering the body means the content length would be off,
-                                    // we could just adjust it based on the size difference
-                                    delete proxyResponse.headers["content-length"];
-
                                     responsePayload = parsedPayload;
                                 }
                             }
@@ -518,8 +514,13 @@ module.exports = {
                             response.code(proxyResponse.statusCode);
                             response.message(proxyResponse.statusMessage);
 
+                            const skipHeaders = {
+                                "content-encoding": true,
+                                "content-length": true,
+                                "transfer-encoding": true
+                            };
                             for (const [k, v] of Object.entries(proxyResponse.headers)) {
-                                if (k.toLowerCase() !== "transfer-encoding") {
+                                if (! skipHeaders[k.toLowerCase()]) {
                                     response.header(k, v);
                                 }
                             }

@@ -523,7 +523,7 @@ describe(
             () => {
                 let regStatements;
 
-                if (Helpers.hasWaive()) {
+                if (Helpers.hasAbandon()) {
                     beforeAll(async () => {
                         try {
                             regStatements = await Helpers.fetchStatements({registration: result.registration});

@@ -147,6 +147,17 @@ const Helpers = {
                 console.log(reqId, stContent);
             }
 
+            // If we provide an explicit set of statuses to match, exclude fallthrough cases.
+            if (cfg.expectedStatuses) {
+                if (cfg.expectedStatuses.indexOf(stResponse.status) > -1) {
+                    return true;
+                }
+
+                Helpers.storeResult(false, false, {reqId, msg: `Statement should have been rejected with a status code of (one of) ${cfg.expectedStatuses}, received response status code: ${stResponse.status} ${stContent} (Testing ${reqId})`});
+
+                return false;
+            }
+
             if (stResponse.status === 204 || stResponse.status === 200) {
                 Helpers.storeResult(false, false, {reqId, msg: `Statement not rejected (${stResponse.status})`});
 

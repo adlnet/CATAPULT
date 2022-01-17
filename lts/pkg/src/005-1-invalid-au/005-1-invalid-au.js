@@ -427,6 +427,9 @@ const saveLearnerPrefs = async (
                 type: "passed",
                 alter: (st) => {
                     st.actor.objectType = "Unknown";
+                },
+                cfg: {
+                    expectedStatuses: [400, 403]
                 }
             },
             {

@@ -414,22 +414,28 @@ const saveLearnerPrefs = async (
                 }
             },
             {
-                // statement with actor objectType set to "Group"
+                // defined statement with actor objectType set to "Group"
                 reqId: "9.2.0.0-2",
+                type: "passed",
                 alter: (st) => {
                     st.actor.objectType = "Group";
                 }
             },
             {
-                // statement with actor objectType set to an invalid value
+                // defined statement with actor objectType set to an invalid value
                 reqId: "9.2.0.0-2",
+                type: "passed",
                 alter: (st) => {
                     st.actor.objectType = "Unknown";
+                },
+                cfg: {
+                    expectedStatuses: [400, 403]
                 }
             },
             {
-                // statement with actor using an mbox IFI instead of account
+                // defined statement with actor using an mbox IFI instead of account
                 reqId: "9.2.0.0-3",
+                type: "passed",
                 alter: (st) => {
                     delete st.actor.account;
                     st.actor.mbox = "mailto:catapult@example.com";

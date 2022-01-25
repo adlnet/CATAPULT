@@ -98,17 +98,25 @@ const saveLearnerPrefs = async (
 
                 return false;
             }
-            // this treats non-401 and non-403 (like 400, 500, etc.) as not acceptable responses
+            // If no actor is provided to an agent profile endpoint, xAPI rules apply and requires a 400, not a 403.
+            else if (noActor) {
+                if (response.status !== 400) {
+                    Helpers.storeResult(false, false, {reqId, msg: `Save learner preferences with no actor query param should have responded with a status code: 400, but instead had a response status code: ${response.status} ${responseContent} (Testing ${reqId})`});
+
+                    return false;
+                }
+            }
+            // this treats other non-403 (like 400, 500, etc.) as not acceptable responses
             // for denying the request
             // eslint-disable-next-line no-magic-numbers
-            else if (response.status !== 401 && response.status !== 403) {
+            else if (response.status !== 403) {
                 Helpers.storeResult(false, false, {reqId: "4.2.0.0-2", msg: `Save learner preferences response status code: ${response.status} ${responseContent} (Testing ${reqId})`});
 
                 return false;
             }
         }
         catch (ex) {
-            // request should succeed, but provide a 401 or 403, so an exception here is an error
+            // request should succeed but provide a 403, so an exception here is an error
             Helpers.storeResult(false, true, {reqId, msg: `Failed request to save learner preferences: ${ex}`});
 
             return false;
@@ -135,7 +143,7 @@ const saveLearnerPrefs = async (
         // send statement prior to getting auth token, with value
         //
         cmi5.setAuth("Basic Y2F0YXB1bHQ6ZmlyZSBzb21lIFJ1c3RpY2kgU29mdHdhcmUgcm9ja3Mh");
-        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "8.1.2.0-2 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "8.1.2.0-2 (d)", {shouldSucceed: false, acceptUnauthorized: true})) {
             return;
         }
 
@@ -330,7 +338,7 @@ const saveLearnerPrefs = async (
         const origAuth = cmi5.getAuth();
 
         cmi5.setAuth("");
-        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "8.1.2.0-5 (d)")) {
+        if (! await Helpers.sendStatement(cmi5, preInitializedSt, "8.1.2.0-5 (d)", {shouldSucceed: false, acceptUnauthorized: true})) {
             return;
         }
 
@@ -804,7 +812,7 @@ const saveLearnerPrefs = async (
             return;
         }
 
-        Helpers.storeResult(true, false, {msg: "LMS rejected set of statements with either 401 or 403 response status"});
+        Helpers.storeResult(true, false, {msg: "LMS rejected set of statements with 403 response status"});
     };
     /* eslint-enable padding-line-between-statements */
 

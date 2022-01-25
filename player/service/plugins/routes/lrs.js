@@ -388,6 +388,9 @@ const Boom = require("@hapi/boom"),
         }
         else if (resource === "agents") {
             // all agents requests require an actor, and that actor must be the launch actor
+
+            let parsedAgent;
+
             try {
                 parsedAgent = JSON.parse(req.query.agent);
             }
@@ -400,7 +403,7 @@ const Boom = require("@hapi/boom"),
         else if (resource === "agents/profile") {
             // all agents/profile requests require an actor,
             if (typeof req.query.agent === "undefined") {
-                throw Helpers.buildViolatedReqId("11.0.0.0-1", "'agent' parameter missing");
+                throw Helpers.buildViolatedReqId("11.0.0.0-1", "'agent' parameter missing", "badRequest");
             }
 
             let parsedAgent;

@@ -163,17 +163,22 @@ const Helpers = {
 
                 return false;
             }
-            // this treats non-401 and non-403 (like 400, 500, etc.) as not acceptable responses
+            // treats specific tests for unauthorized requests as acceptable responses.
+            // eslint-disable-next-line no-magic-numbers
+            else if (stResponse.status === 401 && cfg.acceptUnauthorized) {
+                return true;
+            }
+            // this treats non-403 (like 400, 500, etc.) as not acceptable responses
             // for denying the statement
             // eslint-disable-next-line no-magic-numbers
-            else if (stResponse.status !== 401 && stResponse.status !== 403) {
+            else if (stResponse.status !== 403) {
                 Helpers.storeResult(false, false, {reqId: "4.2.0.0-2", msg: `Statement request status code: ${stResponse.status} ${stContent} (Testing ${reqId})`});
 
                 return false;
             }
         }
         catch (ex) {
-            // request should succeed, but provide a 401 or 403, so an exception here is an error
+            // request should succeed so an exception here is an error
             Helpers.storeResult(false, true, {reqId, msg: `Failed request to store statement: ${ex}`});
 
             return false;

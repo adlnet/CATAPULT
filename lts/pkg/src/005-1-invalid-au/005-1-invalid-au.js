@@ -774,7 +774,7 @@ const saveLearnerPrefs = async (
         // send statement after terminated
         // Also validates: 9.3.0.0-2 (d)
         //
-        if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.0.0-5 (d2)")) {
+        if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.0.0-5 (d2)", {shouldSucceed: false, acceptUnauthorized: true})) {
             return;
         }
 

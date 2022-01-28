@@ -153,7 +153,7 @@ module.exports = {
                     -1, 0, 1,
                     // These are HTTP statuses. Ideally we would make these constants, but that's a
                     // job for a more thorough eslint unification task.
-                    200, 204, 302, 400, 403, 404, 500
+                    200, 204, 302, 400, 401, 403, 404, 500
                 ],
                 "ignoreArrayIndexes": true
             }

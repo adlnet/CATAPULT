@@ -19,7 +19,9 @@ The test suite itself can then be executed manually by following the [documented
 
 ## Running Automatically
 
-To run this suite automatically or via CI the LMS needs to provide a custom LMS implementation library script. The LMS script should be modeled after the example found at `lib/lms.catapult-player.js`. Name the file `lib/lms.custom.js` to have it ignored in the repository by default. Once the library script has been written, create a `.env` file in the directory pointed to its location. For example:
+To run this suite automatically or via CI the LMS needs to provide a custom LMS implementation library script. The LMS script should be modeled after the example found at `lib/lms.catapult-player.js`. There is a template at `lib/lms.template.js` that can be copied and used as a starting point. Name the file `lib/lms.custom.js` to have it ignored in the repository by default. The template file is extensively commented to provide direction for implementers.
+
+Once the library script has been written, create a `.env` file in the directory pointed to its location. For example:
 
     # path to LMS script (required)
     CATAPULT_LMS="./lib/lms.catapult-player.js"
@@ -32,7 +34,11 @@ To run this suite automatically or via CI the LMS needs to provide a custom LMS 
     LRS_KEY="my-lrs-key"
     LRS_SECRET="my-lrs-secret"
 
-With those files in place the dependencies should be installed and then the tests can be run:
+With those files in place the dependencies should be installed using:
+
+    npm ci
+
+and then the tests can be run using:
 
     npx jest
 

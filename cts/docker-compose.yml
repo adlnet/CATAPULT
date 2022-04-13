@@ -11,13 +11,44 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-version: "3.8"
+version: "3"
 services:
+
+  nginx:
+    restart: always
+    build: 
+      context: nginx
+      args:
+        HOSTNAME: "${HOSTNAME}"
+    ports:
+      - "80:80"
+      - "443:443"
+    container_name: docker_nginx
+    volumes:
+      - ./nginx/letsencrypt:/usr/share/nginx/html
+      - ./certbot/etc:/usr/share/keys
+    networks:
+      - public
+
+  certbot:
+    container_name: 'docker_certbot'
+    image: certbot/certbot
+    volumes:
+      - ./keys:/var/lib/letsencrypt
+      - ./nginx/letsencrypt:/data/letsencrypt
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/log:/var/log/letsencrypt
+    depends_on:
+      - nginx
+    networks:
+      - public
+
   webservice:
     build: .
     image: catapult:cts
+    restart: always
     ports:
-      - ${HOST_PORT}:3399
+      - 127.0.0.1:3399:3399
     depends_on:
       - rdbms
     volumes:
@@ -34,13 +65,17 @@ services:
       - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET
+    networks:
+      - public  
+
   player:
     build: ../player
     image: catapult:player
+    restart: always
     depends_on:
       - rdbms
     ports:
-      - ${PLAYER_HOST_PORT}:3398
+      - 127.0.0.1:3398:3398
     volumes:
       - ../player/service/index.js:/usr/src/app/index.js:ro
       - ../player/service/knexfile.js:/usr/src/app/knexfile.js:ro
@@ -60,6 +95,9 @@ services:
       - TOKEN_SECRET=${PLAYER_TOKEN_SECRET}
       - API_KEY=${PLAYER_KEY}
       - API_SECRET=${PLAYER_SECRET}
+    networks:
+      - public
+
   rdbms:
     image: mysql:8.0.17
     volumes:
@@ -82,6 +120,12 @@ services:
       # the newer default scheme used in MySQL 8.x
       "--default-authentication-plugin=mysql_native_password"
     ]
+    networks:
+      - public
 
 volumes:
   catapult-cts-data:
+
+networks:
+  public:
+    driver: bridge

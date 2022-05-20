@@ -13,12 +13,14 @@
 # limitations under the License.
 
 FROM node:14.17.3-alpine AS client-build
+RUN apk add python2
 WORKDIR /usr/src/app
 COPY --chown=node:node client /usr/src/app
 RUN npm ci
 RUN npm run build
 
 FROM node:14.17.3-alpine
+RUN apk add python2 make g++
 RUN apk add dumb-init
 ENV NODE_ENV production
 WORKDIR /usr/src/app

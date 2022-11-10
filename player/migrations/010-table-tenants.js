@@ -25,5 +25,12 @@ exports.up = async (knex) => {
             table.string("code").notNullable().unique();
         }
     );
+    //Here we weant to do a knex.insert, check env variable, if empty place a 1, 'player' 
+    //try hardcode insert, then try using environment variable check
+     //Here is some trial stuff of internweb
+     await knex(tableName).insert({code: 'Player'})
+      .then( function (result) {
+          console.log("You did it you genius you!") });     // respond back to request
+       
 };
 exports.down = (knex) => knex.schema.dropTable(tableName);

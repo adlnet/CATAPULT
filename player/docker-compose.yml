@@ -50,7 +50,6 @@ services:
     volumes:
       - catapult-player-data:/var/lib/mysql
       - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro
-     # - ./init_tenant.sql:/docker-entrypoint-initdb.d/init_tenant.sql:ro
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
       - MYSQL_USER=catapult

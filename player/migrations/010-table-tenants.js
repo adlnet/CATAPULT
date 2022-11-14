@@ -29,10 +29,15 @@ exports.up = async (knex) => {
             table.string("code").notNullable().unique();
         }
     );
+    //Check to see if there is a value in First_tenant_name
+    if(defaultTenantName){
     //On creating new database, create new tenant, will automatically be '1'
      await knex(tableName).insert({code: defaultTenantName})
       .then( function (result) {
           console.log("First tenant created named " + defaultTenantName) });// respond back to request
-       
+    }
+    else{
+        console.log("There is no specified default tenant name. No default tenant created.")
+    }
 };
 exports.down = (knex) => knex.schema.dropTable(tableName);

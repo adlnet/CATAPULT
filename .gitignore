@@ -4,3 +4,4 @@ player/.env
 cts/.env
 cts/var
 lts/pkg/dist
+.DS_Store

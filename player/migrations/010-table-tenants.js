@@ -13,7 +13,11 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+//require('dotenv').config();
+
+
 const tableName = "tenants";
+const defaultTenantName = process.env.FIRST_TENANT_NAME;
 
 exports.up = async (knex) => {
     await knex.schema.createTable(
@@ -25,12 +29,10 @@ exports.up = async (knex) => {
             table.string("code").notNullable().unique();
         }
     );
-    //Here we weant to do a knex.insert, check env variable, if empty place a 1, 'player' 
-    //try hardcode insert, then try using environment variable check
-     //Here is some trial stuff of internweb
-     await knex(tableName).insert({code: 'Player'})
+    //On creating new database, create new tenant, will automatically be '1'
+     await knex(tableName).insert({code: defaultTenantName})
       .then( function (result) {
-          console.log("You did it you genius you!") });     // respond back to request
+          console.log("First tenant created named " + defaultTenantName) });// respond back to request
        
 };
 exports.down = (knex) => knex.schema.dropTable(tableName);

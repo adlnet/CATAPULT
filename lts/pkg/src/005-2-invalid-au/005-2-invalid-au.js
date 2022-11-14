@@ -71,7 +71,7 @@ const execute = async () => {
 
     await Helpers.closeAU(cmi5);
 
-    Helpers.storeResult(true, false, {msg: "LMS rejected set of statements with either 401 or 403 response status"});
+    Helpers.storeResult(true, false, {msg: "LMS rejected set of statements with 403 response status"});
 };
 
 execute();

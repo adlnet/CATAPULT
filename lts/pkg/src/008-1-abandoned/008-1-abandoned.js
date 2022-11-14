@@ -50,7 +50,8 @@ const execute = async () => {
             //
             const allowedSt = cmi5.prepareStatement("http://adlnet.gov/expapi/verbs/experienced");
 
-            if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.6.0-2 (d2)")) {
+            if (! await Helpers.sendStatement(cmi5, allowedSt, "9.3.6.0-2 (d2)",
+                {expectedStatuses: [401, 403]})) {
                 return;
             }
 

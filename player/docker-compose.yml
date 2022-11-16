@@ -40,7 +40,7 @@ services:
       - DATABASE_NAME=catapult_player
       - FIRST_TENANT_NAME
   rdbms:
-    image: mysql:8.0.17
+    image: mysql:8.0.31
     volumes:
       - catapult-player-data:/var/lib/mysql
     environment:

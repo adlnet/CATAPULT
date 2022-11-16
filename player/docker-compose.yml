@@ -35,7 +35,6 @@ services:
       - LRS_ENDPOINT
       - LRS_USERNAME
       - LRS_PASSWORD
-      - CREATE_FIRST_TENANT
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player

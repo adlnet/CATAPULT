@@ -44,15 +44,11 @@ services:
     image: mysql:8.0.17
     volumes:
       - catapult-player-data:/var/lib/mysql
-      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
       - MYSQL_USER=catapult
       - MYSQL_PASSWORD=quartz
       - MYSQL_DATABASE=catapult_player
-      - DATABASE_USER=catapult
-      - DATABASE_USER_PASSWORD=quartz
-      - DATABASE_NAME=catapult_player
     command: [
       "mysqld",
 

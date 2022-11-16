@@ -13,9 +13,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-//require('dotenv').config();
-
-
 const tableName = "tenants";
 const defaultTenantName = process.env.FIRST_TENANT_NAME;
 

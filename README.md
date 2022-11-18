@@ -1,10 +1,10 @@
-# Project CATAPULT
+# cmi5 Advanced Testing Application and Player Underpinning Learning Technologies (CATAPULT)
 
 This repository contains the artifacts of ADL's Project CATAPULT. The resources here are intended to increase the adoption of [cmi5](https://github.com/AICC/CMI-5_Spec_Current) by providing resources and tools needed by developers, instructional designers, and procurement personnel.
 
-## Player
+## cmi5 Player
 
-The `player/` houses the implementation of a prototype web service intended to be integrated into an LMS to provide the cmi5 launching system capabilities. It leverages an external LRS for xAPI requirement handling, but otherwise provides all validation, import, launch and other required functionality.
+The `player/` houses the implementation of a web service intended to be integrated into an LMS to provide the cmi5 launching system capabilities. It leverages an external LRS for xAPI requirement handling, but otherwise provides all validation, import, launch and other required functionality.
 
 ## Content Test Suite
 

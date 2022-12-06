@@ -21,7 +21,6 @@ const Hapi = require("@hapi/hapi"),
     Vision = require("@hapi/vision"),
     AuthBasic = require("@hapi/basic"),
     AuthJwt = require("@hapi/jwt"),
-    Bcrypt = require("bcrypt"),
     waitPort = require("wait-port"),
     {
         LRS_ENDPOINT,

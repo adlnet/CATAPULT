@@ -15,280 +15,288 @@
 */
 "use strict";
 
-const fs = require("fs"),
-    util = require("util"),
-    Boom = require("@hapi/boom"),
-    Wreck = require("@hapi/wreck"),
-    Hoek = require("@hapi/hoek"),
-    Joi = require("joi"),
-    libxml = require("libxmljs"),
-    StreamZip = require("node-stream-zip"),
-    iri = require("iri"),
-    { v4: uuidv4 } = require("uuid"),
-    url = require("url"),
-    Helpers = require("../lib/helpers"),
-    Registration = require("../lib/registration"),
-    Session = require("../lib/session"),
-    readFile = util.promisify(fs.readFile),
-    copyFile = util.promisify(fs.copyFile),
-    mkdir = util.promisify(fs.mkdir),
-    rm = util.promisify(fs.rm),
-    schema = libxml.parseXml(fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`)),
-    schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd",
+const fs = require("fs");
+const util = require("util");
+const Boom = require("@hapi/boom");
+const Wreck = require("@hapi/wreck");
+const Hoek = require("@hapi/hoek");
+const Joi = require("joi");
+const libxml = require("libxmljs");
+const StreamZip = require("node-stream-zip");
+const iri = require("iri");
+const uuidv4 = require("uuid").v4;
+const Helpers = require("../lib/helpers");
+const Registration = require("../lib/registration");
+const Session = require("../lib/session");
+const readFile = util.promisify(fs.readFile);
+const copyFile = util.promisify(fs.copyFile);
+const mkdir = util.promisify(fs.mkdir);
+const rm = util.promisify(fs.rm);
 
-    //
-    // this is basically a check for a scheme, assume that if there is a scheme
-    // that the URL is absolute, not checking for `://` because it could be a
-    // non-ip based URL per rfc1738
-    //
-    isAbsolute = (url) => /^[A-Za-z]+:.+/.test(url),
+const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`);
 
-    validateIRI = (input) => {
-        try {
-            new iri.IRI(input).toAbsolute();
+const schema = libxml.parseXml(schemaText);
+const schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd";
+
+//
+// this is basically a check for a scheme, assume that if there is a scheme
+// that the URL is absolute, not checking for `://` because it could be a
+// non-ip based URL per rfc1738
+//
+const isAbsolute = (url) => /^[A-Za-z]+:.+/.test(url);
+
+const validateIRI = (input) => {
+    try {
+        new iri.IRI(input).toAbsolute();
+    }
+    catch (ex) {
+        throw Helpers.buildViolatedReqId("3.0.0.0-1", `Invalid IRI: ${input}`, "badRequest");
+    }
+
+    return true;
+};
+
+const validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
+    const result = [];
+
+    for (const objElement of objectiveRefs.childNodes()) {
+        const idref = objElement.attr("idref").value();
+
+        if (!objectiveMap[idref]) {
+            throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
         }
-        catch (ex) {
-            throw Helpers.buildViolatedReqId("3.0.0.0-1", `Invalid IRI: ${input}`, "badRequest");
-        }
 
-        return true;
+        result.push(idref);
+    }
+
+    return result;
+};
+
+const validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
+    const result = {
+        type: "au",
+        id: element.attr("id").value(),
+        lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
+        objectives: null,
+        parents: parents.map(
+            (e) => ({ id: e.id, title: e.title })
+        )
     },
-    validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
-        const result = [];
+        auTitle = element.get("xmlns:title", schemaNS),
+        auDesc = element.get("xmlns:description", schemaNS),
+        objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
-        for (const objElement of objectiveRefs.childNodes()) {
-            const idref = objElement.attr("idref").value();
+    validateIRI(result.id);
 
-            if (! objectiveMap[idref]) {
-                throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
-            }
+    if (duplicateCheck.aus[result.id]) {
+        throw Helpers.buildViolatedReqId("13.1.4.0-1", `Invalid AU id (${result.id}: duplicate not allowed`, "badRequest");
+    }
 
-            result.push(idref);
-        }
+    duplicateCheck.aus[result.id] = true;
 
-        return result;
+    result.title = auTitle.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
+    result.description = auDesc.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
+
+    if (objectiveRefs) {
+        result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
+    }
+
+    result.url = element.get("xmlns:url", schemaNS).text().trim();
+
+    result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
+    result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
+    result.masteryScore = element.attr("masteryScore") ? Number.parseFloat(element.attr("masteryScore").value()) : null;
+    result.activityType = element.attr("activityType") ? element.attr("activityType").value() : null;
+
+    const launchParameters = element.get("xmlns:launchParameters", schemaNS),
+        entitlementKey = element.get("xmlns:entitlementKey", schemaNS);
+
+    if (launchParameters) {
+        result.launchParameters = launchParameters.text().trim();
+    }
+    if (entitlementKey) {
+        result.entitlementKey = entitlementKey.text().trim();
+    }
+
+    return result;
+};
+
+const validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
+    const result = {
+        type: "block",
+        id: element.attr("id").value(),
+        lmsId: `${lmsIdHelper.prefix}/block/${lmsIdHelper.blockIndex++}`,
+        children: [],
+        objectives: null
     },
-    validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
-        const result = {
-                type: "au",
-                id: element.attr("id").value(),
-                lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
-                objectives: null,
-                parents: parents.map(
-                    (e) => ({id: e.id, title: e.title})
-                )
-            },
-            auTitle = element.get("xmlns:title", schemaNS),
-            auDesc = element.get("xmlns:description", schemaNS),
-            objectiveRefs = element.get("xmlns:objectives", schemaNS);
+        blockTitle = element.get("xmlns:title", schemaNS),
+        blockDesc = element.get("xmlns:description", schemaNS),
+        objectiveRefs = element.get("xmlns:objectives", schemaNS);
 
-        validateIRI(result.id);
+    parents.push(result);
 
-        if (duplicateCheck.aus[result.id]) {
-            throw Helpers.buildViolatedReqId("13.1.4.0-1", `Invalid AU id (${result.id}: duplicate not allowed`, "badRequest");
+    validateIRI(result.id);
+
+    if (duplicateCheck.blocks[result.id]) {
+        throw Helpers.buildViolatedReqId("13.1.2.0-1", `Invalid block id (${result.id}: duplicate not allowed`, "badRequest");
+    }
+
+    duplicateCheck.blocks[result.id] = true;
+
+    result.title = blockTitle.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
+    result.description = blockDesc.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
+
+    if (objectiveRefs) {
+        result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
+    }
+
+    for (const child of element.childNodes()) {
+        if (child.name() === "au") {
+            result.children.push(
+                validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
+            );
         }
-
-        duplicateCheck.aus[result.id] = true;
-
-        result.title = auTitle.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
-        result.description = auDesc.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
-
-        if (objectiveRefs) {
-            result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
+        else if (child.name() === "block") {
+            result.children.push(
+                validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
+            );
         }
+    }
 
-        result.url = element.get("xmlns:url", schemaNS).text().trim();
+    parents.pop(result);
 
-        result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
-        result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
-        result.masteryScore = element.attr("masteryScore") ? Number.parseFloat(element.attr("masteryScore").value()) : null;
-        result.activityType = element.attr("activityType") ? element.attr("activityType").value() : null;
+    return result;
+};
 
-        const launchParameters = element.get("xmlns:launchParameters", schemaNS),
-            entitlementKey = element.get("xmlns:entitlementKey", schemaNS);
-
-        if (launchParameters) {
-            result.launchParameters = launchParameters.text().trim();
+const validateAndReduceStructure = (document, lmsId) => {
+    const result = {
+        course: {
+            type: "course",
+            lmsId,
+            children: [],
+            objectives: null
         }
-        if (entitlementKey) {
-            result.entitlementKey = entitlementKey.text().trim();
-        }
-
-        return result;
     },
-    validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
-        const result = {
-                type: "block",
-                id: element.attr("id").value(),
-                lmsId: `${lmsIdHelper.prefix}/block/${lmsIdHelper.blockIndex++}`,
-                children: [],
-                objectives: null
-            },
-            blockTitle = element.get("xmlns:title", schemaNS),
-            blockDesc = element.get("xmlns:description", schemaNS),
-            objectiveRefs = element.get("xmlns:objectives", schemaNS);
+        courseStructure = document.root(),
+        course = courseStructure.get("xmlns:course", schemaNS),
+        courseTitle = course.get("xmlns:title", schemaNS),
+        courseDesc = course.get("xmlns:description", schemaNS),
+        objectives = courseStructure.get("xmlns:objectives", schemaNS),
+        lmsIdHelper = {
+            prefix: lmsId,
+            auIndex: 0,
+            blockIndex: 0
+        },
+        duplicateCheck = {
+            aus: {},
+            blocks: {}
+        };
 
-        parents.push(result);
+    result.course.id = course.attr("id").value();
 
-        validateIRI(result.id);
+    validateIRI(result.course.id);
 
-        if (duplicateCheck.blocks[result.id]) {
-            throw Helpers.buildViolatedReqId("13.1.2.0-1", `Invalid block id (${result.id}: duplicate not allowed`, "badRequest");
-        }
+    result.course.title = courseTitle.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
+    result.course.description = courseDesc.childNodes().map(
+        (ls) => ({
+            lang: ls.attr("lang").value(),
+            text: ls.text().trim()
+        })
+    );
 
-        duplicateCheck.blocks[result.id] = true;
+    if (objectives) {
+        result.course.objectives = {};
 
-        result.title = blockTitle.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
-        result.description = blockDesc.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
+        for (const objElement of objectives.childNodes()) {
+            if (objElement.name() === "objective") {
+                const id = objElement.attr("id").value();
 
-        if (objectiveRefs) {
-            result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
-        }
+                validateIRI(id);
 
-        for (const child of element.childNodes()) {
-            if (child.name() === "au") {
-                result.children.push(
-                    validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
-                );
-            }
-            else if (child.name() === "block") {
-                result.children.push(
-                    validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
-                );
-            }
-        }
-
-        parents.pop(result);
-
-        return result;
-    },
-    validateAndReduceStructure = (document, lmsId) => {
-        const result = {
-                course: {
-                    type: "course",
-                    lmsId,
-                    children: [],
-                    objectives: null
+                if (result.course.objectives[id]) {
+                    throw Helpers.buildViolatedReqId("13.1.3.0-1", `Invalid objective id (${id}: duplicate not allowed`, "badRequest");
                 }
-            },
-            courseStructure = document.root(),
-            course = courseStructure.get("xmlns:course", schemaNS),
-            courseTitle = course.get("xmlns:title", schemaNS),
-            courseDesc = course.get("xmlns:description", schemaNS),
-            objectives = courseStructure.get("xmlns:objectives", schemaNS),
-            lmsIdHelper = {
-                prefix: lmsId,
-                auIndex: 0,
-                blockIndex: 0
-            },
-            duplicateCheck = {
-                aus: {},
-                blocks: {}
-            };
 
-        result.course.id = course.attr("id").value();
-
-        validateIRI(result.course.id);
-
-        result.course.title = courseTitle.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
-        result.course.description = courseDesc.childNodes().map(
-            (ls) => ({
-                lang: ls.attr("lang").value(),
-                text: ls.text().trim()
-            })
-        );
-
-        if (objectives) {
-            result.course.objectives = {};
-
-            for (const objElement of objectives.childNodes()) {
-                if (objElement.name() === "objective") {
-                    const id = objElement.attr("id").value();
-
-                    validateIRI(id);
-
-                    if (result.course.objectives[id]) {
-                        throw Helpers.buildViolatedReqId("13.1.3.0-1", `Invalid objective id (${id}: duplicate not allowed`, "badRequest");
-                    }
-
-                    result.course.objectives[id] = {
-                        title: objElement.get("xmlns:title", schemaNS).childNodes().map(
-                            (ls) => ({
-                                lang: ls.attr("lang").value(),
-                                text: ls.text().trim()
-                            })
-                        ),
-                        description: objElement.get("xmlns:description", schemaNS).childNodes().map(
-                            (ls) => ({
-                                lang: ls.attr("lang").value(),
-                                text: ls.text().trim()
-                            })
-                        )
-                    };
-                }
+                result.course.objectives[id] = {
+                    title: objElement.get("xmlns:title", schemaNS).childNodes().map(
+                        (ls) => ({
+                            lang: ls.attr("lang").value(),
+                            text: ls.text().trim()
+                        })
+                    ),
+                    description: objElement.get("xmlns:description", schemaNS).childNodes().map(
+                        (ls) => ({
+                            lang: ls.attr("lang").value(),
+                            text: ls.text().trim()
+                        })
+                    )
+                };
             }
         }
+    }
 
-        const parents = [];
+    const parents = [];
 
-        for (const element of courseStructure.childNodes()) {
-            if (element.name() === "au") {
-                result.course.children.push(
-                    validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
-                );
-            }
-            else if (element.name() === "block") {
-                result.course.children.push(
-                    validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
-                );
-            }
-            else {
-                // shouldn't need to handle unknown elements since the XSD
-                // checks should have caught them, anything else is handled
-                // directly above (course, objectives)
-                // throw new Error(`Unrecognized element: ${element.name()}`);
-            }
+    for (const element of courseStructure.childNodes()) {
+        if (element.name() === "au") {
+            result.course.children.push(
+                validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
+            );
         }
-
-        return result;
-    },
-    flattenAUs = (tree, list) => {
-        for (const child of tree) {
-            if (child.type === "au") {
-                child.auIndex = list.length;
-                list.push(child);
-            }
-            else if (child.type === "block") {
-                flattenAUs(child.children, list)
-            }
+        else if (element.name() === "block") {
+            result.course.children.push(
+                validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
+            );
         }
-    },
-    getCourseDir = (tenantId, courseId) => `${__dirname}/../../../var/content/${tenantId}/${courseId}`;
+        else {
+            // shouldn't need to handle unknown elements since the XSD
+            // checks should have caught them, anything else is handled
+            // directly above (course, objectives)
+            // throw new Error(`Unrecognized element: ${element.name()}`);
+        }
+    }
+
+    return result;
+};
+
+const flattenAUs = (tree, list) => {
+    for (const child of tree) {
+        if (child.type === "au") {
+            child.auIndex = list.length;
+            list.push(child);
+        }
+        else if (child.type === "block") {
+            flattenAUs(child.children, list)
+        }
+    }
+};
+
+const getCourseDir = (tenantId, courseId) => `${__dirname}/../../../var/content/${tenantId}/${courseId}`;
 
 module.exports = {
     name: "catapult-player-api-routes-v1-courses",
@@ -342,13 +350,13 @@ module.exports = {
                         let courseStructureData,
                             zip;
 
-                        if (! isZip && contentType !== "text/xml") {
-                            throw Helpers.buildViolatedReqId("14.0.0.0-1", `Unrecognized Content-Type: ${contentType}` , "badRequest");
+                        if (!isZip && contentType !== "text/xml") {
+                            throw Helpers.buildViolatedReqId("14.0.0.0-1", `Unrecognized Content-Type: ${contentType}`, "badRequest");
                         }
 
                         if (isZip) {
                             try {
-                                zip = new StreamZip.async({file: req.payload.path});
+                                zip = new StreamZip.async({ file: req.payload.path });
                             }
                             catch (ex) {
                                 throw Helpers.buildViolatedReqId("14.1.0.0-1", ex, "badRequest");
@@ -399,7 +407,7 @@ module.exports = {
                             throw Boom.internal(`Failed to validate course structure against schema: ${ex}`);
                         }
 
-                        if (! validationResult) {
+                        if (!validationResult) {
                             throw Helpers.buildViolatedReqId("13.2.0.0-1", `Invalid course structure data (schema violation): ${courseStructureDocument.validationErrors.join(",")}`, "badRequest");
                         }
 
@@ -444,13 +452,13 @@ module.exports = {
                                 }
                             }
 
-                            if (! isAbsolute(au.url)) {
-                                if (! zip) {
+                            if (!isAbsolute(au.url)) {
+                                if (!zip) {
                                     throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
                                 const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
-                                if (! zipEntry) {
+                                if (!zipEntry) {
                                     throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
                                 }
                             }
@@ -508,7 +516,7 @@ module.exports = {
                         const courseDir = getCourseDir(tenantId, courseId);
 
                         try {
-                            await mkdir(courseDir, {recursive: true});
+                            await mkdir(courseDir, { recursive: true });
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed to create course content directory (${courseDir}): ${ex}`));
@@ -526,7 +534,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to store course content: ${ex}`));
                         }
 
-                        return db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId: req.auth.credentials.tenantId, id: courseId});
+                        return db.first("*").from("courses").queryContext({ jsonCols: ["metadata", "structure"] }).where({ tenantId: req.auth.credentials.tenantId, id: courseId });
                     }
                 },
 
@@ -537,9 +545,9 @@ module.exports = {
                         tags: ["api"]
                     },
                     handler: async (req, h) => {
-                        const result = await req.server.app.db.first("*").from("courses").queryContext({jsonCols: ["metadata", "structure"]}).where({tenantId: req.auth.credentials.tenantId, id: req.params.id});
+                        const result = await req.server.app.db.first("*").from("courses").queryContext({ jsonCols: ["metadata", "structure"] }).where({ tenantId: req.auth.credentials.tenantId, id: req.params.id });
 
-                        if (! result) {
+                        if (!result) {
                             return Boom.notFound();
                         }
 
@@ -571,7 +579,7 @@ module.exports = {
                         }
 
                         try {
-                            await req.server.app.db("courses").where({tenantId, id: courseId}).delete();
+                            await req.server.app.db("courses").where({ tenantId, id: courseId }).delete();
                         }
                         catch (ex) {
                             throw new Boom.internal(`Failed to delete course (${courseId}): ${ex}`);
@@ -615,14 +623,14 @@ module.exports = {
                             code = req.payload.reg,
                             tenantId = req.auth.credentials.tenantId,
                             lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req)),
-                            course = await db.first("*").queryContext({jsonCols: ["metadata", "structure"]}).from("courses").where(
+                            course = await db.first("*").queryContext({ jsonCols: ["metadata", "structure"] }).from("courses").where(
                                 {
                                     tenantId,
                                     id: courseId
                                 }
                             );
 
-                        if (! course) {
+                        if (!course) {
                             throw Boom.notFound(`Unrecognized course: ${courseId} (${tenantId})`);
                         }
 
@@ -630,7 +638,7 @@ module.exports = {
 
                         if (code) {
                             // check for registration record and validate details match
-                            const selectResult = await db.first("id", "actor").queryContext({jsonCols: ["actor"]}).from("registrations").where(
+                            const selectResult = await db.first("id", "actor").queryContext({ jsonCols: ["actor"] }).from("registrations").where(
                                 {
                                     tenantId,
                                     courseId,
@@ -643,7 +651,7 @@ module.exports = {
                             }
                         }
 
-                        if (! registrationId) {
+                        if (!registrationId) {
                             // either this is a new registration or we didn't find one they were expecting
                             // so go ahead and create the registration now
                             registrationId = await Registration.create(
@@ -660,10 +668,10 @@ module.exports = {
                             );
                         }
 
-                        const reg = await Registration.load({tenantId, registrationId}, {db}),
-                            {registrationsCoursesAus: regCourseAu, coursesAus: courseAu} = await db
+                        const reg = await Registration.load({ tenantId, registrationId }, { db }),
+                            { registrationsCoursesAus: regCourseAu, coursesAus: courseAu } = await db
                                 .first("*")
-                                .queryContext({jsonCols: ["registrations_courses_aus.metadata", "courses_aus.metadata"]})
+                                .queryContext({ jsonCols: ["registrations_courses_aus.metadata", "courses_aus.metadata"] })
                                 .from("registrations_courses_aus")
                                 .leftJoin("courses_aus", "registrations_courses_aus.course_au_id", "courses_aus.id")
                                 .where(
@@ -673,7 +681,7 @@ module.exports = {
                                         "courses_aus.au_index": auIndex
                                     }
                                 )
-                                .options({nestTables: true});
+                                .options({ nestTables: true });
 
                         //
                         // check for existing open sessions and abandon them,
@@ -696,7 +704,7 @@ module.exports = {
 
                         if (openSessions) {
                             for (const session of openSessions) {
-                                await Session.abandon(session.id, tenantId, "new-launch", {db, lrsWreck});
+                                await Session.abandon(session.id, tenantId, "new-launch", { db, lrsWreck });
                             }
                         }
 
@@ -725,7 +733,7 @@ module.exports = {
                             };
 
                         if (req.payload.contextTemplateAdditions) {
-                            Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, {nullOverride: false});
+                            Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });
                         }
 
                         let contentUrl;
@@ -742,13 +750,13 @@ module.exports = {
 
                         try {
                             const lmsLaunchDataStateParams = new URLSearchParams(
-                                    {
-                                        stateId: "LMS.LaunchData",
-                                        agent: JSON.stringify(actor),
-                                        activityId: lmsActivityId,
-                                        registration: reg.code
-                                    }
-                                ),
+                                {
+                                    stateId: "LMS.LaunchData",
+                                    agent: JSON.stringify(actor),
+                                    activityId: lmsActivityId,
+                                    registration: reg.code
+                                }
+                            ),
                                 lmsLaunchDataPayload = {
                                     launchMode,
                                     masteryScore,
@@ -783,7 +791,7 @@ module.exports = {
                                 }
                             );
 
-                            lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, {json: true});
+                            lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, { json: true });
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));
@@ -846,7 +854,7 @@ module.exports = {
                                 }
                             );
 
-                            launchedStResponseBody = await Wreck.read(launchedStResponse, {json: true});
+                            launchedStResponseBody = await Wreck.read(launchedStResponse, { json: true });
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to store launched statement: ${ex}`));

@@ -15,6 +15,8 @@
 */
 "use strict";
 
+const ALLOWED_ORIGIN = (process.env.HOSTNAME || "*");
+
 const Bcrypt = require("bcrypt"),
     Joi = require("joi"),
     Boom = require("@hapi/boom"),
@@ -49,7 +51,11 @@ module.exports = {
                         auth: {
                             mode: "try"
                         },
-                        tags: ["api"]
+                        tags: ["api"],
+                        security: true,
+                        cors: {
+                            origin: [ALLOWED_ORIGIN]
+                        }
                     },
                     handler: async (req, h) => {
                         const db = req.server.app.db,
@@ -107,6 +113,10 @@ module.exports = {
                                 password: Joi.string().required(),
                                 storeCookie: Joi.boolean().optional()
                             }).label("Request-Login")
+                        },
+                        security: true,
+                        cors: {
+                            origin: [ALLOWED_ORIGIN]
                         }
                     },
                     handler: async (req, h) => {

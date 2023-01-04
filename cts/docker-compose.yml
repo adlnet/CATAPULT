@@ -59,6 +59,7 @@ services:
       - ./migrations:/usr/src/app/migrations:ro
       - ./seeds:/usr/src/app/seeds:ro
     environment:
+      - HOSTNAME
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
@@ -85,6 +86,7 @@ services:
       - ../player/seeds:/usr/src/app/seeds:ro
       - ./var/player/content:/usr/src/app/var/content
     environment:
+      - HOSTNAME
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player

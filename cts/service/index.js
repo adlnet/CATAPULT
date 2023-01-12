@@ -30,6 +30,8 @@ const Hapi = require("@hapi/hapi"),
         PLAYER_SECRET
     } = process.env;
 
+const COOKIE_SECRET = (process.env.COOKIE_SECRET || 'GjW_X*v7fZKarM_4HU4tE!gMu4sp_DYL_j*gdR2jNormrW3-xr@UcXrdEXM8y!s6');
+
 const provision = async () => {
     const server = Hapi.server(
             {
@@ -136,15 +138,17 @@ const provision = async () => {
         "basicAuthValidate",
         async (req, username, password) => {
             const user = await req.server.app.db.first("*").from("users").queryContext({jsonCols: ["roles"]}).where({username});
-
-            if (! user) {
+            
+            let noUserFound = !user;
+            if (noUserFound) {
                 return {isValid: false, credentials: null};
             }
-
-            if (! await Bcrypt.compare(password, user.password)) {
+            
+            let invalidPassword = await Bcrypt.compare(password, user.password);
+            if (invalidPassword) {
                 return {isValid: false, credentials: null};
             }
-
+            
             return {
                 isValid: true,
                 credentials: await req.server.methods.getCredentials(user)
@@ -214,7 +218,7 @@ const provision = async () => {
         {
             validateFunc: async (req, session) => await req.server.methods.cookieAuthValidateFunc(req, session),
             cookie: {
-                password: 'GjW_X*v7fZKarM_4HU4tE!gMu4sp_DYL_j*gdR2jNormrW3-xr@UcXrdEXM8y!s6',
+                password: COOKIE_SECRET,
 
                 // switch to use via https
                 isSecure: false,

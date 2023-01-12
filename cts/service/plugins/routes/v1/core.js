@@ -190,8 +190,11 @@ module.exports = {
                             //
                             [query] = await db("users").count("id", {as: "count"});
 
+                        // if (query.count > 0) {
+                        //     throw Boom.conflict(`Unexpected user count: ${query.count}`);
+                        // }
                         if (query.count > 0) {
-                            throw Boom.conflict(`Unexpected user count: ${query.count}`);
+                            throw Boom.conflict(`Invalid Request.`);
                         }
 
                         try {

@@ -111,7 +111,13 @@ export default {
                     throw new Error(`Request failed: ${response.status}`);
                 }
 
-                let body = await response.json();
+                let payload = await response.text();
+                let expectedLength = response.headers.contentLength;
+                if (expectedLength != payload.length) {
+                    throw "Your username and / or password is incorrect. Please try again.";
+                }
+
+                let body = JSON.parse(payload);
 
                 //
                 // if they didn't want to be remembered then we don't get a cookie

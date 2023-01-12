@@ -21,14 +21,21 @@ const Bcrypt = require("bcrypt"),
     Joi = require("joi"),
     Boom = require("@hapi/boom"),
     User = require("./lib/user"),
-    { AUTH_TTL_SECONDS } = require("../../../lib/consts"),
-    getClientSafeUser = (user) => {
-        delete user.password;
-        delete user.playerApiToken;
-        delete user.tenantId;
+    crypto = require("./lib/crypto"),
+    { AUTH_TTL_SECONDS } = require("../../../lib/consts");
 
-        return user;
-    };
+const getClientSafeUser = (user) => {
+    delete user.password;
+    delete user.playerApiToken;
+    delete user.tenantId;
+
+    let raw = JSON.stringify(user);
+    let encoded = crypto.encrypt(raw, ALLOWED_ORIGIN);
+
+    user.hash = encoded;
+
+    return user;
+};
 
 module.exports = {
     name: "catapult-cts-api-routes-v1-core",

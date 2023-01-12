@@ -25,6 +25,33 @@ const initialState = () => ({
     expiresAt: null
 });
 
+/**
+ * Decrypt XOR method
+ * @param {string} cypherString - Cypher string to be decoded
+ * @param {string} key - Crypt key used to XOR cypherString
+ * @returns {string} Plain text
+ */
+const decrypt = (cypherString, key) => {
+
+    let plainText = '';
+    const cypherArray = [];
+    let i;
+    // Group cypher by 2 hex char (16bits) into array
+    for (i = 0; i < cypherString.length; i = i + 2) {
+        cypherArray.push(cypherString[i] + cypherString[i + 1]);
+    }
+
+    // XOR Decrypt with provided cypher text and key
+    for (i = 0; i < cypherArray.length; i++) {
+        const hex = cypherArray[i];
+        const dec = parseInt(hex, 16);
+        const keyPointer = i % key.length;
+        const asciiCode = dec ^ (key[keyPointer]).charCodeAt(0);
+        plainText += String.fromCharCode(asciiCode);
+    }
+    return plainText;
+};
+
 export default {
     namespaced: true,
     state: {
@@ -103,21 +130,38 @@ export default {
                     }
                 );
 
+                const BLANKET_ERROR_MESSAGE = "Your username and / or password is incorrect. Please try again.";
+
                 if (! response.ok) {
                     if (response.status === 401) {
-                        throw "Your username and / or password is incorrect. Please try again.";
+                        throw BLANKET_ERROR_MESSAGE;
                     }
 
                     throw new Error(`Request failed: ${response.status}`);
                 }
 
-                let payload = await response.text();
-                let expectedLength = response.headers.contentLength;
-                if (expectedLength != payload.length) {
-                    throw "Your username and / or password is incorrect. Please try again.";
+                let body = await response.json();
+
+                //
+                // Check if it looks like anyone has messed with the body
+                //
+                if (body.hash == undefined) {
+                    throw BLANKET_ERROR_MESSAGE;
                 }
 
-                let body = JSON.parse(payload);
+                let decoded = decrypt(body.hash, window.location.hostname);
+                let decodedBody = JSON.parse(decoded);
+
+                delete body.hash;
+
+                for (let key in body) {
+                    let bodyValue = JSON.stringify(body[key]);
+                    let decodedValue = JSON.stringify(decodedBody[key]);
+                    
+                    if (decodedValue !== bodyValue) {
+                        throw BLANKET_ERROR_MESSAGE;
+                    }
+                }
 
                 //
                 // if they didn't want to be remembered then we don't get a cookie

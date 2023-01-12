@@ -66,6 +66,7 @@ services:
       - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET
+      - COOKIE_SECRET
     networks:
       - public  
 
@@ -102,6 +103,7 @@ services:
 
   rdbms:
     image: mysql:8.0.17
+    restart: always
     volumes:
       - catapult-cts-data:/var/lib/mysql
       - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro

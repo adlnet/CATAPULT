@@ -53,7 +53,7 @@
         data: () => ({
             username: "",
             password: "",
-            keepSignedIn: false,
+            keepSignedIn: true,
             passwordVisible: false
         }),
         computed: {

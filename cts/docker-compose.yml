@@ -66,6 +66,7 @@ services:
       - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET
+      - PLAYER_API_ROOT=/player
     networks:
       - public  
 

@@ -66,7 +66,6 @@ services:
       - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET
-      - PLAYER_API_ROOT=/player
     networks:
       - public  
 
@@ -98,6 +97,7 @@ services:
       - TOKEN_SECRET=${PLAYER_TOKEN_SECRET}
       - API_KEY=${PLAYER_KEY}
       - API_SECRET=${PLAYER_SECRET}
+      - PLAYER_API_ROOT=/player
     networks:
       - public
 

@@ -39,7 +39,7 @@ const Hapi = require("@hapi/hapi"),
     }; 
 
     //Variable for the player API root
-    const playerBasePath = PLAYER_API_ROOT + "/api/v1";
+    const playerBasePath = PLAYER_API_ROOT;
  
 const provision = async () => {
     const server = Hapi.server(
@@ -112,10 +112,14 @@ const provision = async () => {
         }
     );
 
-    await server.register(H2o2);
-    await server.register(Inert);
-    await server.register(AuthJwt);
-    await server.register(AuthBasic);
+    let defaultRouteArgs = {
+        prefix: playerBasePath
+    };
+
+    await server.register(H2o2, {...defaultRouteArgs});
+    await server.register(Inert, {...defaultRouteArgs});
+    await server.register(AuthJwt, {...defaultRouteArgs});
+    await server.register(AuthBasic, {...defaultRouteArgs});
 
     await server.register(
         [
@@ -130,7 +134,8 @@ const provision = async () => {
                     }
                 }
             }
-        ]
+        ],
+        {...defaultRouteArgs}
     );
 
     //
@@ -212,7 +217,8 @@ const provision = async () => {
             require("./plugins/routes/content"),
             require("./plugins/routes/lrs"),
             require("./plugins/routes/spec")
-        ]
+        ],
+        {...defaultRouteArgs}
     );
 
     server.auth.default(
@@ -229,7 +235,7 @@ const provision = async () => {
         ],
         {
             routes: {
-                prefix: playerBasePath
+                prefix: playerBasePath + "/api/v1"
             }
         }
     );

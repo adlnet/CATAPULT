@@ -242,6 +242,24 @@ const provision = async () => {
         }
     );
 
+    server.route({
+        method: '*',
+        path: '/{any*}',
+        handler: function (request, h) {
+            
+            if (!request)
+                return;
+
+            if (playerBasePath != "" && !request.path.startsWith(playerBasePath)) {
+                let prefixed = playerBasePath + request.path;
+                return h.redirect(prefixed);
+            }
+            else {
+                return h.response('404 Error! Page Not Found!').code(404);
+            }
+        }
+    });
+
     await server.start();
 
     process.on("SIGINT", sigHandler);

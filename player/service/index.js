@@ -113,7 +113,9 @@ const provision = async () => {
     );
 
     let defaultRouteArgs = {
-        prefix: playerBasePath
+        routes: {
+            prefix: playerBasePath
+        }
     };
 
     await server.register(H2o2, {...defaultRouteArgs});

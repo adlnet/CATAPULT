@@ -19,6 +19,9 @@ WORKDIR /usr/src/app
 COPY --chown=node:node entrypoint.sh /usr/src/app
 COPY --chown=node:node service /usr/src/app
 COPY --chown=node:node migrations /usr/src/app/migrations
+
+RUN mkdir -p /usr/src/app/var/content && chown node:node /usr/src/app/var/content
+
 RUN npm ci --only=production
 RUN npm install -g nodemon
 USER node

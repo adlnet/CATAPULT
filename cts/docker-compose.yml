@@ -63,7 +63,7 @@ services:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
-      - PLAYER_BASE_URL
+      - PLAYER_BASE_URL=http://player:3398/player
       - PLAYER_KEY
       - PLAYER_SECRET
     networks:
@@ -84,7 +84,7 @@ services:
       - ../player/service/lib:/usr/src/app/lib:ro
       - ../player/migrations:/usr/src/app/migrations:ro
       - ../player/seeds:/usr/src/app/seeds:ro
-      - ./var/player/content:/usr/src/app/var/content
+      - catapult-player-data:/usr/src/app/var/content
     environment:
       - HOSTNAME
       - DATABASE_USER=catapult
@@ -128,6 +128,7 @@ services:
 
 volumes:
   catapult-cts-data:
+  catapult-player-data:
 
 networks:
   public:

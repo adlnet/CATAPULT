@@ -147,6 +147,7 @@ const provision = async () => {
     server.method(
         "basicAuthValidate",
         async (req, key, secret) => {
+
             if (key !== API_KEY || secret !== API_SECRET) {
                 return {isValid: false, credentials: null};
             }
@@ -247,16 +248,13 @@ const provision = async () => {
         path: '/{any*}',
         handler: function (request, h) {
             
-            if (!request)
-                return;
-
-            if (playerBasePath != "" && !request.path.startsWith(playerBasePath)) {
+            let usingBasePath = !!playerBasePath;
+            if (usingBasePath && !request.path.startsWith(playerBasePath)) {
                 let prefixed = playerBasePath + request.path;
                 return h.redirect(prefixed);
             }
-            else {
-                return h.response('404 Error! Page Not Found!').code(404);
-            }
+
+            return h.response('404 Error! Page Not Found!').code(404);
         }
     });
 

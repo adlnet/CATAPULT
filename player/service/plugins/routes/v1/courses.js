@@ -457,9 +457,10 @@ module.exports = {
                                     throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
-                                const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
+                                const zipEntry = await zip.entry(au.url);
                                 if (!zipEntry) {
-                                    throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
+                                    // throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
+                                    throw Helpers.buildViolatedReqId("14.1.0.0-4", `${au.url} not found in zip`, "badRequest");
                                 }
                             }
                         }

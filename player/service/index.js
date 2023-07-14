@@ -108,7 +108,7 @@ const provision = async () => {
     );
 
     let defaultRouteArgs = {
-        routes: {
+        routes: !playerBasePath ? undefined : {
             prefix: playerBasePath
         }
     };

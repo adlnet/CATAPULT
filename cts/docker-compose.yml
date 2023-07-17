@@ -63,7 +63,7 @@ services:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
-      - PLAYER_BASE_URL=http://player:3398/player
+      - PLAYER_BASE_URL=http://player:3398${PLAYER_ROOT_PATH}
       - PLAYER_KEY
       - PLAYER_SECRET
     networks:
@@ -97,7 +97,7 @@ services:
       - TOKEN_SECRET=${PLAYER_TOKEN_SECRET}
       - API_KEY=${PLAYER_KEY}
       - API_SECRET=${PLAYER_SECRET}
-      - PLAYER_API_ROOT=/player
+      - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
     networks:
       - public
 

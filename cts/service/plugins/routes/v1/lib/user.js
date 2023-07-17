@@ -28,13 +28,16 @@ module.exports = {
         let createTenantResponse,
             createTenantResponseBody;
 
+        let auth = await req.server.methods.playerBasicAuthHeader(req);
+        let tenantURL = `${req.server.app.player.baseUrl}/api/v1/tenant`;
+
         try {
             createTenantResponse = await Wreck.request(
                 "POST",
-                `${req.server.app.player.baseUrl}/api/v1/tenant`,
+                tenantURL,
                 {
                     headers: {
-                        Authorization: await req.server.methods.playerBasicAuthHeader(req)
+                        Authorization: auth
                     },
                     payload: {
                         code: username

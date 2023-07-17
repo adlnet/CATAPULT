@@ -707,7 +707,7 @@ module.exports = {
                     try {
                         const beforeResult = beforeLRSRequest(req, session, regCourseAu, registration);
 
-                        const uri = `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`,
+                        const uri = `${req.server.app.lrs.endpoint}${req.params.resource}${req.url.search}`,
                             protocol = uri.split(":", 1)[0],
                             options = {
                                 headers: Hoek.clone(req.headers),

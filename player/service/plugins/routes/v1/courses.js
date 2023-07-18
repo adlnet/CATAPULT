@@ -428,6 +428,9 @@ module.exports = {
                         // relative URLs make sure they are from a zip and that there
                         // is an entry in the zip for that URL
                         //
+
+                        //MB
+                        //Here is were it is handling aus
                         for (const au of aus) {
                             let launchUrl;
 
@@ -459,7 +462,11 @@ module.exports = {
                                     throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
-                                const zipEntry = await zip.entry(au.url);
+                                // Testing
+                                //This was the original code 
+                                const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
+                                //This is new (breaking?) code
+                                //const zipEntry = await zip.entry(au.url);
                                 if (!zipEntry) {
                                     // throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
                                     throw Helpers.buildViolatedReqId("14.1.0.0-4", `${au.url} not found in zip`, "badRequest");

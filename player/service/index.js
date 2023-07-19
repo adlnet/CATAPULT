@@ -33,14 +33,8 @@ const Hapi = require("@hapi/hapi"),
         PLAYER_API_ROOT
     } = process.env;
 
-    //If the player API root is not set, default to empty string
-    if (!PLAYER_API_ROOT) {
-        process.env.PLAYER_API_ROOT = "";
-    }; 
+const rootPath = (process.env.PLAYER_API_ROOT || "");
 
-    //Variable for the player API root
-    const playerBasePath = PLAYER_API_ROOT;
- 
 const provision = async () => {
     const server = Hapi.server(
             {
@@ -113,8 +107,8 @@ const provision = async () => {
     );
 
     let defaultRouteArgs = {
-        routes: {
-            prefix: playerBasePath
+        routes: !rootPath ? undefined : {
+            prefix: rootPath
         }
     };
 
@@ -129,7 +123,7 @@ const provision = async () => {
             {
                 plugin: require("hapi-swagger"),
                 options: {
-                    basePath: playerBasePath,
+                    basePath: "/api/v1",
                     pathPrefixSize: 3,
                     info: {
                         title: "Catapult Player API"
@@ -238,7 +232,7 @@ const provision = async () => {
         ],
         {
             routes: {
-                prefix: playerBasePath + "/api/v1"
+                prefix: rootPath + "/api/v1"
             }
         }
     );
@@ -248,9 +242,9 @@ const provision = async () => {
         path: '/{any*}',
         handler: function (request, h) {
             
-            let usingBasePath = !!playerBasePath;
-            if (usingBasePath && !request.path.startsWith(playerBasePath)) {
-                let prefixed = playerBasePath + request.path;
+            let usingBasePath = !!rootPath;
+            if (usingBasePath && !request.path.startsWith(rootPath)) {
+                let prefixed = rootPath + request.path;
                 return h.redirect(prefixed);
             }
 

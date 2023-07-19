@@ -33,6 +33,8 @@ const copyFile = util.promisify(fs.copyFile);
 const mkdir = util.promisify(fs.mkdir);
 const rm = util.promisify(fs.rm);
 
+const rootPath = (process.env.PLAYER_API_ROOT || "");
+
 const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`);
 
 const schema = libxml.parseXml(schemaText);
@@ -426,6 +428,9 @@ module.exports = {
                         // relative URLs make sure they are from a zip and that there
                         // is an entry in the zip for that URL
                         //
+
+                        //MB
+                        //Here is were it is handling aus
                         for (const au of aus) {
                             let launchUrl;
 
@@ -457,7 +462,11 @@ module.exports = {
                                     throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
-                                const zipEntry = await zip.entry(au.url);
+                                // Testing
+                                //This was the original code 
+                                const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
+                                //This is new (breaking?) code
+                                //const zipEntry = await zip.entry(au.url);
                                 if (!zipEntry) {
                                     // throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
                                     throw Helpers.buildViolatedReqId("14.1.0.0-4", `${au.url} not found in zip`, "badRequest");
@@ -717,7 +726,7 @@ module.exports = {
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
-                            baseUrl = `${req.url.protocol}//${req.url.host}`,
+                            baseUrl = `${req.url.protocol}//${req.url.host}${rootPath}`,
                             endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
                             contextTemplate = {

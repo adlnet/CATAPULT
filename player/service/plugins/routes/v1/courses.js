@@ -464,7 +464,21 @@ module.exports = {
 
                                 // Testing
                                 //This was the original code 
-                                const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
+                                //const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
+                                
+                                //we need to remove the PLAYER_ROOT_PATH from launchUrl.pathname.substring(1)
+                                //OR we need to lose everything after the ? in au.url. Because we don't want a query.
+
+
+                                const zipEntry = await zip.entry(au.url.split('?')[0]);
+                                console.log('au.url: ', au.url);
+
+                                console.log('launchurl-pathname-sub: ', launchUrl.pathname.substring(1));
+
+                                console.log('Ok, what is zipEntry now?? : ', zipEntry);
+
+                                //It's coming back undefined 
+
                                 //This is new (breaking?) code
                                 //const zipEntry = await zip.entry(au.url);
                                 if (!zipEntry) {

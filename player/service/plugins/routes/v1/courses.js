@@ -830,6 +830,14 @@ module.exports = {
                             console.log("lmsLaunchDataResponseBody is ", lmsLaunchDataResponseBody);
                         }
                         catch (ex) {
+                             //also the url that is wrong MUST be the activities/state plaus the lmslaunchdatastateparams
+                             console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
+                             //MB
+                             //and what is lmsLaunchDataResponse?
+                             console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
+                            //MB
+                            //amd lmsLaunchDataResponseBody?
+                            console.log("lmsLaunchDataResponseBody is ", lmsLaunchDataResponseBody);
                             throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));
                         }
 

@@ -816,6 +816,10 @@ module.exports = {
                                     payload: lmsLaunchDataPayload
                                 }
                             );
+                            //What is the launchData payload
+                            console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+                            //also the url that is wrong MUST be the activities/state plaus the lmslaunchdatastateparams
+                            console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
                             //MB
                             //and what is lmsLaunchDataResponse?
                             console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);

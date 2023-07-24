@@ -54,7 +54,6 @@ module.exports = {
                             lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req));
 
                         await Session.abandon(sessionId, tenantId, "api", {db, lrsWreck});
-
                         return null;
                     }
                 }

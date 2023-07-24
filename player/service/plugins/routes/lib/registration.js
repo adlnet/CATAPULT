@@ -256,6 +256,7 @@ module.exports = Registration = {
                             "courses_aus.metadata"
                         ]
                     }
+
                 )
                 .forUpdate()
                 .options({nestTables: true})
@@ -296,6 +297,7 @@ module.exports = Registration = {
                     id: "https://w3id.org/xapi/adl/verbs/satisfied",
                     display: {
                         "en": "satisfied"
+
                     }
                 },
                 context: {

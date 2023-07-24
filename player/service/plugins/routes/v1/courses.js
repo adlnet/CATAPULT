@@ -429,8 +429,6 @@ module.exports = {
                         // is an entry in the zip for that URL
                         //
 
-                        //MB
-                        //Here is were it is handling aus
                         for (const au of aus) {
                             let launchUrl;
 
@@ -462,25 +460,8 @@ module.exports = {
                                     throw Helpers.buildViolatedReqId("14.2.0.0-1", "relative URL not in a zip", "badRequest");
                                 }
 
-                                // Testing
-                                //This was the original code 
-                                //const zipEntry = await zip.entry(launchUrl.pathname.substring(1));
-                                
-                                //we need to remove the PLAYER_ROOT_PATH from launchUrl.pathname.substring(1)
-                                //OR we need to lose everything after the ? in au.url. Because we don't want a query.
-
-
                                 const zipEntry = await zip.entry(au.url.split('?')[0]);
-                                console.log('au.url: ', au.url);
 
-                                console.log('launchurl-pathname-sub: ', launchUrl.pathname.substring(1));
-
-                                console.log('Ok, what is zipEntry now?? : ', zipEntry);
-
-                                //It's coming back undefined 
-
-                                //This is new (breaking?) code
-                                //const zipEntry = await zip.entry(au.url);
                                 if (!zipEntry) {
                                     // throw Helpers.buildViolatedReqId("14.1.0.0-4", `${launchUrl.pathname} not found in zip`, "badRequest");
                                     throw Helpers.buildViolatedReqId("14.1.0.0-4", `${au.url} not found in zip`, "badRequest");
@@ -740,6 +721,7 @@ module.exports = {
                             masteryScore = req.payload.masteryScore || courseAu.metadata.masteryScore,
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
+                    
                             baseUrl = `${req.url.protocol}//${req.url.host}${rootPath}`,
                             endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
@@ -755,7 +737,8 @@ module.exports = {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
                                 }
                             };
-
+                            console.log("Base url is ", baseUrl); 
+                            console.log("Which makes endpoint ", endpoint);
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });
                         }
@@ -764,9 +747,11 @@ module.exports = {
 
                         if (isAbsolute(course.metadata.aus[auIndex].url)) {
                             contentUrl = course.metadata.aus[auIndex].url;
+                            console.log("Content url is absolute : ", contentUrl);
                         }
                         else {
                             contentUrl = `${req.server.app.contentUrl}/${req.auth.credentials.tenantId}/${course.id}/${course.metadata.aus[auIndex].url}`;
+                            console.log("Content url is NOT absolute", contentUrl);
                         }
 
                         let lmsLaunchDataResponse,
@@ -923,11 +908,13 @@ module.exports = {
                                 registration: reg.code
                             }
                         );
-
+                            let urlCheck;
+                            urlCheck= `${contentUrl}${contentUrl.indexOf("?") === -1 ? "?" : "&"}${launchUrlParams.toString()}`
                         return {
                             id: session.id,
                             launchMethod,
                             url: `${contentUrl}${contentUrl.indexOf("?") === -1 ? "?" : "&"}${launchUrlParams.toString()}`
+                           
                         };
                     }
                 }

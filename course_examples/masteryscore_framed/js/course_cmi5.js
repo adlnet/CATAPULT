@@ -69,7 +69,7 @@ function CourseCmi5Plugin() {
  * @param {Function} callbackOnStatementSend  Callback to call whenever any xAPI or cmi5 statement is sent.
  */
 CourseCmi5Plugin.prototype.initialize = function (callbackOnInit, callbackOnStatementSend) {
-    // Cmi5.enableDebug();
+     Cmi5.enableDebug();
 
     this.callbackOnStatementSend = callbackOnStatementSend;
     this.cmi5 = new Cmi5(document.location.href);
@@ -120,6 +120,8 @@ CourseCmi5Plugin.prototype.getEndpoint = function () {
     if (endpoint[endpoint.length - 1] !== "/") {
         endpoint = endpoint + "/";
     }
+    //MB
+    console.log("What is the xAPI endpoint? This is being returned as the XAPI root to send statements to - endpoint:", endpoint)
     return endpoint;
 }
 

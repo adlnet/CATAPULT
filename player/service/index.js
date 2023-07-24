@@ -70,10 +70,11 @@ const provision = async () => {
     const db = await require("./lib/db")();
 
     let lrsEndpoint = LRS_ENDPOINT;
+    
     if (!lrsEndpoint.endsWith("/")) {
         lrsEndpoint += "/";
     }
-
+    console.log("What is the lrs endpoint here? is the  added???  " + lrsEndpoint);
     server.app = {
         contentUrl: CONTENT_URL || "http://localhost:3398/content",
         lrs: {
@@ -81,6 +82,7 @@ const provision = async () => {
             username: LRS_USERNAME,
             password: LRS_PASSWORD
         },
+       
         db,
         jwt: {
             tokenSecret: TOKEN_SECRET,

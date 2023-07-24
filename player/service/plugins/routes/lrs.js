@@ -636,7 +636,7 @@ module.exports = {
                 }
             }
         );
-
+        
         // OPTIONS requests don't provide an authorization header, so set this up
         // as a separate route without auth
         server.route(
@@ -656,6 +656,7 @@ module.exports = {
                     cors: false
                 },
                 handler: {
+                    
                     proxy: {
                         passThrough: true,
                         xforward: true,
@@ -666,10 +667,14 @@ module.exports = {
                         // maintaining any query string parameters
                         //
                         mapUri: (req) => ({
+
                             uri: `${req.server.app.lrs.endpoint}/${req.params.resource}${req.url.search}`
+                            
                         })
+                        
                     }
                 }
+                
             }
         );
 

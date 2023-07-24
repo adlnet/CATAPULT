@@ -777,6 +777,8 @@ module.exports = {
                                 //MB, Some URL here is failing, adding extra decoding
                                 //What is lmsLaunchDataStateParams.toString()?
                                 console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
+                                //and not toString()?
+                                console.log("lmsLaunchDataStateParams is ", lmsLaunchDataStateParams);
                                 //And what is lmsLaunchDataPayload?
                                 console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
 

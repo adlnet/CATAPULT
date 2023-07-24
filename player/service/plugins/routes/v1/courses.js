@@ -774,18 +774,33 @@ module.exports = {
                                     contextTemplate
                                 };
 
+                                //MB, Some URL here is failing, adding extra decoding
+                                //What is lmsLaunchDataStateParams.toString()?
+                                console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
+                                //And what is lmsLaunchDataPayload?
+                                console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+
                             if (courseAu.metadata.entitlementKey) {
+                                //MB
+                                //entered the first if
+                                console.log("Entered the first if, courseAu.metadata.entitlementKey is ", courseAu.metadata.entitlementKey);
                                 lmsLaunchDataPayload.entitlementKey = {
                                     courseStructure: courseAu.metadata.entitlementKey
                                 };
                             }
 
                             if (alternateEntitlementKey !== null) {
+                                //MB
+                                //entered the second if
+                                console.log("Entered the second if, alternateEntitlementKey is ", alternateEntitlementKey);
                                 lmsLaunchDataPayload.entitlementKey = lmsLaunchDataPayload.entitlementKey || {};
                                 lmsLaunchDataPayload.entitlementKey.alternate = alternateEntitlementKey;
                             }
 
                             if (req.payload.returnUrl) {
+                                //MB
+                                //entered the third if
+                                console.log("Entered the third if, req.payload.returnUrl is ", req.payload.returnUrl);
                                 lmsLaunchDataPayload.returnURL = req.payload.returnUrl;
                             }
 
@@ -799,8 +814,14 @@ module.exports = {
                                     payload: lmsLaunchDataPayload
                                 }
                             );
+                            //MB
+                            //and what is lmsLaunchDataResponse?
+                            console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
 
                             lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, { json: true });
+                            //MB
+                            //amd lmsLaunchDataResponseBody?
+                            console.log("lmsLaunchDataResponseBody is ", lmsLaunchDataResponseBody);
                         }
                         catch (ex) {
                             throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));

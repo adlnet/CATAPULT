@@ -29,8 +29,11 @@ const Hapi = require("@hapi/hapi"),
         CONTENT_URL,
         TOKEN_SECRET,
         API_KEY,
-        API_SECRET
+        API_SECRET,
+        PLAYER_API_ROOT
     } = process.env;
+
+const rootPath = (process.env.PLAYER_API_ROOT || "");
 
 const provision = async () => {
     const server = Hapi.server(
@@ -66,12 +69,12 @@ const provision = async () => {
 
     const db = await require("./lib/db")();
 
-    //Here is where the server takes info from .env file and applies it to itself. 
     let lrsEndpoint = LRS_ENDPOINT;
+    
     if (!lrsEndpoint.endsWith("/")) {
         lrsEndpoint += "/";
     }
-
+    console.log("What is the lrs endpoint here? is the  added???  " + lrsEndpoint);
     server.app = {
         contentUrl: CONTENT_URL || "http://localhost:3398/content",
         lrs: {
@@ -79,6 +82,7 @@ const provision = async () => {
             username: LRS_USERNAME,
             password: LRS_PASSWORD
         },
+       
         db,
         jwt: {
             tokenSecret: TOKEN_SECRET,
@@ -104,10 +108,16 @@ const provision = async () => {
         }
     );
 
-    await server.register(H2o2);
-    await server.register(Inert);
-    await server.register(AuthJwt);
-    await server.register(AuthBasic);
+    let defaultRouteArgs = {
+        routes: !rootPath ? undefined : {
+            prefix: rootPath
+        }
+    };
+
+    await server.register(H2o2, {...defaultRouteArgs});
+    await server.register(Inert, {...defaultRouteArgs});
+    await server.register(AuthJwt, {...defaultRouteArgs});
+    await server.register(AuthBasic, {...defaultRouteArgs});
 
     await server.register(
         [
@@ -122,7 +132,8 @@ const provision = async () => {
                     }
                 }
             }
-        ]
+        ],
+        {...defaultRouteArgs}
     );
 
     //
@@ -132,6 +143,7 @@ const provision = async () => {
     server.method(
         "basicAuthValidate",
         async (req, key, secret) => {
+
             if (key !== API_KEY || secret !== API_SECRET) {
                 return {isValid: false, credentials: null};
             }
@@ -204,7 +216,8 @@ const provision = async () => {
             require("./plugins/routes/content"),
             require("./plugins/routes/lrs"),
             require("./plugins/routes/spec")
-        ]
+        ],
+        {...defaultRouteArgs}
     );
 
     server.auth.default(
@@ -221,10 +234,25 @@ const provision = async () => {
         ],
         {
             routes: {
-                prefix: "/api/v1"
+                prefix: rootPath + "/api/v1"
             }
         }
     );
+
+    server.route({
+        method: '*',
+        path: '/{any*}',
+        handler: function (request, h) {
+            
+            let usingBasePath = !!rootPath;
+            if (usingBasePath && !request.path.startsWith(rootPath)) {
+                let prefixed = rootPath + request.path;
+                return h.redirect(prefixed);
+            }
+
+            return h.response('404 Error! Page Not Found!').code(404);
+        }
+    });
 
     await server.start();
 

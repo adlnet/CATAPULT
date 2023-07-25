@@ -33,6 +33,7 @@ const copyFile = util.promisify(fs.copyFile);
 const mkdir = util.promisify(fs.mkdir);
 const rm = util.promisify(fs.rm);
 
+const rootPath = (process.env.PLAYER_API_ROOT || "");
 
 const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`);
 
@@ -721,7 +722,7 @@ module.exports = {
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                     
-                            baseUrl = `${req.url.protocol}//${req.url.host}`,
+                            baseUrl = `${req.url.protocol}//${req.url.host}${rootPath}`,
                             endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
                             contextTemplate = {

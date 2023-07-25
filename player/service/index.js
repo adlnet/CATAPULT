@@ -66,6 +66,7 @@ const provision = async () => {
 
     const db = await require("./lib/db")();
 
+    //Here is where the server takes info from .env file and applies it to itself. 
     let lrsEndpoint = LRS_ENDPOINT;
     if (!lrsEndpoint.endsWith("/")) {
         lrsEndpoint += "/";

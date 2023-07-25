@@ -88,6 +88,7 @@ const Boom = require("@hapi/boom"),
 
         const resource = req.params.resource;
 
+    //REsource changes when you click on different course things, it has been activities/state, agents/profile, and statements so far
         if (resource === "statements") {
             if (method === "post" || method === "put") {
                 if (! session.learner_prefs_fetched) {
@@ -95,7 +96,6 @@ const Boom = require("@hapi/boom"),
                 }
 
                 const statements = Array.isArray(req.payload) ? req.payload : [req.payload];
-
                 for (const st of statements) {
                     for (const prop of ["actor", "verb", "object"]) {
                         if (typeof st[prop] === "undefined") {
@@ -160,6 +160,10 @@ const Boom = require("@hapi/boom"),
                         throw Helpers.buildViolatedReqId("9.6.3.1-4", st.id);
                     }
 
+                    //Ok, HERE. Everything above seems to be like, make sure the actors match, make sure the verb is valid, but here it's
+                    //checking if init or terminated. Is that diff? helpoful? Here is is accessing SESSION. What is session here?
+                   // console.log("What is SESSION here?" + JSON.stringify(session));
+                    //Ok, so session seems to have verbs already marked with 1 or 0, it is accessing DB. When did it do this and why?
                     if (! session.is_initialized && st.verb.id !== VERB_INITIALIZED_ID) {
                         throw Helpers.buildViolatedReqId("9.3.0.0-4", st.id);
                     }
@@ -191,6 +195,8 @@ const Boom = require("@hapi/boom"),
                         if (typeof st.object.id === "undefined") {
                             throw Helpers.buildViolatedReqId("9.4.0.0-1", st.id);
                         }
+                        //For record, this is the onject id oni one ionstance: "https://w3id.org/xapi/cmi5/catapult/player/course/e0ac51da-57c0-4636-a209-34ab8a66c560/au/0/slide/1
+                        // So they are making sure AU keeps up with cmi5 specs??
                         else if (st.object.id !== regCourseAu.courseAu.lms_id) {
                             // also validates for 9.4.0.0-2
                             throw Helpers.buildViolatedReqId("8.1.5.0-6", st.id);
@@ -352,7 +358,12 @@ const Boom = require("@hapi/boom"),
                         result.statements.push(verbId);
                     }
                     else {
+                        ///OHHHHH we never entered all that stuff above cause it comes here to this else, ALL the stuff above is checking for cmi5 compliance
                         // cmi5 allowed statement
+
+                        ////AHH this is the end of if resource = statements!!!! We only get here if it's statements
+                       // console.log("What is result here?" + JSON.stringify(result));
+
                         console.log("cmi5 allowed statement", st.verb.id);
                     }
                 }
@@ -448,6 +459,7 @@ const Boom = require("@hapi/boom"),
 
         return result;
     },
+    //Ok, and it makes sense this is AFTER the LRS request cause it si essentially saving the results to the DB
     afterLRSRequest = async (req, res, txn, beforeResult, session, regCourseAu, registration) => {
         const status = res.statusCode,
             sessionUpdates = {
@@ -591,7 +603,7 @@ const Boom = require("@hapi/boom"),
     };
 
 //
-// all requests here are neceesarily made by the AU because any LMS
+// all requests here are necesarily made by the AU because any LMS
 // based requests are being made by this player
 //
 module.exports = {
@@ -673,6 +685,7 @@ module.exports = {
             }
         );
 
+        //This erver route, it seems to call both before and after lrs and loadforchange...suspicious...could load for change be what we are looking for?
         server.route(
             {
                 method: [
@@ -681,6 +694,7 @@ module.exports = {
                     "PUT",
                     "DELETE"
                 ],
+                //By resource do they mean statments or activities/state like resource pull from beforeLRS?
                 path: "/lrs/{resource*}",
                 options: {
                     auth: "proxied-lrs",
@@ -702,6 +716,7 @@ module.exports = {
                             registration,
                             courseAu
                         } = await Session.loadForChange(txn, req.auth.credentials.id, req.auth.credentials.tenantId);
+                        //loadForchange does pull a session and info out of joined tables, but WHERE IS WHAT RUNS THE COURSE?
                     let response;
 
                     try {
@@ -732,10 +747,16 @@ module.exports = {
                             options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
                         }
 
+                        //this 'response here' is THIS the call to the lrs? Above we have preLRS and below postLRS.
                         const res = await Wreck.request(req.method, uri, options),
                             payload = await Wreck.read(res);
+                        
+                       // console.log("HELLO from lrs.js - what is res here?" . res);
+                       // console.log("HELLO from lrs.js - what is payload here" . payload);
+
 
                         response = h.response(payload).passThrough(true);
+                        //console.log("HELLO from lrs.js - what is response here" . response);
 
                         response.code(res.statusCode);
                         response.message(res.statusMessage);

@@ -58,6 +58,7 @@ module.exports = {
                                 }
 
                                 let payload;
+                                //Ok, if we are making the payload above, and here populatiung it. What is wreck.read???
                                 try {
                                     payload = await Wreck.read(res, {json: true});
                                 }
@@ -78,6 +79,8 @@ module.exports = {
                                 const db = req.server.app.db;
 
                                 let insertResult;
+                                //MB///
+                                //HERE!!!! I THINK HERE IS where it responds to the post for a course and creates it! (Fingers crossed)
                                 try {
                                     insertResult = await db.insert(
                                         {

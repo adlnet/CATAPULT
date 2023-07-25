@@ -467,6 +467,8 @@ module.exports = {
                         let courseId;
 
                         try {
+                            //MBMBM
+                            //I am FAIRLY certain here is where the course is FIRST added to DB
                             await db.transaction(
                                 async (txn) => {
                                     const insertResult = await txn("courses").insert(
@@ -515,6 +517,8 @@ module.exports = {
 
                         const courseDir = getCourseDir(tenantId, courseId);
 
+                        //Then it tries to make the course direrctory, this is what I was wondering. Could this be what is unpacked into and later does the 
+                        //CALLING??? 
                         try {
                             await mkdir(courseDir, { recursive: true });
                         }
@@ -590,8 +594,11 @@ module.exports = {
                 },
 
                 {
+                    //MEthod to retreive course launch url
+                    //So when a user sends this POST, it builds what the response is, and sends it?
                     method: "POST",
                     path: "/course/{id}/launch-url/{auIndex}",
+                    //I beleive this options are buildin the course object FORM? 
                     options: {
                         tags: ["api"],
                         validate: {
@@ -615,6 +622,7 @@ module.exports = {
                             }).required().label("Request-LaunchUrl")
                         }
                     },
+                    //req being the info sent in the post statment
                     handler: async (req, h) => {
                         const db = req.server.app.db,
                             courseId = req.params.id,
@@ -668,6 +676,7 @@ module.exports = {
                             );
                         }
 
+                        //After validating the info the info is retreived from DB and built into a URL
                         const reg = await Registration.load({ tenantId, registrationId }, { db }),
                             { registrationsCoursesAus: regCourseAu, coursesAus: courseAu } = await db
                                 .first("*")
@@ -708,6 +717,7 @@ module.exports = {
                             }
                         }
 
+                        //'options' set the parameters for what the object could be, this BUILDS the object
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
                             launchMethod = courseAu.metadata.launchMethod || "AnyWindow",
@@ -779,6 +789,9 @@ module.exports = {
                             if (req.payload.returnUrl) {
                                 lmsLaunchDataPayload.returnURL = req.payload.returnUrl;
                             }
+
+                            //Here is where it sets the state document. Is this the launch?
+                            //OR a prelauch?
 
                             lmsLaunchDataResponse = await lrsWreck.request(
                                 "POST",
@@ -864,6 +877,7 @@ module.exports = {
                             throw Boom.internal(new Error(`Failed to store launched statement: ${launchedStResponse.statusCode}`));
                         }
 
+                        //So if we get past all of above, we SAVE the session here?
                         const session = {
                             tenantId,
                             registrationsCoursesAusId: regCourseAu.id,

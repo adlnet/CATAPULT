@@ -388,7 +388,6 @@ const Boom = require("@hapi/boom"),
         }
         else if (resource === "agents") {
             // all agents requests require an actor, and that actor must be the launch actor
-
             let parsedAgent;
 
             try {
@@ -591,7 +590,7 @@ const Boom = require("@hapi/boom"),
     };
 
 //
-// all requests here are neceesarily made by the AU because any LMS
+// all requests here are necessarily made by the AU because any LMS
 // based requests are being made by this player
 //
 module.exports = {

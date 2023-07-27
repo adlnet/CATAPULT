@@ -39,7 +39,8 @@ services:
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player
       - FIRST_TENANT_NAME
-      - PLAYER_API_ROOT
+      - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
+      - HOST_PORT
   rdbms:
     image: mysql:8.0.31
     volumes:

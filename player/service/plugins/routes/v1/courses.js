@@ -712,6 +712,13 @@ module.exports = {
                                 await Session.abandon(session.id, tenantId, "new-launch", { db, lrsWreck });
                             }
                         }
+                        
+                        //Debug messages for troubleshooting host and path issuse - MB
+                        if (cfg.degug) {
+                            console.log("req.url.protocol is ", req.url.protocol);
+                            console.log("req.url.host is ", req.url.host);
+                            console.log("rootPath is ", rootPath);
+                        }
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
@@ -737,8 +744,13 @@ module.exports = {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
                                 }
                             };
-                            console.log("Base url is ", baseUrl); 
+                        
+                        //Debug messages for troubleshooting host and path issuse - MB
+                        if (cfg.degug) {
+                            console.log("Base url is ", baseUrl);
                             console.log("Which makes endpoint ", endpoint);
+                        }
+
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });
                         }
@@ -747,11 +759,9 @@ module.exports = {
 
                         if (isAbsolute(course.metadata.aus[auIndex].url)) {
                             contentUrl = course.metadata.aus[auIndex].url;
-                            console.log("Content url is absolute : ", contentUrl);
                         }
                         else {
                             contentUrl = `${req.server.app.contentUrl}/${req.auth.credentials.tenantId}/${course.id}/${course.metadata.aus[auIndex].url}`;
-                            console.log("Content url is NOT absolute", contentUrl);
                         }
 
                         let lmsLaunchDataResponse,
@@ -774,35 +784,25 @@ module.exports = {
                                     contextTemplate
                                 };
 
-                                //MB, Some URL here is failing, adding extra decoding
-                                //What is lmsLaunchDataStateParams.toString()?
+                             //Debug messages for troubleshooting host and path issuse - MB
+                            if (cfg.degug) {
                                 console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
-                                //and not toString()?
                                 console.log("lmsLaunchDataStateParams is ", lmsLaunchDataStateParams);
-                                //And what is lmsLaunchDataPayload?
                                 console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+                            }
 
                             if (courseAu.metadata.entitlementKey) {
-                                //MB
-                                //entered the first if
-                                console.log("Entered the first if, courseAu.metadata.entitlementKey is ", courseAu.metadata.entitlementKey);
                                 lmsLaunchDataPayload.entitlementKey = {
                                     courseStructure: courseAu.metadata.entitlementKey
                                 };
                             }
 
                             if (alternateEntitlementKey !== null) {
-                                //MB
-                                //entered the second if
-                                console.log("Entered the second if, alternateEntitlementKey is ", alternateEntitlementKey);
                                 lmsLaunchDataPayload.entitlementKey = lmsLaunchDataPayload.entitlementKey || {};
                                 lmsLaunchDataPayload.entitlementKey.alternate = alternateEntitlementKey;
                             }
 
                             if (req.payload.returnUrl) {
-                                //MB
-                                //entered the third if
-                                console.log("Entered the third if, req.payload.returnUrl is ", req.payload.returnUrl);
                                 lmsLaunchDataPayload.returnURL = req.payload.returnUrl;
                             }
 
@@ -816,18 +816,15 @@ module.exports = {
                                     payload: lmsLaunchDataPayload
                                 }
                             );
-                            //What is the launchData payload
-                            console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
-                            //also the url that is wrong MUST be the activities/state plaus the lmslaunchdatastateparams
-                            console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
-                            //MB
-                            //and what is lmsLaunchDataResponse?
-                            console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
-
+                            //Debug messages for troubleshooting host and path issuse - MB
+                            if (cfg.degug) {
+                                console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+                                console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
+                                console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
+                            }
+                                
                             lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, { json: true });
-                            //MB
-                            //amd lmsLaunchDataResponseBody?
-                            console.log("lmsLaunchDataResponseBody is ", lmsLaunchDataResponseBody);
+                            
                         }
                         catch (ex) {
                              

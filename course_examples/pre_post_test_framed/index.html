@@ -616,9 +616,6 @@
     let course;
 
     (function () {
-        //MB
-        //What IS this? What is dang document.location.search.substring(1) doing?
-        console.log("Can we see the DOCUMENT.LOCATION HERE? : ", document.location.search.substring(1));
         let queryParams = new URLSearchParams(document.location.search.substring(1));
         course = new Course({
             pageListQueryParam: queryParams.get("pages"),

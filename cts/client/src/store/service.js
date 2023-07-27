@@ -36,7 +36,6 @@ export default {
                 fetchCfg.credentials = "include";
             }
 
-            //This line is throwing an error when run //MB
             return fetch(`${getters.baseApiUrl}/api/v1/${resource}`, fetchCfg);
         }
     },

@@ -120,8 +120,7 @@ CourseCmi5Plugin.prototype.getEndpoint = function () {
     if (endpoint[endpoint.length - 1] !== "/") {
         endpoint = endpoint + "/";
     }
-    //MB
-    console.log("What is the xAPI endpoint? This is being returned as the XAPI root to send statements to - endpoint:", endpoint)
+   
     return endpoint;
 }
 

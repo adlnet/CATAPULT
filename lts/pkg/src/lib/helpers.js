@@ -37,8 +37,6 @@ const Helpers = {
         let cmi5;
 
         try {
-            //MB
-            console.log("Initializing cmi5 object. What is the current URL?", window.document.location.href);
             cmi5 = new Cmi5(window.document.location.href);
         }
         catch (ex) {
@@ -106,12 +104,9 @@ const Helpers = {
             Helpers.storeResult(false, true, {msg: `Failed to handle returnURL: ${ex}`});
         }
     },
-    //MB
-    //HERE! IT sends statements here! COULD THIS BE THE PROBLEM?
+
     sendStatement: async (cmi5, st, reqId, cfg = {}) => {
         try {
-            //Again the endpoint? What is it??? -MB
-            console.log("What endpoint is being fethced here?", `${cmi5.getEndpoint()}/statements?`);
             const endpoint = cmi5.getEndpoint();
             let url = `${endpoint}/statements`;
 
@@ -192,7 +187,7 @@ const Helpers = {
 
         return true;
     },
-    //MB, a state request. IS this it? 
+
     stateRequest: async (cmi5, method, stateId, body) => {
         try {
             const requestCfg = {
@@ -208,9 +203,6 @@ const Helpers = {
                 requestCfg.headers["Content-Type"] = "application/json";
                 requestCfg.body = body;
             }
-
-            //What endpoint is being fethced here? -MB
-            console.log("What endpoint is being fethced here?", `${cmi5.getEndpoint()}/activities/state?` + new URLSearchParams());
 
             const response = await fetch(
                     `${cmi5.getEndpoint()}/activities/state?` + new URLSearchParams(

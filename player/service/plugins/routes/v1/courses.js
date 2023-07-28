@@ -714,11 +714,10 @@ module.exports = {
                         }
                         
                         //Debug messages for troubleshooting host and path issuse - MB
-                        if (cfg.degug) {
                             console.log("req.url.protocol is ", req.url.protocol);
                             console.log("req.url.host is ", req.url.host);
                             console.log("rootPath is ", rootPath);
-                        }
+                        
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
@@ -746,10 +745,8 @@ module.exports = {
                             };
                         
                         //Debug messages for troubleshooting host and path issuse - MB
-                        if (cfg.degug) {
                             console.log("Base url is ", baseUrl);
                             console.log("Which makes endpoint ", endpoint);
-                        }
 
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });
@@ -785,11 +782,9 @@ module.exports = {
                                 };
 
                              //Debug messages for troubleshooting host and path issuse - MB
-                            if (cfg.degug) {
                                 console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
                                 console.log("lmsLaunchDataStateParams is ", lmsLaunchDataStateParams);
                                 console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
-                            }
 
                             if (courseAu.metadata.entitlementKey) {
                                 lmsLaunchDataPayload.entitlementKey = {
@@ -817,11 +812,9 @@ module.exports = {
                                 }
                             );
                             //Debug messages for troubleshooting host and path issuse - MB
-                            if (cfg.degug) {
                                 console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
                                 console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
                                 console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
-                            }
                                 
                             lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, { json: true });
                             

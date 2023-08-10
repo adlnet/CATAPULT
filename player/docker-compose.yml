@@ -13,6 +13,36 @@
 # limitations under the License.
 version: "3.8"
 services:
+
+  nginx:
+    restart: always
+    build: 
+      context: nginx
+      args:
+        HOSTNAME: "${HOSTNAME}"
+    ports:
+      - "80:80"
+      - "443:443"
+    container_name: docker_nginx
+    volumes:
+      - ./nginx/letsencrypt:/usr/share/nginx/html
+      - ./certbot/etc:/usr/share/keys
+    networks:
+      - public
+
+  certbot:
+    container_name: 'docker_certbot'
+    image: certbot/certbot
+    volumes:
+      - ./keys:/var/lib/letsencrypt
+      - ./nginx/letsencrypt:/data/letsencrypt
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/log:/var/log/letsencrypt
+    depends_on:
+      - nginx
+    networks:
+      - public
+      
   webservice:
     build: .
     image: catapult:player

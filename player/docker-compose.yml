@@ -46,8 +46,8 @@ services:
   webservice:
     build: .
     image: catapult:player
-    ports:
-      - ${HOST_PORT}:3398
+    #ports:
+    #  - ${HOST_PORT}:3398
     depends_on:
       - rdbms
     volumes:
@@ -71,6 +71,9 @@ services:
       - FIRST_TENANT_NAME
       - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
       - HOST_PORT
+    networks:
+      - public
+  
   rdbms:
     image: mysql:8.0.31
     volumes:
@@ -91,6 +94,12 @@ services:
       # the newer default scheme used in MySQL 8.x
       "--default-authentication-plugin=mysql_native_password"
     ]
+    networks:
+      - public
 
 volumes:
   catapult-player-data:
+
+networks:
+  public:
+    driver: bridge

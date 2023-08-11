@@ -58,6 +58,7 @@ services:
       - ./migrations:/usr/src/app/migrations:ro
       - ./seeds:/usr/src/app/seeds:ro
     environment:
+      - PLAYER_API_PROTOCOL
       - CONTENT_URL
       - API_KEY
       - API_SECRET

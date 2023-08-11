@@ -34,6 +34,7 @@ const mkdir = util.promisify(fs.mkdir);
 const rm = util.promisify(fs.rm);
 
 const rootPath = (process.env.PLAYER_API_ROOT || "");
+const protocol = (process.env.PLAYER_API_PROTOCOL || "http");
 
 const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`);
 
@@ -714,9 +715,10 @@ module.exports = {
                         }
                         
                         //Debug messages for troubleshooting host and path issuse - MB
-                            console.log("req.url.protocol is ", req.url.protocol);
+                            console.log("protocol is ", protocol);
                             console.log("req.url.host is ", req.url.host);
                             console.log("rootPath is ", rootPath);
+                            console.log("request is ", req);
                         
 
                         const lmsActivityId = courseAu.lms_id,
@@ -728,7 +730,7 @@ module.exports = {
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                     
-                            baseUrl = `${req.url.protocol}//${req.url.host}${rootPath}`,
+                            baseUrl = `${protocol}//${req.url.host}${rootPath}`,
                             endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
                             contextTemplate = {

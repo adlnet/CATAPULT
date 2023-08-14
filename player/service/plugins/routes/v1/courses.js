@@ -714,10 +714,12 @@ module.exports = {
                         }
                         
                         //Debug messages for troubleshooting host and path issuse - MB
-                            console.log("req.url.protocol is ", req.url.protocol);
-                            console.log("req.url.host is ", req.url.host);
-                            console.log("rootPath is ", rootPath);
+                        console.log("req.url.protocol is ", req.url.protocol);
+                        // console.log("req.url.host is ", req.url.host);
+                        // console.log("rootPath is ", rootPath);
                         
+                        let forwardingHeader = req.headers["x-forwarded-proto"];
+                        let protocol = (forwardingHeader === "https") ? "https:" : req.url.protocol;
 
                         const lmsActivityId = courseAu.lms_id,
                             publisherActivityId = course.metadata.aus[auIndex].id,
@@ -728,7 +730,7 @@ module.exports = {
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                     
-                            baseUrl = `${req.url.protocol}//${req.url.host}${rootPath}`,
+                            baseUrl = `${protocol}//${req.url.host}${rootPath}`,
                             endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
                             contextTemplate = {
@@ -744,9 +746,10 @@ module.exports = {
                                 }
                             };
                         
-                        //Debug messages for troubleshooting host and path issuse - MB
-                            console.log("Base url is ", baseUrl);
-                            console.log("Which makes endpoint ", endpoint);
+                        // //Debug messages for troubleshooting host and path issuse - MB
+                        // console.log("Base url is ", baseUrl);
+                        // console.log("Which makes endpoint ", endpoint);
+                        // console.log("Forwarded Header: ", req.headers["x-forwarded-proto"]);
 
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });
@@ -781,10 +784,10 @@ module.exports = {
                                     contextTemplate
                                 };
 
-                             //Debug messages for troubleshooting host and path issuse - MB
-                                console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
-                                console.log("lmsLaunchDataStateParams is ", lmsLaunchDataStateParams);
-                                console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+                            //  //Debug messages for troubleshooting host and path issuse - MB
+                            //     console.log("lmsLaunchDataStateParams.toString() is ", lmsLaunchDataStateParams.toString());
+                            //     console.log("lmsLaunchDataStateParams is ", lmsLaunchDataStateParams);
+                            //     console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
 
                             if (courseAu.metadata.entitlementKey) {
                                 lmsLaunchDataPayload.entitlementKey = {
@@ -811,10 +814,10 @@ module.exports = {
                                     payload: lmsLaunchDataPayload
                                 }
                             );
-                            //Debug messages for troubleshooting host and path issuse - MB
-                                console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
-                                console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
-                                console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
+                            // //Debug messages for troubleshooting host and path issuse - MB
+                            //     console.log("lmsLaunchDataPayload is ", lmsLaunchDataPayload);
+                            //     console.log("activities/state?${lmsLaunchDataStateParams.toString()} is ", `activities/state?${lmsLaunchDataStateParams.toString()}`);
+                            //     console.log("lmsLaunchDataResponse is ", lmsLaunchDataResponse);
                                 
                             lmsLaunchDataResponseBody = await Wreck.read(lmsLaunchDataResponse, { json: true });
                             

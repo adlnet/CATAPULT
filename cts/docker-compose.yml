@@ -63,9 +63,10 @@ services:
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_cts
-      - PLAYER_BASE_URL=http://player:3398${PLAYER_ROOT_PATH}
+      - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET
+      - NODE_TLS_REJECT_UNAUTHORIZED
     networks:
       - public  
 
@@ -103,6 +104,7 @@ services:
 
   rdbms:
     image: mysql:8.0.17
+    restart: always
     volumes:
       - catapult-cts-data:/var/lib/mysql
       - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh:ro

@@ -174,6 +174,7 @@ module.exports = Registration = {
             );
         }
         catch (ex) {
+            console.error("Failed to create registration: ", ex);
             throw Boom.internal(new Error(`Failed to store registration: ${ex}`));
         }
 

@@ -178,7 +178,26 @@ module.exports = {
                         if (createResponse.statusCode !== 200) {
                             throw Boom.internal(new Error(`Failed to create player registration (${createResponse.statusCode}): ${createResponseBody.message}${createResponseBody.srcError ? " (" + createResponseBody.srcError + ")" : ""}`));
                         }
-
+                        
+                        // Create an Agent Profile for this new user.
+                        //
+                        let lrsWreck = Wreck.defaults(await req.server.methods.lrsWreckDefaults(req));
+                        let profileCreationRes = await lrsWreck.request(
+                            "POST",
+                            "agents/profile?" + new URLSearchParams(
+                                {
+                                    profileId: "cmi5LearnerPreferences",
+                                    agent: JSON.stringify(req.payload.actor)
+                                }
+                            ).toString(),
+                            {
+                                payload: {
+                                    languagePreference: "en-US,fr-FR,fr-BE",
+                                    audiePreference: "on"
+                                }
+                            }
+                        )
+                            .catch(err => console.error("Failed to Create Agent Profile", profileCreationRes.statusCode, err));
 
                         const txn = await db.transaction();
                         let registrationId;

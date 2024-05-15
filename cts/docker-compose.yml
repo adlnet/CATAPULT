@@ -45,7 +45,7 @@ services:
 
   webservice:
     build: .
-    image: catapult:cts
+    container_name: docker_cts
     restart: always
     ports:
       - 127.0.0.1:3399:3399
@@ -67,12 +67,15 @@ services:
       - PLAYER_KEY
       - PLAYER_SECRET
       - NODE_TLS_REJECT_UNAUTHORIZED
+      - LRS_ENDPOINT
+      - LRS_USERNAME
+      - LRS_PASSWORD
     networks:
       - public  
 
   player:
     build: ../player
-    image: catapult:player
+    container_name: docker_player
     restart: always
     depends_on:
       - rdbms

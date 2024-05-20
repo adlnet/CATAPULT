@@ -32,6 +32,8 @@ const stream = require("stream"),
         return session;
     };
 
+const helpers = require("./lib/helpers");
+
 module.exports = {
     name: "catapult-cts-api-routes-v1-sessions",
     register: (server, options) => {
@@ -55,7 +57,7 @@ module.exports = {
                     log.id = insertResult[0];
                 }
                 catch (ex) {
-                    console.log(`Failed to write to sessions_logs(${sessionId}): ${ex}`);
+                    console.error(`Failed to write to sessions_logs(${sessionId}): ${ex}`);
                 }
 
                 log.metadata = metadata;
@@ -457,10 +459,12 @@ module.exports = {
                             session = await db.first("*").from("sessions").where({id}).queryContext({jsonCols: ["metadata"]});
                         }
                         catch (ex) {
+                            // console.error(0, "CAN'T SELECT SESSION", ex);
                             throw Boom.internal(new Error(`Failed to select session data: ${ex}`));
                         }
 
                         if (! session) {
+                            // console.error(1, "NO SESSION", ex);
                             throw Boom.notFound(`session: ${id}`);
                         }
 
@@ -491,11 +495,33 @@ module.exports = {
                                 options.headers["x-forwarded-proto"] = options.headers["x-forwarded-proto"] || req.server.info.protocol;
                                 options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
                             }
+                            
+                            // Concurrency check required or xAPI 2.0
+                            //
+                            if (req.method == "post" || req.method == "put") {
+
+                                let lrsResourcePath = req.params.resource;
+                                
+                                let requiresConcurrency = helpers.doesLRSResourceEnforceConcurrency(lrsResourcePath);
+                                let isMissingEtagHeader = options.headers["if-match"] == undefined;
+
+                                if (requiresConcurrency && isMissingEtagHeader) {
+                                    let etagResponse = await Wreck.request("get", uri, { headers: options.headers });
+                                    if (etagResponse.statusCode < 400) {
+                                        let etag = etagResponse.headers["etag"];
+                                        options.headers["if-match"] = etag;
+                                    }
+
+                                    etagResponse.destroy();s
+                                }
+                            }
 
                             proxyResponse = await Wreck.request(req.method, uri, options);
                             rawProxyResponsePayload = await Wreck.read(proxyResponse, {gunzip: true});
 
                             let responsePayload = rawProxyResponsePayload;
+
+                            
 
                             if (req.method === "get" && req.params.resource === "activities/state") {
                                 if (req.query.stateId === "LMS.LaunchData") {
@@ -514,6 +540,7 @@ module.exports = {
                             response.code(proxyResponse.statusCode);
                             response.message(proxyResponse.statusMessage);
 
+
                             const skipHeaders = {
                                 "content-encoding": true,
                                 "content-length": true,
@@ -529,6 +556,7 @@ module.exports = {
                             proxyResponse.destroy();
                         }
                         catch (ex) {
+                            // console.error(2, ex);
                             throw ex;
                         }
 
@@ -540,6 +568,7 @@ module.exports = {
                                 proxyResponsePayload = JSON.parse(proxyResponsePayloadAsString);
                             }
                             catch (ex) {
+                                // console.error("BAD RESPONSE DATA", ex);
                                 console.log(`Failed JSON parse of LRS response error: ${ex} (${proxyResponsePayloadAsString})`);
                             }
 
@@ -550,6 +579,7 @@ module.exports = {
                                     await db("sessions").update({metadata: JSON.stringify(session.metadata)}).where({id, tenantId});
                                 }
                                 catch (ex) {
+                                    // console.error("CAN'T UPDATE SESSION", ex);
                                     console.log(`Failed to update session for violated spec requirement (${proxyResponsePayload.violatedReqId}): ${ex}`);
                                 }
 

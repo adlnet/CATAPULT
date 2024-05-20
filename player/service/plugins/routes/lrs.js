@@ -719,7 +719,7 @@ module.exports = {
                             };
 
                         delete options.headers.host;
-                        delete options.headers["content-length"];
+                        // delete options.headers["content-length"];
 
                         //
                         // switch the authorization credential from the player session based value
@@ -736,8 +736,33 @@ module.exports = {
                             options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
                         }
 
-                        const res = await Wreck.request(req.method, uri, options),
-                            payload = await Wreck.read(res);
+                        // console.error(uri, options);
+
+                        let lrsResourcePath = req.params.resource;
+
+                            
+                        // Concurrency check required or xAPI 2.0
+                        //
+                        if (req.method == "post" || req.method == "put") {
+
+                            let requiresConcurrency = Helpers.doesLRSResourceEnforceConcurrency(lrsResourcePath);
+                            let isMissingEtagHeader = options.headers["if-match"] == undefined;
+
+                            if (requiresConcurrency && isMissingEtagHeader) {
+
+                                let lrsFullQuery = `${req.params.resource}${req.url.search}`;
+                                let documentResponse = await Helpers.getDocumentFromLRS(lrsFullQuery);
+                                if (documentResponse.exists) {
+                                    options.headers["if-match"] = documentResponse.etag;
+                                }
+                            }
+                        }
+
+                        const res = await Wreck.request(req.method, uri, {
+                            ...options,
+                            timeout: 10000
+                        });
+                        const payload = await Wreck.read(res);
 
                         response = h.response(payload).passThrough(true);
 
@@ -754,10 +779,12 @@ module.exports = {
                         res.destroy();
 
                         await afterLRSRequest(req, res, txn, beforeResult, session, regCourseAu, registration);
-
                         await txn.commit();
                     }
-                    catch (ex) {
+                    catch (ex) { 
+                        
+                        // console.error(ex);
+
                         await txn.rollback();
                         throw ex;
                     }

@@ -117,7 +117,7 @@ const provision = async () => {
         (req) => ({
             baseUrl: LRS_ENDPOINT.endsWith("/") ? LRS_ENDPOINT : LRS_ENDPOINT + "/",
             headers: {
-                "X-Experience-API-Version": "1.0.3",
+                "X-Experience-API-Version": (process.env.LRS_XAPI_VERSION ||  "1.0.3"),
                 Authorization: `Basic ${Buffer.from(`${LRS_USERNAME}:${LRS_PASSWORD}`).toString("base64")}`
             },
             json: true

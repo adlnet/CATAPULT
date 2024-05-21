@@ -496,6 +496,13 @@ module.exports = {
                                 options.headers["x-forwarded-host"] = options.headers["x-forwarded-host"] || req.info.host;
                             }
                             
+                            // The cmi5 JS stuff won't know what the configured LRS's xAPI version is
+                            // between 1.0.3 and 2.0, so replace that here if it was specified.
+                            //
+                            let configuredXAPIVersion = process.env.LRS_XAPI_VERSION;
+                            if (configuredXAPIVersion != undefined)
+                                options.headers["x-experience-api-version"] = configuredXAPIVersion;
+                            
                             // Concurrency check required or xAPI 2.0
                             //
                             if (req.method == "post" || req.method == "put") {

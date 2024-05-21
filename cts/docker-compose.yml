@@ -70,6 +70,7 @@ services:
       - LRS_ENDPOINT
       - LRS_USERNAME
       - LRS_PASSWORD
+      - LRS_XAPI_VERSION
     networks:
       - public  
 

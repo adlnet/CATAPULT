@@ -35,6 +35,7 @@ services:
       - LRS_ENDPOINT
       - LRS_USERNAME
       - LRS_PASSWORD
+      - LRS_XAPI_VERSIONs
       - DATABASE_USER=catapult
       - DATABASE_USER_PASSWORD=quartz
       - DATABASE_NAME=catapult_player

@@ -27,7 +27,10 @@ const Hapi = require("@hapi/hapi"),
     {
         PLAYER_BASE_URL: PLAYER_BASE_URL = "http://player:3398",
         PLAYER_KEY,
-        PLAYER_SECRET
+        PLAYER_SECRET,
+        LRS_ENDPOINT,
+        LRS_USERNAME,
+        LRS_PASSWORD
     } = process.env;
 
 const provision = async () => {
@@ -107,6 +110,25 @@ const provision = async () => {
                 }
             }
         ]
+    );
+
+    server.method(
+        "lrsWreckDefaults",
+        (req) => ({
+            baseUrl: LRS_ENDPOINT.endsWith("/") ? LRS_ENDPOINT : LRS_ENDPOINT + "/",
+            headers: {
+                "X-Experience-API-Version": (process.env.LRS_XAPI_VERSION ||  "1.0.3"),
+                Authorization: `Basic ${Buffer.from(`${LRS_USERNAME}:${LRS_PASSWORD}`).toString("base64")}`
+            },
+            json: true
+        }),
+        {
+            generateKey: (req) => `${LRS_ENDPOINT}-${LRS_USERNAME}-${LRS_PASSWORD}`,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 1000
+            }
+        }
     );
 
     server.method(

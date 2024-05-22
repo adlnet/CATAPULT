@@ -104,6 +104,7 @@ services:
       - API_KEY=${PLAYER_KEY}
       - API_SECRET=${PLAYER_SECRET}
       - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
+      - PLAYER_LAUNCH_URL_BASE
     networks:
       - public
 

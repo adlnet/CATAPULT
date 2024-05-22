@@ -730,8 +730,6 @@ module.exports = {
                             moveOn = req.payload.moveOn || courseAu.metadata.moveOn || "NotApplicable",
                             alternateEntitlementKey = req.payload.alternateEntitlementKey || courseAu.metadata.alternateEntitlementKey,
                     
-                            baseUrl = `${protocol}//${req.url.host}${rootPath}`,
-                            endpoint = `${baseUrl}/lrs`,
                             sessionId = uuidv4(),
                             contextTemplate = {
                                 contextActivities: {
@@ -745,6 +743,9 @@ module.exports = {
                                     "https://w3id.org/xapi/cmi5/context/extensions/sessionid": sessionId
                                 }
                             };
+                        
+                        let launchURLBase = (process.env.PLAYER_LAUNCH_URL_BASE || `${protocol}//${req.url.host}${rootPath}`);
+                        let endpoint = `${launchURLBase}/lrs`;
                         
                         // //Debug messages for troubleshooting host and path issuse - MB
                         // console.log("Base url is ", baseUrl);
@@ -923,7 +924,7 @@ module.exports = {
                         const launchUrlParams = new URLSearchParams(
                             {
                                 endpoint,
-                                fetch: `${baseUrl}/fetch-url/${session.id}`,
+                                fetch: `${launchURLBase}/fetch-url/${session.id}`,
                                 actor: JSON.stringify(actor),
                                 activityId: lmsActivityId,
                                 registration: reg.code

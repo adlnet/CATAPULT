@@ -519,7 +519,7 @@ module.exports = {
                                         options.headers["if-match"] = etag;
                                     }
 
-                                    etagResponse.destroy();s
+                                    etagResponse.destroy();
                                 }
                             }
 

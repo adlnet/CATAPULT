@@ -744,7 +744,7 @@ module.exports = {
                                 }
                             };
                         
-                        let launchURLBase = (process.env.PLAYER_LAUNCH_URL_BASE || `${protocol}//${req.url.host}${rootPath}`);
+                        let launchURLBase = (process.env.PLAYER_STANDALONE_LAUNCH_URL_BASE || `${protocol}//${req.url.host}${rootPath}`);
                         let endpoint = `${launchURLBase}/lrs`;
                         
                         // //Debug messages for troubleshooting host and path issuse - MB
@@ -824,7 +824,7 @@ module.exports = {
                             
                         }
                         catch (ex) {
-                             
+                            console.error(ex);
                             throw Boom.internal(new Error(`Failed request to set LMS.LaunchData state document: ${ex}`));
                         }
 
@@ -918,6 +918,7 @@ module.exports = {
                             session.id = sessionInsertResult[0];
                         }
                         catch (ex) {
+                            console.error(ex);
                             throw Boom.internal(new Error(`Failed to insert session: ${ex}`));
                         }
 

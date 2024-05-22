@@ -159,6 +159,8 @@ module.exports = {
                             playerFetch = playerAuLaunchUrlParsed.searchParams.get("fetch");
                         let sessionId;
 
+                        console.log("PLAYER FETCH:", playerFetch);
+
                         try {
                             const sessionInsert = await db.insert(
                                 {
@@ -362,6 +364,8 @@ module.exports = {
                             let fetchResponse,
                                 fetchResponseBody;
 
+                            console.log("POSTING FETCH:", session.playerFetch);
+
                             try {
                                 fetchResponse = await Wreck.request(
                                     "POST",
@@ -370,6 +374,7 @@ module.exports = {
                                 fetchResponseBody = await Wreck.read(fetchResponse, {json: true});
                             }
                             catch (ex) {
+                                console.error(ex);
                                 throw Boom.internal(new Error(`Failed to request fetch url from player: ${ex}`));
                             }
 

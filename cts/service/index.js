@@ -236,7 +236,7 @@ const provision = async () => {
         {
             validateFunc: async (req, session) => await req.server.methods.cookieAuthValidateFunc(req, session),
             cookie: {
-                password: 'GjW_X*v7fZKarM_4HU4tE!gMu4sp_DYL_j*gdR2jNormrW3-xr@UcXrdEXM8y!s6',
+                password: Date.now() + process.env.CTS_SESSION_COOKIE_PASSWORD + Math.ceil(Math.random() * 10000000),
 
                 // switch to use via https
                 isSecure: false,

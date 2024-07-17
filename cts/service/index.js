@@ -183,7 +183,7 @@ const provision = async () => {
     server.method(
         "cookieAuthValidateFunc",
         async (req, session) => {
-            const user = await req.server.app.db.first("id").from("users").where({id: session.id});
+            const user = await req.server.app.db.first("id").from("users").where({id: session.id, username: session.username});
 
             if (! user) {
                 return {valid: false};

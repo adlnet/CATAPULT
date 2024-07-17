@@ -111,6 +111,7 @@ services:
 
   rdbms:
     image: mysql:8.0.17
+    container_name: mysql
     restart: always
     volumes:
       - catapult-cts-data:/var/lib/mysql

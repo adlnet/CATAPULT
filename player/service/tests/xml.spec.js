@@ -7,8 +7,9 @@ const fs = require("fs");
 
 const helpers = require("../plugins/routes/lib/helpers");
 const chai = require("chai");
+const exp = require("constants");
 
-describe("Libxmljs Usage", async () => {
+describe("XML Parsing and Usage", async () => {
 
     /**
      * https://www.stackhawk.com/blog/nodejs-xml-external-entities-xxe-guide-examples-and-prevention/
@@ -21,5 +22,15 @@ describe("Libxmljs Usage", async () => {
         let suspicious = await helpers.isPotentiallyMaliciousXML(entityBody);
 
         chai.expect(suspicious).to.be.equal(true, "The provided XML should have thrown a validity issue for its use of an <!ENTITY tag");
+    });
+
+    it ("Sanitizes malicious characters out of the XML body", async() => {
+
+        let providedText = '\u0000Some text\u0000🎉🎉\u0000';
+        let expectedText = 'Some text';
+
+        let parsedText = await helpers.sanitizeXML(providedText);
+
+        chai.expect(parsedText).to.be.equal(expectedText, "The provided XML was not parsed into the expected text");
     });
 });

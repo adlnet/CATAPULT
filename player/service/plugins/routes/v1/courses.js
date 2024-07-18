@@ -385,9 +385,12 @@ module.exports = {
                             }
                         }
 
-                        let courseStructureData = helpers.sanitizeXML(courseStructureDataRaw);
-                        if (courseStructureData != undefined && helpers.isPotentiallyMaliciousXML(courseStructureData)) {
-                            throw Boom.internal(`Invalid XML data provided: ${ex}`);
+                        let courseStructureData = await helpers.sanitizeXML(courseStructureDataRaw);
+                        if (courseStructureData != undefined) {
+                            let seemsOdd = await helpers.isPotentiallyMaliciousXML(courseStructureData);
+                            if (seemsOdd) {
+                                throw Boom.internal(`Invalid XML data provided: ${ex}`);
+                            }
                         }
 
                         let courseStructureDocument;

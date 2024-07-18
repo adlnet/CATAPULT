@@ -28,6 +28,7 @@ const uuidv4 = require("uuid").v4;
 const Helpers = require("../lib/helpers");
 const Registration = require("../lib/registration");
 const Session = require("../lib/session");
+const helpers = require("../lib/helpers");
 const readFile = util.promisify(fs.readFile);
 const copyFile = util.promisify(fs.copyFile);
 const mkdir = util.promisify(fs.mkdir);
@@ -349,7 +350,7 @@ module.exports = {
                             //
                             isZip = contentType === "application/zip" || contentType === "application/x-zip-compressed";
 
-                        let courseStructureData,
+                        let courseStructureDataRaw,
                             zip;
 
                         if (!isZip && contentType !== "text/xml") {
@@ -365,7 +366,7 @@ module.exports = {
                             }
 
                             try {
-                                courseStructureData = await zip.entryData("cmi5.xml");
+                                courseStructureDataRaw = await zip.entryData("cmi5.xml");
                             }
                             catch (ex) {
                                 if (ex.message === "Bad archive") {
@@ -377,11 +378,16 @@ module.exports = {
                         }
                         else {
                             try {
-                                courseStructureData = await readFile(req.payload.path);
+                                courseStructureDataRaw = await readFile(req.payload.path);
                             }
                             catch (ex) {
                                 throw Boom.internal(`Failed to read structure file: ${ex}`);
                             }
+                        }
+
+                        let courseStructureData = helpers.sanitizeXML(courseStructureDataRaw);
+                        if (courseStructureData != undefined && helpers.isPotentiallyMaliciousXML(courseStructureData)) {
+                            throw Boom.internal(`Invalid XML data provided: ${ex}`);
                         }
 
                         let courseStructureDocument;

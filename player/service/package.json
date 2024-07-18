@@ -43,7 +43,8 @@
     "mysql": "^2.18.1",
     "node-stream-zip": "^1.13.6",
     "uuid": "^9.0.1",
-    "wait-port": "^0.2.9"
+    "wait-port": "^0.2.9",
+    "xml-sanitizer": "^2.0.1"
   },
   "devDependencies": {
     "chai": "^4",

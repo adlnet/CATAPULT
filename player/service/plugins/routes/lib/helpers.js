@@ -18,6 +18,7 @@
 const Boom = require("@hapi/boom");
 const Requirements = require("@cmi5/requirements");
 const axios = require("axios").default;
+const xmlSanitizer = require("xml-sanitizer");
 
 let user = process.env.LRS_USERNAME;
 let pass = process.env.LRS_PASSWORD;
@@ -133,5 +134,29 @@ module.exports = {
         ];
 
         return concurrencyPaths.includes(resourcePath);
+    },
+
+    /**
+     * Checks the given XML content, returning false if the content
+     * appears potentially malicious.
+     * @param {String|Buffer} xmlContent 
+     */
+    isPotentiallyMaliciousXML: async(xmlContent) => {
+
+        if (xmlContent.includes("<!ENTITY")) {
+            console.error(">> Invalid XML -- Attempts an Entity Tag: ", "\n--------------\n", xmlContent);
+            return true;
+        }
+        
+        return false;
+    },
+
+    /**
+     * Checks the given XML content, returning false if the content
+     * appears potentially malicious.
+     * @param {String|Buffer} xmlContent 
+     */
+    sanitizeXML: async(xmlContent) => {
+        return xmlSanitizer(xmlContent);
     }
 };

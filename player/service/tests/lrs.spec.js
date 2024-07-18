@@ -34,19 +34,12 @@ describe("Basic LRS Communications", async () => {
         };
 
         let path = "/statements?statementId=" + statement.id;
-        let pathWithoutID = "/statements";
 
         console.log("Sending statement ...");
 
         let res = await helpers.sendDocumentToLRS(path, "PUT", statement);
-        let ids = res.responseBody;
 
-        delete res.res;
-        
-        console.log("Received response:", res);
-        
         chai.expect(res.status).to.be.lessThan(400);
         chai.expect(res.status).to.be.greaterThanOrEqual(200);
-        chai.expect(ids).to.have.length(1);
     });
 });

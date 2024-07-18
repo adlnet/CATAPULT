@@ -7,6 +7,7 @@ const fs = require("fs");
 
 const helpers = require("../plugins/routes/lib/helpers");
 const chai = require("chai");
+const mocha = require("mocha");
 const exp = require("constants");
 
 describe("XML Parsing and Usage", async () => {

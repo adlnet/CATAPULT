@@ -201,7 +201,7 @@ module.exports = {
                         }
 
                         if (alreadyBootstrapped) {
-                            throw Boom.conflict(`Invalid request.`);
+                            throw Boom.badRequest(`This endpoint cannot be used once the system has been initialized.`);
                         }
 
                         try {

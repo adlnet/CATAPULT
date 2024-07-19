@@ -30,6 +30,8 @@ const Bcrypt = require("bcrypt"),
         return user;
     };
 
+let alreadyBootstrapped = false;
+
 module.exports = {
     name: "catapult-cts-api-routes-v1-core",
     register: (server, options) => {
@@ -183,15 +185,23 @@ module.exports = {
                         }
                     },
                     handler: async (req, h) => {
-                        const db = req.server.app.db,
+
+                        if (!alreadyBootstrapped) {
+
                             //
                             // checking that there aren't any users created yet is effectively
                             // the authorization for this resource
                             //
-                            [query] = await db("users").count("id", {as: "count"});
+                            const db = req.server.app.db;
+                            const [query] = await db("users").count("id", {as: "count"});
 
-                        if (query.count > 0) {
-                            throw Boom.conflict(`Unexpected user count: ${query.count}`);
+                            if (query.count > 0) {
+                                alreadyBootstrapped = true;
+                            }
+                        }
+
+                        if (alreadyBootstrapped) {
+                            throw Boom.conflict(`Invalid request.`);
                         }
 
                         try {
@@ -199,7 +209,7 @@ module.exports = {
                             await User.create(req.payload.firstUser.username, req.payload.firstUser.password, ["admin"], {req});
                         }
                         catch (ex) {
-                            throw Boom.internal(`Failed to create user: ${ex}`);
+                            throw Boom.internal(`Failed to create bootstrap user.`);
                         }
 
                         return null;

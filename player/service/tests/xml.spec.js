@@ -34,4 +34,16 @@ describe("XML Parsing and Usage", async () => {
 
         chai.expect(parsedText).to.be.equal(expectedText, "The provided XML was not parsed into the expected text");
     });
+
+
+    it ("Handles when a Buffer is provided instead of a string", async() => {
+
+        let providedText = '\u0000Some text\u0000🎉🎉\u0000';
+        let providedBuffer = Buffer.from(providedText);
+        let expectedText = 'Some text';
+
+        let parsedText = await helpers.sanitizeXML(providedBuffer);
+
+        chai.expect(parsedText).to.be.equal(expectedText, "The provided XML was not parsed into the expected text");
+    });
 });

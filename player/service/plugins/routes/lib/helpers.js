@@ -152,11 +152,19 @@ module.exports = {
     },
 
     /**
-     * Checks the given XML content, returning false if the content
-     * appears potentially malicious.
+     * Attempts to sanitize the given content, throwing an error if the provided
+     * content is neither a string nor a Buffer.
+     * 
      * @param {String|Buffer} xmlContent 
      */
     sanitizeXML: async(xmlContent) => {
-        return xmlSanitizer(xmlContent);
+        if (typeof xmlContent === "string")
+            return xmlSanitizer(xmlContent);
+        else if (Buffer.isBuffer(xmlContent))
+            return xmlSanitizer(xmlContent.toString());
+        else
+            console.error("helpers.sanitizeXML requires either a string or a Buffer -- received: " + typeof xmlContent);
+
+        return undefined;
     }
 };

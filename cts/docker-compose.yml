@@ -60,9 +60,13 @@ services:
       - ./seeds:/usr/src/app/seeds:ro
     environment:
       - HOSTNAME
-      - DATABASE_USER=catapult
-      - DATABASE_USER_PASSWORD=quartz
-      - DATABASE_NAME=catapult_cts
+      - DB_HOST
+      - DB_NAME
+      - DB_USERNAME
+      - DB_PASSWOD
+      # - DATABASE_USER=catapult
+      # - DATABASE_USER_PASSWORD=quartz
+      # - DATABASE_NAME=catapult_cts
       - PLAYER_BASE_URL
       - PLAYER_KEY
       - PLAYER_SECRET

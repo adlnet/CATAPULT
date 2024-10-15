@@ -36,9 +36,13 @@ services:
       - LRS_USERNAME
       - LRS_PASSWORD
       - LRS_XAPI_VERSIONs
-      - DATABASE_USER=catapult
-      - DATABASE_USER_PASSWORD=quartz
-      - DATABASE_NAME=catapult_player
+      - DB_HOST
+      - DB_NAME
+      - DB_USERNAME
+      - DB_PASSWOD
+      # - DATABASE_USER=catapult
+      # - DATABASE_USER_PASSWORD=quartz
+      # - DATABASE_NAME=catapult_player
       - FIRST_TENANT_NAME
       - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
       - PLAYER_STANDALONE_LAUNCH_URL_BASE

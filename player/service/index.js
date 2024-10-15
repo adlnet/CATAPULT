@@ -65,7 +65,8 @@ const provision = async () => {
             }
         };
 
-    await waitPort({host: "rdbms", port: 3306});
+    const DB_HOST = (process.env.DB_HOST || "rdbms");
+    await waitPort({host: DB_HOST, port: 3306});
 
     const db = await require("./lib/db")();
 

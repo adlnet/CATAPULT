@@ -63,7 +63,7 @@ services:
       - DB_HOST
       - DB_NAME
       - DB_USERNAME
-      - DB_PASSWOD
+      - DB_PASSWORD
       # - DATABASE_USER=catapult
       # - DATABASE_USER_PASSWORD=quartz
       # - DATABASE_NAME=catapult_cts

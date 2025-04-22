@@ -724,8 +724,8 @@ module.exports = {
                         
                         //Debug messages for troubleshooting host and path issuse - MB
                         console.log("req.url.protocol is ", req.url.protocol);
-                        // console.log("req.url.host is ", req.url.host);
-                        // console.log("rootPath is ", rootPath);
+                        console.log("req.url.host is ", req.url.host);
+                        console.log("rootPath is ", rootPath);
                         
                         let forwardingHeader = req.headers["x-forwarded-proto"];
                         let protocol = (forwardingHeader === "https") ? "https:" : req.url.protocol;

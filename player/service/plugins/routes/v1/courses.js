@@ -757,9 +757,9 @@ module.exports = {
                         let endpoint = `${launchURLBase}/lrs`;
                         
                         // //Debug messages for troubleshooting host and path issuse - MB
-                        console.log("Base url is ", baseUrl);
+                        // console.log("Base url is ", baseUrl);
                         console.log("Which makes endpoint ", endpoint);
-                        console.log("Forwarded Header: ", req.headers["x-forwarded-proto"]);
+                       // console.log("Forwarded Header: ", req.headers["x-forwarded-proto"]);
 
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });

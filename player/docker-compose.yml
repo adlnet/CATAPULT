@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+version: "3.8"
 services:
   webservice:
     build: .
@@ -18,7 +19,7 @@ services:
     ports:
       - ${HOST_PORT}:3398
     depends_on:
-      - test-db
+      - rdbms
     volumes:
       - ./service/index.js:/usr/src/app/index.js:ro
       - ./service/knexfile.js:/usr/src/app/knexfile.js:ro
@@ -28,30 +29,33 @@ services:
       - ./seeds:/usr/src/app/seeds:ro
     environment:
       - CONTENT_URL
-      - API_KEY=${PLAYER_KEY}
-      - API_SECRET=${PLAYER_SECRET}
-      - TOKEN_SECRET=${PLAYER_TOKEN_SECRET}
+      - API_KEY
+      - API_SECRET
+      - TOKEN_SECRET
       - LRS_ENDPOINT
       - LRS_USERNAME
       - LRS_PASSWORD
       - LRS_XAPI_VERSIONs
-      - DATABASE_USER=${PLAYER_DB_USER}
-      - DATABASE_USER_PASSWORD=${PLAYER_DB_USER_PASSWORD}
-      - DATABASE_NAME=${PLAYER_DB_NAME}
+      - DB_HOST
+      - DB_NAME
+      - DB_USERNAME
+      - DB_PASSWOD
+      # - DATABASE_USER=catapult
+      # - DATABASE_USER_PASSWORD=quartz
+      # - DATABASE_NAME=catapult_player
       - FIRST_TENANT_NAME
-      - PLAYER_API_ROOT=${PLAYER_API_ROOT}
+      - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
       - PLAYER_STANDALONE_LAUNCH_URL_BASE
-      - HOST_PORT=${PLAYER_HOST_PORT}
-      - MYSQL_HOST=${MYSQL_HOST}
-  test-db:
+      - HOST_PORT
+  rdbms:
     image: mysql:8.0.31
     volumes:
       - catapult-player-data:/var/lib/mysql
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      # - MYSQL_USER=${PLAYER_DB_USER}
-      - MYSQL_PASSWORD=${PLAYER_DB_USER_PASSWORD}
-      - MYSQL_DATABASE=${PLAYER_DB_NAME}
+      - MYSQL_USER=catapult
+      - MYSQL_PASSWORD=quartz
+      - MYSQL_DATABASE=catapult_player
     command: [
       "mysqld",
 

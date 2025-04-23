@@ -724,8 +724,8 @@ module.exports = {
                         
                         //Debug messages for troubleshooting host and path issuse - MB
                         console.log("req.url.protocol is ", req.url.protocol);
-                        // console.log("req.url.host is ", req.url.host);
-                        // console.log("rootPath is ", rootPath);
+                        console.log("req.url.host is ", req.url.host);
+                        console.log("rootPath is ", rootPath);
                         
                         let forwardingHeader = req.headers["x-forwarded-proto"];
                         let protocol = (forwardingHeader === "https") ? "https:" : req.url.protocol;
@@ -757,9 +757,9 @@ module.exports = {
                         let endpoint = `${launchURLBase}/lrs`;
                         
                         // //Debug messages for troubleshooting host and path issuse - MB
-                        // console.log("Base url is ", baseUrl);
-                        // console.log("Which makes endpoint ", endpoint);
-                        // console.log("Forwarded Header: ", req.headers["x-forwarded-proto"]);
+                        console.log("Base url is ", baseUrl);
+                        console.log("Which makes endpoint ", endpoint);
+                        console.log("Forwarded Header: ", req.headers["x-forwarded-proto"]);
 
                         if (req.payload.contextTemplateAdditions) {
                             Hoek.merge(contextTemplate, req.payload.contextTemplateAdditions, { nullOverride: false });

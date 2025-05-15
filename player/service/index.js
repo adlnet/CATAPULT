@@ -188,7 +188,7 @@ const provision = async () => {
         "jwt",
         "jwt",
         {
-            keys: server.app.jwt.tokenSecret,
+            // keys: server.app.jwt.tokenSecret,
             verify: false,
             // verify: {
             //     aud: new RegExp(`^${server.app.jwt.audPrefix}.+$`),
@@ -205,13 +205,13 @@ const provision = async () => {
             }
         }
     );
-    server.auth.strategy(
-        "basic",
-        "basic",
-        {
-            validate: async (req, key, secret) => await req.server.methods.basicAuthValidate(req, key, secret)
-        }
-    );
+    // server.auth.strategy(
+    //     "basic",
+    //     "basic",
+    //     {
+    //         validate: async (req, key, secret) => await req.server.methods.basicAuthValidate(req, key, secret)
+    //     }
+    // );
 
     await server.register(
         [

@@ -189,7 +189,6 @@ const provision = async () => {
         "jwt",
         {
             keys: server.app.jwt.tokenSecret,
-            // verify: false,
             verify: {
                 aud: new RegExp(`^${server.app.jwt.audPrefix}.+$`),
                 iss: server.app.jwt.iss,

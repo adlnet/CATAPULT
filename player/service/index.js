@@ -118,7 +118,7 @@ const provision = async () => {
     await server.register(H2o2, {...defaultRouteArgs});
     await server.register(Inert, {...defaultRouteArgs});
     await server.register(AuthJwt, {...defaultRouteArgs});
-    // await server.register(AuthBasic, {...defaultRouteArgs});
+    await server.register(AuthBasic, {...defaultRouteArgs});
 
     await server.register(
         [
@@ -141,27 +141,27 @@ const provision = async () => {
     // this is only used to authenticate the route that is used
     // to create tenants and get API access tokens
     //
-    // server.method(
-    //     "basicAuthValidate",
-    //     async (req, key, secret) => {
+    server.method(
+        "basicAuthValidate",
+        async (req, key, secret) => {
 
-    //         if (key !== API_KEY || secret !== API_SECRET) {
-    //             return {isValid: false, credentials: null};
-    //         }
+            if (key !== API_KEY || secret !== API_SECRET) {
+                return {isValid: false, credentials: null};
+            }
 
-    //         return {
-    //             isValid: true,
-    //             credentials: {}
-    //         };
-    //     },
-    //     {
-    //         generateKey: (req, key, secret) => `${key}-${secret}`,
-    //         cache: {
-    //             expiresIn: 60000,
-    //             generateTimeout: 5000
-    //         }
-    //     }
-    // );
+            return {
+                isValid: true,
+                credentials: {}
+            };
+        },
+        {
+            generateKey: (req, key, secret) => `${key}-${secret}`,
+            cache: {
+                expiresIn: 60000,
+                generateTimeout: 5000
+            }
+        }
+    );
 
     // tried making this just return the Wreck object, that didn't work correctly
     // probably because of the cache
@@ -189,12 +189,12 @@ const provision = async () => {
         "jwt",
         {
             keys: server.app.jwt.tokenSecret,
-            verify: false,
-            // verify: {
-            //     aud: new RegExp(`^${server.app.jwt.audPrefix}.+$`),
-            //     iss: server.app.jwt.iss,
-            //     sub: false
-            // },
+            // verify: false,
+            verify: {
+                aud: new RegExp(`^${server.app.jwt.audPrefix}.+$`),
+                iss: server.app.jwt.iss,
+                sub: false
+            },
             validate: async (artifacts, req) => {
                 return {
                     isValid: true,
@@ -205,13 +205,13 @@ const provision = async () => {
             }
         }
     );
-    // server.auth.strategy(
-    //     "basic",
-    //     "basic",
-    //     {
-    //         validate: async (req, key, secret) => await req.server.methods.basicAuthValidate(req, key, secret)
-    //     }
-    // );
+    server.auth.strategy(
+        "basic",
+        "basic",
+        {
+            validate: async (req, key, secret) => await req.server.methods.basicAuthValidate(req, key, secret)
+        }
+    );
 
     await server.register(
         [

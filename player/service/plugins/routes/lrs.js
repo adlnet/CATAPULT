@@ -598,7 +598,7 @@ module.exports = {
     register: (server, options) => {
         server.auth.strategy(
             "proxied-lrs",
-            // "basic",
+            "basic",
             {
                 allowEmptyUsername: true,
                 validate: async (req, key, secret) => {

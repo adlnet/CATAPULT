@@ -28,6 +28,7 @@ For example:
 | LRS_XAPI_VERSION | The LRS xAPI version ( if needed using an LRS) | No recommendation | No - only used if using an LRS |
 | PLAYER_API_ROOT | The player API root, or location of the player to be used in networking with nginx | /cmi5/player | No - only used when using nginx to proxy |
 | PLAYER_STANDALONE_LAUNCH_URL_BASE | The 'public friendly' location of the player. This is not the internal docker address, but the address that the player can be reached at from outside the network. | No recommendation - but example is "http://localhost/cmi5/player" | No - only used when using nginx to proxy |
+| PLAYER_ALTERNATE_AUTH_HEADER | An optional header to check when processing auth from a client / browser request.  This is a rare configuration value and should only be used when when a deployment environment overrides the expected `Authorization` header.  The default auth header will still be used if the specified header value was not found in the request. | Empty, but for Platform One we use `cmi5Authorization` | No. |
 
 Then run,
 

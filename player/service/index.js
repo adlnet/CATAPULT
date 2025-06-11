@@ -35,6 +35,9 @@ const Hapi = require("@hapi/hapi"),
     } = process.env;
 
 const rootPath = (process.env.PLAYER_API_ROOT || "");
+const requireStrictHeaders = (process.env.PLAYER_REQUIRE_STRICT_HEADERS || "true") == "true";
+
+console.log("Using Strict Headers: ", requireStrictHeaders);
 
 const provision = async () => {
     const server = Hapi.server(
@@ -46,6 +49,9 @@ const provision = async () => {
                     response: {
                         emptyStatusCode: 204
                     }
+                },
+                state: {
+                    strictHeader: requireStrictHeaders
                 }
             }
         ),

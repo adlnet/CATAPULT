@@ -46,6 +46,7 @@ services:
       - FIRST_TENANT_NAME
       - PLAYER_API_ROOT=${PLAYER_ROOT_PATH}
       - PLAYER_STANDALONE_LAUNCH_URL_BASE
+      - PLAYER_REQUIRE_STRICT_HEADERS
       - HOST_PORT
   rdbms:
     image: mysql:8.0.31

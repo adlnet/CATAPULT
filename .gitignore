@@ -7,3 +7,4 @@ lts/pkg/dist
 .DS_Store
 .idea
 dumb-init
+CATAPULT-player.tar.gz

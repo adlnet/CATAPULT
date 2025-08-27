@@ -160,7 +160,7 @@ const Boom = require("@hapi/boom"),
                         throw Helpers.buildViolatedReqId("9.6.3.1-4", st.id);
                     }
 
-                    if (! session.is_initialized && st.verb.id !== VERB_INITIALIZED_ID) {
+                    if (! session.is_initialized && st.verb.id !== VERB_INITIALIZED_ID && statements[0].verb.id !== VERB_INITIALIZED_ID) {
                         throw Helpers.buildViolatedReqId("9.3.0.0-4", st.id);
                     }
 

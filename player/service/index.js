@@ -45,7 +45,7 @@ const provision = async () => {
                 host: process.argv[3],
                 port: process.argv[2] || 3398,
                 routes: {
-                    cors: true,
+                    cors: false,
                     response: {
                         emptyStatusCode: 204
                     }

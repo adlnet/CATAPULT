@@ -14,7 +14,7 @@
     limitations under the License.
 */
 const DB_HOST = (process.env.DB_HOST || "rdbms");
-const DB_NAME = (process.env.DB_NAME || "catapult_player");
+const DB_NAME = (process.env.DB_NAME || "catapult_cts");
 const DB_USERNAME = (process.env.DB_USERNAME || "catapult");
 const DB_PASSWORD = (process.env.DB_PASSWORD || "quartz");
 

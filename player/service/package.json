@@ -54,6 +54,6 @@
   "devDependencies": {
     "chai": "^4",
     "dotenv": "^16.4.5",
-    "mocha": "^10.4.0"
+    "mocha": "^11.7.5"
   }
 }

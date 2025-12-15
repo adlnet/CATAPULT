@@ -215,7 +215,10 @@ const validateAndReduceStructure = (document, lmsId) => {
             blocks: {}
         };
 
-    result.course.id = course.attr("id").value();
+    // result.course.id = course.attr("id").value();
+    const attr = course.attr("id");
+    result.course.id = attr && attr.value; // .value is now a property
+
 
     validateIRI(result.course.id);
 

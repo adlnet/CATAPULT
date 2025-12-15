@@ -41,7 +41,7 @@
     "joi": "^17.12.1",
     "knex": "^3.1.0",
     "knex-stringcase": "^1.4.5",
-    "libxmljs": "^0.19.8",
+    "libxmljs": "^1.0.11",
     "make-dir": "^4.0.0",
     "mysql": "^2.18.1",
     "node-stream-zip": "^1.13.6",
@@ -55,5 +55,10 @@
     "chai": "^4",
     "dotenv": "^16.4.5",
     "mocha": "^11.7.5"
+  },
+  "overrides": {
+    "z-schema": {
+      "validator": "^13.9.0"
+    }
   }
 }

@@ -21,7 +21,9 @@ const Boom = require("@hapi/boom");
 const Wreck = require("@hapi/wreck");
 const Hoek = require("@hapi/hoek");
 const Joi = require("joi");
-const libxml = require("libxmljs");
+const { DOMParser } = require("@xmldom/xmldom")
+var xpath = require("xpath");
+const { validateXML } = require("xmllint-wasm");
 const StreamZip = require("node-stream-zip");
 const iri = require("iri");
 const uuidv4 = require("uuid").v4;
@@ -36,10 +38,9 @@ const rm = util.promisify(fs.rm);
 
 const rootPath = (process.env.PLAYER_API_ROOT || "");
 
-const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`);
-
-const schema = libxml.parseXml(schemaText);
+const schemaText = fs.readFileSync(`${__dirname}/../../../xsd/v1/CourseStructure.xsd`, "utf-8");
 const schemaNS = "https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd";
+const select = xpath.useNamespaces({"xmlns": schemaNS});
 
 //
 // this is basically a check for a scheme, assume that if there is a scheme
@@ -62,14 +63,16 @@ const validateIRI = (input) => {
 const validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
     const result = [];
 
-    for (const objElement of objectiveRefs.childNodes()) {
-        const idref = objElement.attr("idref").value();
+    for (const objElement of Array.from(objectiveRefs.childNodes)) {
+        if (objElement.localName) {
+            const idref = objElement.getAttribute("idref");
 
-        if (!objectiveMap[idref]) {
-            throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
+            if (!objectiveMap[idref]) {
+                throw new Error(`Invalid objective idref (${idref}): not found in objective map`);
+            }
+
+            result.push(idref);
         }
-
-        result.push(idref);
     }
 
     return result;
@@ -78,16 +81,16 @@ const validateObjectiveRefs = (objectiveRefs, objectiveMap) => {
 const validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
     const result = {
         type: "au",
-        id: element.attr("id").value(),
+        id: element.getAttribute("id"),
         lmsId: `${lmsIdHelper.prefix}/au/${lmsIdHelper.auIndex++}`,
         objectives: null,
         parents: parents.map(
             (e) => ({ id: e.id, title: e.title })
         )
     },
-        auTitle = element.get("xmlns:title", schemaNS),
-        auDesc = element.get("xmlns:description", schemaNS),
-        objectiveRefs = element.get("xmlns:objectives", schemaNS);
+        auTitle = select("xmlns:title", element)[0],
+        auDesc = select("xmlns:description", element)[0],
+        objectiveRefs = select("xmlns:objectives", element)[0];
 
     validateIRI(result.id);
 
@@ -97,38 +100,45 @@ const validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents)
 
     duplicateCheck.aus[result.id] = true;
 
-    result.title = auTitle.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
-    result.description = auDesc.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
+    result.title = []
+    for (const ls of Array.from(auTitle.childNodes)) {
+        if (ls.localName) {
+            result.title.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
+
+    result.description = []
+    for (const ls of Array.from(auDesc.childNodes)) {
+        if (ls.localName) {
+            result.description.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
 
     if (objectiveRefs) {
         result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
     }
 
-    result.url = element.get("xmlns:url", schemaNS).text().trim();
+    result.url = select("xmlns:url", element)[0].textContent.trim();
 
-    result.launchMethod = element.attr("launchMethod") ? element.attr("launchMethod").value() : "AnyWindow";
-    result.moveOn = element.attr("moveOn") ? element.attr("moveOn").value() : "NotApplicable";
-    result.masteryScore = element.attr("masteryScore") ? Number.parseFloat(element.attr("masteryScore").value()) : null;
-    result.activityType = element.attr("activityType") ? element.attr("activityType").value() : null;
+    result.launchMethod = element.getAttribute("launchMethod") ? element.getAttribute("launchMethod") : "AnyWindow";
+    result.moveOn = element.getAttribute("moveOn") ? element.getAttribute("moveOn") : "NotApplicable";
+    result.masteryScore = element.getAttribute("masteryScore") ? Number.parseFloat(element.getAttribute("masteryScore")) : null;
+    result.activityType = element.getAttribute("activityType") ? element.getAttribute("activityType") : null;
 
-    const launchParameters = element.get("xmlns:launchParameters", schemaNS),
-        entitlementKey = element.get("xmlns:entitlementKey", schemaNS);
+    const launchParameters = select("xmlns:launchParameters", element)[0],
+        entitlementKey = select("xmlns:entitlementKey", element)[0];
 
     if (launchParameters) {
-        result.launchParameters = launchParameters.text().trim();
+        result.launchParameters = launchParameters.textContent.trim();
     }
     if (entitlementKey) {
-        result.entitlementKey = entitlementKey.text().trim();
+        result.entitlementKey = entitlementKey.textContent.trim();
     }
 
     return result;
@@ -137,14 +147,14 @@ const validateAU = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents)
 const validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, parents) => {
     const result = {
         type: "block",
-        id: element.attr("id").value(),
+        id: element.getAttribute("id"),
         lmsId: `${lmsIdHelper.prefix}/block/${lmsIdHelper.blockIndex++}`,
         children: [],
         objectives: null
     },
-        blockTitle = element.get("xmlns:title", schemaNS),
-        blockDesc = element.get("xmlns:description", schemaNS),
-        objectiveRefs = element.get("xmlns:objectives", schemaNS);
+        blockTitle = select("xmlns:title", element)[0],
+        blockDesc = select("xmlns:description", element)[0],
+        objectiveRefs = select("xmlns:objectives", element)[0];
 
     parents.push(result);
 
@@ -156,33 +166,41 @@ const validateBlock = (element, lmsIdHelper, objectiveMap, duplicateCheck, paren
 
     duplicateCheck.blocks[result.id] = true;
 
-    result.title = blockTitle.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
-    result.description = blockDesc.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
+    result.title = []
+    for (const ls of Array.from(blockTitle.childNodes)) {
+        if (ls.localName) {
+            result.title.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
+    result.description = []
+    for (const ls of Array.from(blockDesc.childNodes)) {
+        if (ls.localName) {
+            result.description.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
 
     if (objectiveRefs) {
         result.objectives = validateObjectiveRefs(objectiveRefs, objectiveMap);
     }
 
-    for (const child of element.childNodes()) {
-        if (child.name() === "au") {
-            result.children.push(
-                validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
-            );
-        }
-        else if (child.name() === "block") {
-            result.children.push(
-                validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
-            );
+    for (const child of Array.from(element.childNodes)) {
+        if (child.localName) {
+            if (child.localName === "au") {
+                result.children.push(
+                    validateAU(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
+                );
+            }
+            else if (child.localName === "block") {
+                result.children.push(
+                    validateBlock(child, lmsIdHelper, objectiveMap, duplicateCheck, parents)
+                );
+            }
         }
     }
 
@@ -200,11 +218,11 @@ const validateAndReduceStructure = (document, lmsId) => {
             objectives: null
         }
     },
-        courseStructure = document.root(),
-        course = courseStructure.get("xmlns:course", schemaNS),
-        courseTitle = course.get("xmlns:title", schemaNS),
-        courseDesc = course.get("xmlns:description", schemaNS),
-        objectives = courseStructure.get("xmlns:objectives", schemaNS),
+        courseStructure = document.documentElement,
+        course = select("xmlns:course", courseStructure)[0],
+        courseTitle = select("xmlns:title", course)[0],
+        courseDesc = select("xmlns:description", course)[0],
+        objectives = select("xmlns:objectives", courseStructure)[0],
         lmsIdHelper = {
             prefix: lmsId,
             auIndex: 0,
@@ -215,32 +233,37 @@ const validateAndReduceStructure = (document, lmsId) => {
             blocks: {}
         };
 
-    // result.course.id = course.attr("id").value();
-    const attr = course.attr("id");
-    result.course.id = attr && attr.value; // .value is now a property
-
+    result.course.id = course.getAttribute("id");
 
     validateIRI(result.course.id);
 
-    result.course.title = courseTitle.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
-    result.course.description = courseDesc.childNodes().map(
-        (ls) => ({
-            lang: ls.attr("lang").value(),
-            text: ls.text().trim()
-        })
-    );
+
+    result.course.title = [];
+    for (const ls of Array.from(courseTitle.childNodes)) {
+        if (ls.localName) {
+            result.course.title.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
+
+    result.course.description = [];
+    for (const ls of Array.from(courseDesc.childNodes)) {
+        if (ls.localName) {
+            result.course.description.push({
+                lang: ls.getAttribute("lang"),
+                text: ls.textContent.trim()
+            });
+        }
+    }
 
     if (objectives) {
         result.course.objectives = {};
 
-        for (const objElement of objectives.childNodes()) {
-            if (objElement.name() === "objective") {
-                const id = objElement.attr("id").value();
+        for (const objElement of Array.from(objectives.childNodes)) {
+            if (objElement.localName === "objective") {
+                const id = objElement.getAttribute("id");
 
                 validateIRI(id);
 
@@ -248,19 +271,26 @@ const validateAndReduceStructure = (document, lmsId) => {
                     throw Helpers.buildViolatedReqId("13.1.3.0-1", `Invalid objective id (${id}: duplicate not allowed`, "badRequest");
                 }
 
+                const objTitle = select("xmlns:title", objElement)[0];
+                const objDesc = select("xmlns:description", objElement)[0];
+
                 result.course.objectives[id] = {
-                    title: objElement.get("xmlns:title", schemaNS).childNodes().map(
-                        (ls) => ({
-                            lang: ls.attr("lang").value(),
-                            text: ls.text().trim()
-                        })
-                    ),
-                    description: objElement.get("xmlns:description", schemaNS).childNodes().map(
-                        (ls) => ({
-                            lang: ls.attr("lang").value(),
-                            text: ls.text().trim()
-                        })
-                    )
+                    title: Array.from(objTitle.childNodes).map((ls) => {
+                        if (ls.localName) {
+                            return {
+                                lang: ls.getAttribute("lang"),
+                                text: ls.textContent.trim()
+                            };
+                        }
+                    }),
+                    description: Array.from(objDesc.childNodes).map((ls) => {
+                        if (ls.localName) {
+                            return {
+                                lang: ls.getAttribute("lang"),
+                                text: ls.textContent.trim()
+                            };
+                        }
+                    })
                 };
             }
         }
@@ -268,22 +298,24 @@ const validateAndReduceStructure = (document, lmsId) => {
 
     const parents = [];
 
-    for (const element of courseStructure.childNodes()) {
-        if (element.name() === "au") {
-            result.course.children.push(
-                validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
-            );
-        }
-        else if (element.name() === "block") {
-            result.course.children.push(
-                validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
-            );
-        }
-        else {
-            // shouldn't need to handle unknown elements since the XSD
-            // checks should have caught them, anything else is handled
-            // directly above (course, objectives)
-            // throw new Error(`Unrecognized element: ${element.name()}`);
+    for (const element of Array.from(courseStructure.childNodes)) {
+        if (element.localName) {
+            if (element.localName === "au") {
+                result.course.children.push(
+                    validateAU(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
+                );
+            }
+            else if (element.localName === "block") {
+                result.course.children.push(
+                    validateBlock(element, lmsIdHelper, result.course.objectives, duplicateCheck, parents)
+                );
+            }
+            else {
+                // shouldn't need to handle unknown elements since the XSD
+                // checks should have caught them, anything else is handled
+                // directly above (course, objectives)
+                // throw new Error(`Unrecognized element: ${element.name()}`);
+            }
         }
     }
 
@@ -399,13 +431,9 @@ module.exports = {
                         let courseStructureDocument;
 
                         try {
-                            courseStructureDocument = libxml.parseXml(
+                            courseStructureDocument = new DOMParser().parseFromString(
                                 courseStructureData,
-                                {
-                                    noblanks: true,
-                                    noent: true,
-                                    nonet: true
-                                }
+                                'text/xml'
                             );
                         }
                         catch (ex) {
@@ -415,7 +443,10 @@ module.exports = {
                         let validationResult;
 
                         try {
-                            validationResult = courseStructureDocument.validate(schema);
+                            validationResult = await validateXML({
+                                xml: courseStructureData,
+                                schema: schemaText
+                            })
                         }
                         catch (ex) {
                             throw Boom.internal(`Failed to validate course structure against schema: ${ex}`);
